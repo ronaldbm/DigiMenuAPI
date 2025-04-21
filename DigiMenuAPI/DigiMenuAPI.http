@@ -1,0 +1,6 @@
+@DigiMenuAPI_HostAddress = http://localhost:5027
+
+GET {{DigiMenuAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
