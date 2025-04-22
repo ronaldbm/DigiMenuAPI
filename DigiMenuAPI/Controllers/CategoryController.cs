@@ -107,6 +107,14 @@ namespace DigiMenuAPI.Controllers
             var result = await categoryService.GetOne(id);
 
             return result is null ? NotFound() : Ok(result);
+        }        
+        
+        [HttpGet("GetBasicInformation", Name = "GetBasicInformation")]
+        [OutputCache(Tags = [cacheTag])]
+        [ProducesResponseType(typeof(CategoryInfoDto), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<CategoryInfoDto>>> GetBasicInformation()
+        {
+            return await categoryService.GetBasicInformation();
         }
     }
 }

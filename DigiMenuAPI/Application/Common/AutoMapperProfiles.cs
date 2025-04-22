@@ -35,6 +35,8 @@ namespace DigiMenuAPI.Application.Common
         {
             CreateMap<Category, CategoryDto>();
 
+            CreateMap<Category,CategoryInfoDto>();
+
             CreateMap<CategoryCreateDto, Category>();
 
             CreateMap<CategoryUpdateDto, Category>();

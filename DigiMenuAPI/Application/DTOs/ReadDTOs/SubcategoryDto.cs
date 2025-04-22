@@ -6,5 +6,6 @@
         public  required string Label { get; set; }
         public int Position { get; set; }
         public required CategoryDto Category { get; set; }
+        public bool IsVisible { get; set; }
     }
 }

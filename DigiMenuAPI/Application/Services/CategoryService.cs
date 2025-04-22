@@ -220,6 +220,7 @@ namespace DigiMenuAPI.Application.Services
                                             .Category
                                             .AsNoTracking()
                                             .Where(c => c.Alive)
+                                            .OrderBy(c => c.Position)
                                             .ProjectTo<CategoryDto>(mapper.ConfigurationProvider)
                                             .ToListAsync();
 
@@ -234,6 +235,17 @@ namespace DigiMenuAPI.Application.Services
                                         .Where(c => c.Id == Id && c.Alive)
                                         .ProjectTo<CategoryDto>(mapper.ConfigurationProvider)
                                         .FirstOrDefaultAsync();
+            return category;
+        }
+
+        public async Task<List<CategoryInfoDto>> GetBasicInformation()
+        {
+            var category = await context
+                                        .Category
+                                        .AsNoTracking()
+                                        .Where(c => c.Alive)
+                                        .ProjectTo<CategoryInfoDto>(mapper.ConfigurationProvider)
+                                        .ToListAsync();
             return category;
         }
         #endregion Read
