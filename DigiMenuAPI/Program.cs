@@ -41,7 +41,7 @@ builder.Services.AddCors(options =>
 //Cache
 builder.Services.AddOutputCache(options =>
 {
-    options.DefaultExpirationTimeSpan = TimeSpan.FromDays(7);
+    options.DefaultExpirationTimeSpan = TimeSpan.FromDays(1);
 });
 
 // Logger con Serilog

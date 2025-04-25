@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace DigiMenuAPI.Infrastructure.Entities
+﻿namespace DigiMenuAPI.Infrastructure.Entities
 {
     public class Category
     {
@@ -9,8 +7,6 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public bool Alive { get; set; }
         public int Position { get; set; }
         public bool IsVisible { get; set; }
-
-        // Propiedad de navegación hacia las subcategorías
         public ICollection<Subcategory> Subcategories { get; set; } = new List<Subcategory>();  // Relación uno a muchos con Subcategory
     }
 }

@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DigiMenuAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250418200836_FirstMigration")]
-    partial class FirstMigration
+    [Migration("20250422014056_BDClean")]
+    partial class BDClean
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -65,7 +65,6 @@ namespace DigiMenuAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImagePath")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsVisible")

@@ -8,5 +8,6 @@
         public string? Image { get; set; }
         public SubcategoryDto Subcategory { get; set; } = null!;
         public int Position { get; set; }
+        public bool IsVisible { get; set; }
     }
 }

@@ -5,7 +5,7 @@
 namespace DigiMenuAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class FirstMigration : Migration
+    public partial class BDClean : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -74,7 +74,7 @@ namespace DigiMenuAPI.Migrations
                     Label = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Price = table.Column<double>(type: "float", nullable: false),
-                    ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     SubcategoryId = table.Column<int>(type: "int", nullable: false),
                     Alive = table.Column<bool>(type: "bit", nullable: false),
                     Position = table.Column<int>(type: "int", nullable: false),

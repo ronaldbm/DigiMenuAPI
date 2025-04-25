@@ -115,6 +115,14 @@ namespace DigiMenuAPI.Controllers
         public async Task<ActionResult<List<CategoryInfoDto>>> GetBasicInformation()
         {
             return await categoryService.GetBasicInformation();
+        }        
+        
+        [HttpGet("GetCategorySelectInformation", Name = "GetCategorySelectInformation")]
+        [OutputCache(Tags = [cacheTag])]
+        [ProducesResponseType(typeof(CategorySelectInformation), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<CategorySelectInformation>>> GetCategorySelectInformation()
+        {
+            return await categoryService.GetCategorySelectInformation();
         }
     }
 }

@@ -27,7 +27,8 @@ namespace DigiMenuAPI.Application.Common
 
             CreateMap<ProductUpdateDto, Product>()
                 .ForMember(dest => dest.ImagePath, opt => opt.MapFrom(src => src.Image)
-            );
+            )
+           .ReverseMap();
 
         }
 
@@ -36,6 +37,15 @@ namespace DigiMenuAPI.Application.Common
             CreateMap<Category, CategoryDto>();
 
             CreateMap<Category,CategoryInfoDto>();
+
+            CreateMap<Category, CategorySelectInformation>()
+                .ForMember(dest => dest.Subcategory,
+                           opt => opt.MapFrom(src =>
+                               src.Subcategories
+                                  .Where(s => s.Alive && s.IsVisible)
+                                  .OrderBy(s => s.Position)
+                           )
+            );
 
             CreateMap<CategoryCreateDto, Category>();
 
@@ -46,6 +56,8 @@ namespace DigiMenuAPI.Application.Common
         private void SubcategoryMappingConfiguration()
         {
             CreateMap<Subcategory, SubcategoryDto>();
+
+            CreateMap<Subcategory, SubcategoryInfo>();
 
             CreateMap<SubcategoryCreateDto, Subcategory>();
 

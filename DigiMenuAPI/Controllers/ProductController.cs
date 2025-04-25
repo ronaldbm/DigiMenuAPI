@@ -100,9 +100,9 @@ namespace DigiMenuAPI.Controllers
         }
 
         [HttpGet("{id:int}", Name = "GetOne")]
-        [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProductUpdateDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ProductDto>> GetOne(int id)
+        public async Task<ActionResult<ProductUpdateDto>> GetOne(int id)
         {
             var result = await productService.GetOne(id);
 

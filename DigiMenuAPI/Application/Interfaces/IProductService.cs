@@ -12,6 +12,6 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<bool>> UpdatePosition(ItemPositionUpdate productDto);
         Task<OperationResult<bool>> Delete(int Id);
         Task<List<ProductDto>> GetAll();
-        Task<ProductDto?> GetOne(int productId);
+        Task<ProductUpdateDto?> GetOne(int productId);
     }
 }

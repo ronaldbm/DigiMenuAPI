@@ -14,5 +14,6 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<List<CategoryDto>> GetAll();
         Task<CategoryDto?> GetOne(int Id);
         Task<List<CategoryInfoDto>> GetBasicInformation();
+        Task<List<CategorySelectInformation>> GetCategorySelectInformation();
     }
 }

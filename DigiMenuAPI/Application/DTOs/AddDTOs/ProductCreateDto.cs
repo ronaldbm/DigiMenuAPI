@@ -6,12 +6,13 @@ namespace DigiMenuAPI.Application.DTOs.AddDTOs
     {
         [Required]
         public required string Label { get; set; }
+        public string? Description { get; set; }
         [Required]
         public float Price { get; set; }
         public string? Image { get; set; }
         [Required]
         public int SubcategoryId { get; set; }
-        public required int Position { get; set; }
+        public int Position { get; set; }
         public bool IsVisible { get; set; }
 
     }

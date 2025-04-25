@@ -228,13 +228,13 @@ namespace DigiMenuAPI.Application.Services
             return productList;
         }
 
-        public async Task<ProductDto?> GetOne(int Id)
+        public async Task<ProductUpdateDto?> GetOne(int Id)
         {
             var product = await context
                                         .Product
                                         .AsNoTracking()
                                         .Where(p => p.Id == Id && p.Alive)
-                                        .ProjectTo<ProductDto>(mapper.ConfigurationProvider)
+                                        .ProjectTo<ProductUpdateDto>(mapper.ConfigurationProvider)
                                         .FirstOrDefaultAsync();
             return product;
         }

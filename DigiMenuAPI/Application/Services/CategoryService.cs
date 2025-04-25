@@ -248,6 +248,18 @@ namespace DigiMenuAPI.Application.Services
                                         .ToListAsync();
             return category;
         }
+
+        public async Task<List<CategorySelectInformation>> GetCategorySelectInformation()
+        {
+            var category = await context
+                                        .Category
+                                        .AsNoTracking()
+                                        .Where(c => c.Alive)
+                                        .ProjectTo<CategorySelectInformation>(mapper.ConfigurationProvider)
+                                        .OrderBy(c => c.Position)
+                                        .ToListAsync();
+            return category;
+        }
         #endregion Read
     }
 }
