@@ -49,6 +49,7 @@ namespace DigiMenuAPI.Application.Services
 
                 // Mapea el DTO a la entidad
                 var product = mapper.Map<Product>(productDto);
+                product.ImagePath = ImageConverter.ConvertBase64ToWebP(product.ImagePath);
                 product.Alive = true;
 
                 //Guardar
@@ -125,6 +126,13 @@ namespace DigiMenuAPI.Application.Services
                 var product = await context.Product.FirstOrDefaultAsync(p => p.Id == productDto.Id && p.Alive);
                 mapper.Map(productDto, product);
 
+                if (product is null)
+                {
+                    logger.LogWarning(MessageBuilder.NotFound(EntityNames.Product), productDto);
+                    return OperationResult<bool>.Fail(MessageBuilder.NotFound(EntityNames.Product));
+                }
+
+                product.ImagePath = ImageConverter.ConvertBase64ToWebP(product.ImagePath);
 
                 //Guardo los cambios
                 await context.SaveChangesAsync();
