@@ -137,7 +137,7 @@ namespace DigiMenuAPI.Application.Services
                 //Guardo los cambios
                 await context.SaveChangesAsync();
 
-                logger.LogUpdate(EntityNames.Product,productDto);
+                logger.LogUpdate(EntityNames.Product, product);
                 var result = OperationResult<bool>.Ok(true, MessageBuilder.Updated(EntityNames.Product));
 
                 return result;
@@ -245,6 +245,17 @@ namespace DigiMenuAPI.Application.Services
                                         .ProjectTo<ProductUpdateDto>(mapper.ConfigurationProvider)
                                         .FirstOrDefaultAsync();
             return product;
+        }
+
+        public async Task<List<MenuProductsDto>> GetMenu()
+        {
+            var productList = await context
+                                            .vwProductVisibleLists
+                                            .AsNoTracking()
+                                            .ProjectTo<MenuProductsDto>(mapper.ConfigurationProvider)
+                                            .ToListAsync();
+
+            return productList;
         }
         #endregion Read
     }

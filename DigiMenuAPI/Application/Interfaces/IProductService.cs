@@ -13,5 +13,6 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<bool>> Delete(int Id);
         Task<List<ProductDto>> GetAll();
         Task<ProductUpdateDto?> GetOne(int productId);
+        Task<List<MenuProductsDto>> GetMenu();
     }
 }

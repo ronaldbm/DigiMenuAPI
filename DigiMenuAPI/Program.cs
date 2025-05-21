@@ -32,8 +32,8 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(CORSOptions =>
     {
-        CORSOptions.WithOrigins(allowedHosts).AllowAnyMethod().AllowAnyHeader();
-        //CORSOptions.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        //CORSOptions.WithOrigins(allowedHosts).AllowAnyMethod().AllowAnyHeader();
+        CORSOptions.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
 
     });
 });
@@ -63,6 +63,10 @@ Log.Logger = new LoggerConfiguration()
         .Filter.ByIncludingOnly(Matching.FromSource("SubcategoryService"))
         .WriteTo.File("Logs/subcategory-log-.txt", rollingInterval: RollingInterval.Day))
 
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(Matching.FromSource("SocialLinkService"))
+        .WriteTo.File("Logs/socialLink-log-.txt", rollingInterval: RollingInterval.Day))
+
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -74,6 +78,7 @@ builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ISocialLinkService, SocialLinkService>();
 
 var app = builder.Build();
 

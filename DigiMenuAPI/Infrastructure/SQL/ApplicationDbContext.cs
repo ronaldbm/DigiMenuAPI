@@ -1,4 +1,5 @@
 ﻿using DigiMenuAPI.Infrastructure.Entities;
+using DigiMenuAPI.Infrastructure.Entities.Views;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiMenuAPI.Infrastructure.SQL
@@ -12,6 +13,8 @@ namespace DigiMenuAPI.Infrastructure.SQL
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            //TABLAS
 
             // Configuración para la entidad Product
             modelBuilder.Entity<Product>(entity =>
@@ -67,12 +70,41 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 entity.Property(sl => sl.URL);
                 entity.Property(sl => sl.IsVisible).IsRequired();
             });
+
+
+            // VISTAS
+
+            // Configuración de ProductVisibleList
+            modelBuilder.Entity<vwProductVisibleList>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vwProductVisibleList"); 
+            });
+
+            // Configuración de SubcategoryVisibleList
+            modelBuilder.Entity<vwSubcategoryVisibleList>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vwSubcategoryVisibleList"); 
+            });
+
+            // Configuración de CategoryVisibleList
+            modelBuilder.Entity<vwCategoryVisibleList>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vwCategoryVisibleList"); 
+            });
         }
 
-
+        //Tablas
         public DbSet<Product> Product { get; set; }
         public DbSet<Category> Category { get; set; }
         public DbSet<Subcategory> Subcategory { get; set; }
         public DbSet<SocialLink> SocialLink { get; set; }
+
+        //Vistas
+        public DbSet<vwProductVisibleList> vwProductVisibleLists { get; set; }
+        public DbSet<vwSubcategoryVisibleList> vwSubcategoryVisibleLists { get; set; }
+        public DbSet<vwCategoryVisibleList> vwCategoryVisibleLists { get; set; }
     }
 }

@@ -108,6 +108,14 @@ namespace DigiMenuAPI.Controllers
 
             return result is null ? NotFound() : Ok(result);
         }
+
+        [HttpGet("GetMenu", Name = "GetMenu")]
+        [OutputCache(Tags = [cacheTag])]
+        [ProducesResponseType(typeof(List<MenuProductsDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<MenuProductsDto>>> GetMenu()
+        {
+            return Ok(await productService.GetMenu());
+        }
     }
 }
 

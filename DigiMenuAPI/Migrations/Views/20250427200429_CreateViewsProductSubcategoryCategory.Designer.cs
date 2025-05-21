@@ -3,6 +3,7 @@ using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DigiMenuAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250427200429_CreateViewsProductSubcategoryCategory")]
+    partial class CreateViewsProductSubcategoryCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -150,11 +153,11 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
 
-                    b.Property<string>("CategoryLabel")
+                    b.Property<string>("CategoryIdLabel")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("CategoryPosition")
+                    b.Property<int>("CategoryIdPosition")
                         .HasColumnType("int");
 
                     b.ToTable((string)null);
@@ -164,16 +167,6 @@ namespace DigiMenuAPI.Migrations
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Views.vwProductVisibleList", b =>
                 {
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CategoryLabel")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CategoryPosition")
-                        .HasColumnType("int");
-
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -189,16 +182,6 @@ namespace DigiMenuAPI.Migrations
 
                     b.Property<float>("ProductPrice")
                         .HasColumnType("real");
-
-                    b.Property<int>("SubcategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SubcategoryLabel")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SubcategoryPosition")
-                        .HasColumnType("int");
 
                     b.ToTable((string)null);
 

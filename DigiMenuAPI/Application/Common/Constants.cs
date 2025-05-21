@@ -25,6 +25,7 @@
             public static readonly EntityInfo Product = new("producto", Gender.Masculine);
             public static readonly EntityInfo Category = new("categoría", Gender.Feminine);
             public static readonly EntityInfo Subcategory = new("subcategoría", Gender.Feminine);
+            public static readonly EntityInfo SocialLink = new("link", Gender.Masculine);
         }
     }
 }
