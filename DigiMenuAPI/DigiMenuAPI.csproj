@@ -7,6 +7,48 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="obj\Debug\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs" />
+    <Compile Include="obj\Debug\net9.0\DigiMenuAPI.AssemblyInfo.cs" />
+    <Compile Include="obj\Debug\net9.0\DigiMenuAPI.GlobalUsings.g.cs" />
+    <Compile Include="obj\Debug\net9.0\DigiMenuAPI.MvcApplicationPartsAssemblyInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="obj\Debug\net9.0\ApiEndpoints.json" />
+    <Content Include="obj\Debug\net9.0\DigiMenuAPI.csproj.FileListAbsolute.txt" />
+    <Content Include="obj\Debug\net9.0\DigiMenuAPI.sourcelink.json" />
+    <Content Include="obj\Debug\net9.0\staticwebassets.build.endpoints.json" />
+    <Content Include="obj\Debug\net9.0\staticwebassets.build.json" />
+    <Content Include="obj\Debug\net9.0\staticwebassets.references.upToDateCheck.txt" />
+    <Content Include="obj\Debug\net9.0\staticwebassets.removed.txt" />
+    <Content Include="obj\DigiMenuAPI.csproj.nuget.dgspec.json" />
+    <Content Include="obj\project.assets.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="obj\Debug\net9.0\apphost.exe" />
+    <None Include="obj\Debug\net9.0\DigiMenu.30EE4542.Up2Date" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.AssemblyInfoInputs.cache" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.assets.cache" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.csproj.AssemblyReference.cache" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.csproj.BuildWithSkipAnalyzers" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.csproj.CoreCompileInputs.cache" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.dll" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.GeneratedMSBuildEditorConfig.editorconfig" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.genruntimeconfig.cache" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.MvcApplicationPartsAssemblyInfo.cache" />
+    <None Include="obj\Debug\net9.0\DigiMenuAPI.pdb" />
+    <None Include="obj\Debug\net9.0\refint\DigiMenuAPI.dll" />
+    <None Include="obj\Debug\net9.0\ref\DigiMenuAPI.dll" />
+    <None Include="obj\Debug\net9.0\staticwebassets\msbuild.build.DigiMenuAPI.props" />
+    <None Include="obj\Debug\net9.0\staticwebassets\msbuild.buildMultiTargeting.DigiMenuAPI.props" />
+    <None Include="obj\Debug\net9.0\staticwebassets\msbuild.buildTransitive.DigiMenuAPI.props" />
+    <None Include="obj\DigiMenuAPI.csproj.nuget.g.props" />
+    <None Include="obj\DigiMenuAPI.csproj.nuget.g.targets" />
+    <None Include="obj\project.nuget.cache" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />

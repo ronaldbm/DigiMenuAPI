@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string Label { get; set; } = "";
-        public float Price { get; set; }
+        public double Price { get; set; }
         public string? Image { get; set; }
         public SubcategoryDto Subcategory { get; set; } = null!;
         public int Position { get; set; }

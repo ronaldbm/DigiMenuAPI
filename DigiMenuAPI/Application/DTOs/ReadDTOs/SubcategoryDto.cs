@@ -7,5 +7,6 @@
         public int Position { get; set; }
         public required CategoryDto Category { get; set; }
         public bool IsVisible { get; set; }
+        public bool HasProduct { get; set; }
     }
 }

@@ -227,9 +227,9 @@ namespace DigiMenuAPI.Application.Services
         public async Task<List<ProductDto>> GetAll()
         {
             var productList = await  context   
-                                            .Product
+                                            .vwGetAllProducts
                                             .AsNoTracking()
-                                            .Where(p => p.Alive)
+                                            .OrderBy(p => p.Position)
                                             .ProjectTo<ProductDto>(mapper.ConfigurationProvider)
                                             .ToListAsync();
 

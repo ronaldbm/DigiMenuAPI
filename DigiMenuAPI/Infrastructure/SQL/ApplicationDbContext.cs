@@ -94,6 +94,29 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 entity.HasNoKey();
                 entity.ToView("vwCategoryVisibleList"); 
             });
+
+            // Configuración de GetAllCategories
+            modelBuilder.Entity<vwGetAllCategories>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vwGetAllCategories");
+            });
+
+            // Configuración de GetAllSubcategories
+            modelBuilder.Entity<vwGetAllSubcategories>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vwGetAllSubcategories");
+            });
+
+            // Configuración de GetAllProducts
+            modelBuilder.Entity<vwGetAllProducts>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vwGetAllProducts");
+            });
+
+
         }
 
         //Tablas
@@ -103,8 +126,11 @@ namespace DigiMenuAPI.Infrastructure.SQL
         public DbSet<SocialLink> SocialLink { get; set; }
 
         //Vistas
+        public DbSet<vwGetAllProducts> vwGetAllProducts { get; set; }
         public DbSet<vwProductVisibleList> vwProductVisibleLists { get; set; }
+        public DbSet<vwGetAllSubcategories> vwGetAllSubcategories { get; set; }
         public DbSet<vwSubcategoryVisibleList> vwSubcategoryVisibleLists { get; set; }
         public DbSet<vwCategoryVisibleList> vwCategoryVisibleLists { get; set; }
+        public DbSet<vwGetAllCategories> vwGetAllCategories { get; set; }
     }
 }

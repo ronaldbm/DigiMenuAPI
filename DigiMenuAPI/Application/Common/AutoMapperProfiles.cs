@@ -50,6 +50,25 @@ namespace DigiMenuAPI.Application.Common
                 }))
             ;
 
+            CreateMap<vwGetAllProducts, ProductDto>()
+                .ForMember(dest => dest.Subcategory, opt => opt.MapFrom(src => new SubcategoryDto
+                {
+                    Id = src.SubcategoryId,
+                    Label = src.SubcategoryLabel,
+                    Position = src.SubcategoryPosition,
+                    IsVisible = src.SubcategoryIsVisible,
+                    HasProduct = false, 
+                    Category = new CategoryDto
+                    {
+                        Id = src.CategoryId,
+                        Label = src.CategoryLabel,
+                        Position = src.CategoryPosition,
+                        IsVisible = src.CategoryIsVisible,
+                        HasSubcategory = false 
+                    }
+                }))
+            ;
+
         }
 
         private void CategoryMappingConfiguration()
@@ -71,6 +90,8 @@ namespace DigiMenuAPI.Application.Common
 
             CreateMap<CategoryUpdateDto, Category>();
 
+            CreateMap<vwGetAllCategories, CategoryDto>();
+
         }
 
         private void SubcategoryMappingConfiguration()
@@ -82,6 +103,17 @@ namespace DigiMenuAPI.Application.Common
             CreateMap<SubcategoryCreateDto, Subcategory>();
 
             CreateMap<SubcategoryUpdateDto, Subcategory>();
+
+            CreateMap<vwGetAllSubcategories, SubcategoryDto>() 
+                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => new CategoryDto
+                {
+                    Id = src.CategoryId,
+                    Label = src.CategoryLabel,
+                    Position = src.CategoryPosition,
+                    IsVisible = src.CategoryIsVisible,
+                    HasSubcategory = false
+                }))
+            ;
 
         }
 
