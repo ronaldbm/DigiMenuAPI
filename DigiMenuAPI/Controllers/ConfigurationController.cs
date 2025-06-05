@@ -8,9 +8,10 @@ namespace DigiMenuAPI.Controllers
     public class ConfigurationController : Controller
     {
         private readonly IOutputCacheStore outputCacheStore;
-        private const string productCacheTag = "Product";
+        private const string productCacheTag = "Products";
         public ConfigurationController(IOutputCacheStore outputCacheStore)
         {
+            this.outputCacheStore = outputCacheStore;
             this.outputCacheStore = outputCacheStore;
         }
 

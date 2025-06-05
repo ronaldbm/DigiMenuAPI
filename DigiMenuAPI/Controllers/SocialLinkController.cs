@@ -2,6 +2,7 @@
 using DigiMenuAPI.Application.DTOs.UpdateDTOs;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace DigiMenuAPI.Controllers
 {
@@ -9,9 +10,13 @@ namespace DigiMenuAPI.Controllers
     [Route("api/socialLinks")]
     public class SocialLinkController : Controller
     {
+        private readonly IOutputCacheStore outputCacheStore;
         private readonly ISocialLinkService socialLinkService;
-        public SocialLinkController(ISocialLinkService socialLinkService)
+        private const string cacheTag = "Links";
+
+        public SocialLinkController(IOutputCacheStore outputCacheStore, ISocialLinkService socialLinkService)
         {
+            this.outputCacheStore = outputCacheStore;
             this.socialLinkService = socialLinkService;
         }
 
@@ -35,11 +40,13 @@ namespace DigiMenuAPI.Controllers
                     Status = 400
                 });
             }
+            await outputCacheStore.EvictByTagAsync(cacheTag, default);
 
             return Ok(true);
         }
 
         [HttpGet(Name = "GetAllSocialLink")]
+        [OutputCache(Tags = [cacheTag])]
         [ProducesResponseType(typeof(List<SocialLinkDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<SocialLinkDto>>> GetAll()
         {

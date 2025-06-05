@@ -13,7 +13,7 @@ namespace DigiMenuAPI.Controllers
     {
         private readonly IOutputCacheStore outputCacheStore;
         private readonly ICategoryService categoryService;
-        private const string cacheTag = "Category";
+        private const string cacheTag = "Products";
 
         public CategoryController(IOutputCacheStore outputCacheStore, ICategoryService categoryService)
         {
@@ -100,6 +100,7 @@ namespace DigiMenuAPI.Controllers
         }
 
         [HttpGet("{id:int}", Name = "GetOneCategory")]
+        [OutputCache(Tags = [cacheTag])]
         [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<CategoryDto>> GetOne(int id)
