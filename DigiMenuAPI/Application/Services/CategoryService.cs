@@ -212,7 +212,6 @@ namespace DigiMenuAPI.Application.Services
 
         #endregion Updates
 
-
         #region Read
         public async Task<List<CategoryDto>> GetAll()
         {
@@ -243,7 +242,7 @@ namespace DigiMenuAPI.Application.Services
             var category = await context
                                         .Category
                                         .AsNoTracking()
-                                        .Where(c => c.Alive)
+                                        .Where(c => c.Alive && c.IsVisible)
                                         .ProjectTo<CategoryInfoDto>(mapper.ConfigurationProvider)
                                         .ToListAsync();
             return category;
@@ -254,7 +253,7 @@ namespace DigiMenuAPI.Application.Services
             var category = await context
                                         .Category
                                         .AsNoTracking()
-                                        .Where(c => c.Alive)
+                                        .Where(c => c.Alive && c.IsVisible)
                                         .ProjectTo<CategorySelectInformation>(mapper.ConfigurationProvider)
                                         .OrderBy(c => c.Position)
                                         .ToListAsync();
