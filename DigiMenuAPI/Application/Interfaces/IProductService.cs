@@ -7,12 +7,10 @@ namespace DigiMenuAPI.Application.Interfaces
 {
     public interface IProductService
     {
-        Task<OperationResult<int>> Create(ProductCreateDto productDto);
-        Task<OperationResult<bool>> Update(ProductUpdateDto productDto);
-        Task<OperationResult<bool>> UpdatePosition(ItemPositionUpdate productDto);
-        Task<OperationResult<bool>> Delete(int Id);
-        Task<List<ProductDto>> GetAll();
-        Task<ProductUpdateDto?> GetOne(int productId);
-        Task<List<MenuProductsDto>> GetMenu();
+        Task<OperationResult<List<ProductReadDto>>> GetAll();
+        Task<OperationResult<ProductReadDto>> GetById(int id);
+        Task<OperationResult<ProductReadDto>> Create(ProductCreateDto dto);
+        Task<OperationResult<bool>> Update(ProductUpdateDto dto);
+        Task<OperationResult<bool>> Delete(int id);
     }
 }

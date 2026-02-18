@@ -1,263 +1,100 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.AddDTOs;
 using DigiMenuAPI.Application.DTOs.ReadDTOs;
+using DigiMenuAPI.Application.DTOs.AddDTOs;
 using DigiMenuAPI.Application.DTOs.UpdateDTOs;
 using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Application.Utils;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
-using static DigiMenuAPI.Application.Common.Constants;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace DigiMenuAPI.Application.Services
 {
     public class CategoryService : ICategoryService
     {
-        private readonly ApplicationDbContext context;
-        private readonly IMapper mapper;
-        private readonly LogMessageDispatcher<CategoryService> logger;
+        private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
+        private readonly IOutputCacheStore _cacheStore;
+        private const string CacheTag = "tag-menu-publico";
 
-        public CategoryService(ApplicationDbContext context, IMapper mapper, LogMessageDispatcher<CategoryService> logger)
+        public CategoryService(ApplicationDbContext context, IMapper mapper, IOutputCacheStore cacheStore)
         {
-            this.context = context;
-            this.mapper = mapper;
-            this.logger = logger;
+            _context = context;
+            _mapper = mapper;
+            _cacheStore = cacheStore;
         }
 
-        #region Create
-        public async Task<OperationResult<int>> Create(CategoryCreateDto categoryDto)
+        public async Task<OperationResult<List<CategoryReadDto>>> GetAll()
         {
-            try
-            {
-                bool exists = await context.Category
-                                                    .AnyAsync(c => c.Label == categoryDto.Label && c.Alive);
+            var categories = await _context.Categories
+                .AsNoTracking()
+                .OrderBy(c => c.DisplayOrder)
+                .ProjectTo<CategoryReadDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
 
-                if (exists)
-                {
-                    logger.LogWarning(MessageBuilder.AlreadyExists(EntityNames.Category), categoryDto);
-                    return OperationResult<int>.Fail(MessageBuilder.AlreadyExists(EntityNames.Category));
-                }
-
-                // Calcula la posición
-                int nextPosition = await context.Category
-                                                        .Where(c => c.Alive)
-                                                        .CountAsync();
-
-                categoryDto.Position = nextPosition + 1;
-
-                // Mapea el DTO a la entidad
-                var category = mapper.Map<Category>(categoryDto);
-                category.Alive = true;
-
-                //Guardar
-                await context.Category.AddAsync(category);
-                await context.SaveChangesAsync();
-
-                logger.LogCreate(EntityNames.Category, category);
-                return OperationResult<int>.Ok(category.Id, MessageBuilder.Created(EntityNames.Category));
-
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, MessageBuilder.UnexpectedError(EntityNames.Category), categoryDto);
-                return OperationResult<int>.Fail(MessageBuilder.UnexpectedError(EntityNames.Category));
-            }
+            return OperationResult<List<CategoryReadDto>>.Ok(categories);
         }
 
-        #endregion Create
-
-        #region Updates
-        public async Task<OperationResult<bool>> Delete(int Id)
+        public async Task<OperationResult<CategoryReadDto>> GetById(int id)
         {
-            try
-            {
-                var category = context.Category.FirstOrDefault(c => c.Id == Id);
+            var category = await _context.Categories
+                .AsNoTracking()
+                .ProjectTo<CategoryReadDto>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(c => c.Id == id);
 
-                if (category == null) //No se ha encontrado el Id
-                {
-                    logger.LogWarning(MessageBuilder.NotFound(EntityNames.Category), Id);
-                    return OperationResult<bool>.Fail(MessageBuilder.NotFound(EntityNames.Category));
-                }
+            if (category is null) 
+                return OperationResult<CategoryReadDto>.Fail("Categoría no encontrada");
 
-                //Modificarle el estado
-                category.Alive = false;
-
-                //Coloco la posición de todas las demas categorías correctamente
-                await context.Category
-                                    .Where(c => c.Position >= category.Position)
-                                    .ExecuteUpdateAsync(setters => setters.SetProperty(c => c.Position, c => c.Position - 1));
-
-                //Verifico que si se hayan hecho los cambios
-                 await context.SaveChangesAsync();
-  
-                logger.LogDelete(EntityNames.Category, category);
-                var result = OperationResult<bool>.Ok(true, MessageBuilder.Deleted(EntityNames.Category));
-
-                return result;
-
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, MessageBuilder.UnexpectedError(EntityNames.Category), Id);
-                return OperationResult<bool>.Fail(MessageBuilder.UpdatedError(EntityNames.Category));
-            }
+            return OperationResult<CategoryReadDto>.Ok(category);
         }
 
-        public async Task<OperationResult<bool>> Update(CategoryUpdateDto categoryDto)
+        public async Task<OperationResult<CategoryReadDto>> Create(CategoryCreateDto dto)
         {
-            try
-            {
-                bool existsProduct = context
-                                            .Category
-                                            .Any(c => (c.Label == categoryDto.Label && c.Id != categoryDto.Id) && c.Alive);
+            var category = _mapper.Map<Category>(dto);
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
 
-                if (existsProduct)
-                {
-                    logger.LogWarning(MessageBuilder.AlreadyExists(EntityNames.Category), categoryDto);
-                    return OperationResult<bool>.Fail(MessageBuilder.AlreadyExists(EntityNames.Category));
-                }
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
 
-                //Obtengo la categoría que se ha modificado según el Id y le coloco los datos nuevos
-                var category = await context.Category.FirstOrDefaultAsync(c => c.Id == categoryDto.Id && c.Alive);
-                mapper.Map(categoryDto, category);
-
-                //Guardo los cambios
-                await context.SaveChangesAsync();
-
-                logger.LogUpdate(EntityNames.Category, categoryDto);
-                var result = OperationResult<bool>.Ok(true, MessageBuilder.Updated(EntityNames.Category));
- 
-                return result;
-
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, MessageBuilder.UnexpectedError(EntityNames.Category), categoryDto);
-                return OperationResult<bool>.Fail(MessageBuilder.UpdatedError(EntityNames.Category));
-            }
+            return OperationResult<CategoryReadDto>.Ok(_mapper.Map<CategoryReadDto>(category));
         }
 
-        public async Task<OperationResult<bool>> UpdatePosition(ItemPositionUpdate categoryDto)
+        public async Task<OperationResult<bool>> Update(CategoryUpdateDto dto)
         {
-            try
-            {
-                var movedCategory = context.Category.FirstOrDefault(c => c.Id == categoryDto.Id);
-                if (movedCategory == null)
-                {
-                    logger.LogWarning(
-                        MessageBuilder.NotFound(EntityNames.Category),
-                        categoryDto
-                    );
-                    return OperationResult<bool>.Fail(MessageBuilder.NotFound(EntityNames.Category));
-                }
+            var category = await _context.Categories.FindAsync(dto.Id);
+            if (category is null) 
+                return OperationResult<bool>.Fail("Categoría no encontrada");
 
-                int oldPosition = movedCategory.Position;
-                int newPosition = categoryDto.Position;
-                int maxPosition = context.Category.Count(c => c.Alive);
+            _mapper.Map(dto, category);
+            await _context.SaveChangesAsync();
 
-                //Validar si las posiciones son validas
-                if (maxPosition < newPosition || newPosition <= 0)
-                {
-                    logger.LogWarning(MessageBuilder.PositionInvalid(EntityNames.Category), movedCategory);
-                    return OperationResult<bool>.Fail(MessageBuilder.PositionInvalid(EntityNames.Category));
-                }
+            // Al actualizar visibilidad o nombre, el menú público debe refrescarse
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
 
-                if (newPosition == oldPosition) //No se debe de actualizar nada
-                {
-                    return OperationResult<bool>.Ok(true);
-                }
-
-                //Verificar si el item subio o bajo de posición
-                if (newPosition < oldPosition)
-                {
-                    await context.Category
-                                        .Where(c => c.Position >= newPosition && c.Position < oldPosition)
-                                        .ExecuteUpdateAsync(setters => setters.SetProperty(c => c.Position, c => c.Position + 1));
-                }
-                else
-                {
-                    await context.Category
-                        .Where(c => c.Position > oldPosition && c.Position <= newPosition)
-                        .ExecuteUpdateAsync(setters => setters.SetProperty(c => c.Position, c => c.Position - 1));
-                }
-
-                //Guardo la nueva posición
-                movedCategory.Position = newPosition;
-
-                int affected = await context.SaveChangesAsync();
-
-                OperationResult<bool> result;
-                if (affected > 0)
-                {
-                    logger.LogUpdate(EntityNames.Category, movedCategory);
-                    result = OperationResult<bool>.Ok(true, MessageBuilder.Updated(EntityNames.Category));
-                }
-                else
-                {
-                    logger.LogWarning(MessageBuilder.UnexpectedError(EntityNames.Category), movedCategory);
-                    result = OperationResult<bool>.Fail(MessageBuilder.UpdatedError(EntityNames.Category));
-                }
-
-                return result;
-
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, MessageBuilder.UnexpectedError(EntityNames.Category), categoryDto);
-                return OperationResult<bool>.Fail(MessageBuilder.UpdatedError(EntityNames.Category));
-            }
+            return OperationResult<bool>.Ok(true);
         }
 
-        #endregion Updates
-
-        #region Read
-        public async Task<List<CategoryDto>> GetAll()
+        public async Task<OperationResult<bool>> Delete(int id)
         {
-            var categoryList = await context
-                                            .vwGetAllCategories
-                                            .AsNoTracking()
-                                            .OrderBy(c => c.Position)
-                                            .ProjectTo<CategoryDto>(mapper.ConfigurationProvider)
-                                            .ToListAsync();
+            // 1. Verificamos si la categoría existe
+            var category = await _context.Categories.FindAsync(id);
+            if (category is null) 
+                return OperationResult<bool>.Fail("Categoría no encontrada");
 
-            return categoryList;
-        }
+            // 2. Verificamos si tiene productos SIN traerlos a memoria
+            bool hasProducts = await _context.Products.AnyAsync(p => p.CategoryId == id);
 
-        public async Task<CategoryDto?> GetOne(int Id)
-        {
-            var category = await context
-                                        .Category
-                                        .AsNoTracking()
-                                        .Where(c => c.Id == Id && c.Alive)
-                                        .ProjectTo<CategoryDto>(mapper.ConfigurationProvider)
-                                        .FirstOrDefaultAsync();
-            return category;
-        }
+            if (hasProducts)
+                return OperationResult<bool>.Fail("No se puede eliminar una categoría que tiene productos asociados.");
 
-        public async Task<List<CategoryInfoDto>> GetBasicInformation()
-        {
-            var category = await context
-                                        .Category
-                                        .AsNoTracking()
-                                        .Where(c => c.Alive && c.IsVisible)
-                                        .ProjectTo<CategoryInfoDto>(mapper.ConfigurationProvider)
-                                        .ToListAsync();
-            return category;
-        }
+            category.IsDeleted = true;
+            await _context.SaveChangesAsync();
 
-        public async Task<List<CategorySelectInformation>> GetCategorySelectInformation()
-        {
-            var category = await context
-                                        .Category
-                                        .AsNoTracking()
-                                        .Where(c => c.Alive && c.IsVisible)
-                                        .ProjectTo<CategorySelectInformation>(mapper.ConfigurationProvider)
-                                        .OrderBy(c => c.Position)
-                                        .ToListAsync();
-            return category;
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
+
+            return OperationResult<bool>.Ok(true);
         }
-        #endregion Read
     }
 }

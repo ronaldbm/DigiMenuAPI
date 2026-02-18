@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiMenuAPI.Controllers
 {
     [Route("api/[controller]")]
-    public class CategoriesController : BaseController
+    public class FooterLinksController : BaseController
     {
-        private readonly ICategoryService _service;
+        private readonly IFooterLinkService _service;
 
-        public CategoriesController(ICategoryService service)
+        public FooterLinksController(IFooterLinkService service)
         {
             _service = service;
         }
@@ -18,17 +18,14 @@ namespace DigiMenuAPI.Controllers
         [HttpGet]
         public async Task<ActionResult> GetAll() => HandleResult(await _service.GetAll());
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult> GetById(int id) => HandleResult(await _service.GetById(id));
-
         [HttpPost]
-        public async Task<ActionResult> Create([FromBody] CategoryCreateDto dto) => HandleResult(await _service.Create(dto));
+        public async Task<ActionResult> Create([FromBody] FooterLinkCreateDto dto) => HandleResult(await _service.Create(dto));
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] CategoryUpdateDto dto)
+        public async Task<ActionResult> Update(int id, [FromBody] FooterLinkUpdateDto dto)
         {
-            if (id != dto.Id) 
-                return BadRequest("El ID no coincide");
+            if (id != dto.Id)
+                return BadRequest("ID inconsistente");
 
             return HandleResult(await _service.Update(dto));
         }

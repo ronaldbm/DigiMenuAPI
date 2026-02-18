@@ -2,15 +2,14 @@
 
 namespace DigiMenuAPI.Infrastructure.Entities
 {
-    public class Category : BaseEntity
+    public class Tag : BaseEntity
     {
-        [Required, MaxLength(100)]
+        [Required, MaxLength(50)]
         public string Name { get; set; } = null!;
 
-        public int DisplayOrder { get; set; }
-        public bool IsVisible { get; set; }
         public bool IsDeleted { get; set; }
 
+        // Relación inversa para EF Core
         public ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }

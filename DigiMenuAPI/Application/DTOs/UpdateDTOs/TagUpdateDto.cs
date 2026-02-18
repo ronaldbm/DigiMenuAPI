@@ -1,10 +1,8 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.UpdateDTOs
 {
-    public record CategoryUpdateDto(
+    public record TagUpdateDto(
         int Id,
         string Name,
-        int DisplayOrder,
-        bool IsVisible
-
+        string? Color
     );
 }

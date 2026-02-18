@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiMenuAPI.Controllers
 {
     [Route("api/[controller]")]
-    public class CategoriesController : BaseController
+    public class TagsController : BaseController
     {
-        private readonly ICategoryService _service;
+        private readonly ITagService _service;
 
-        public CategoriesController(ICategoryService service)
+        public TagsController(ITagService service)
         {
             _service = service;
         }
@@ -22,14 +22,13 @@ namespace DigiMenuAPI.Controllers
         public async Task<ActionResult> GetById(int id) => HandleResult(await _service.GetById(id));
 
         [HttpPost]
-        public async Task<ActionResult> Create([FromBody] CategoryCreateDto dto) => HandleResult(await _service.Create(dto));
+        public async Task<ActionResult> Create([FromBody] TagCreateDto dto) => HandleResult(await _service.Create(dto));
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] CategoryUpdateDto dto)
+        public async Task<ActionResult> Update(int id, [FromBody] TagUpdateDto dto)
         {
-            if (id != dto.Id) 
-                return BadRequest("El ID no coincide");
-
+            if (id != dto.Id)
+                return BadRequest("ID inconsistente");
             return HandleResult(await _service.Update(dto));
         }
 

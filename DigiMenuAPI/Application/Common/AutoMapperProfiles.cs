@@ -3,126 +3,80 @@ using DigiMenuAPI.Application.DTOs.AddDTOs;
 using DigiMenuAPI.Application.DTOs.ReadDTOs;
 using DigiMenuAPI.Application.DTOs.UpdateDTOs;
 using DigiMenuAPI.Infrastructure.Entities;
-using DigiMenuAPI.Infrastructure.Entities.Views;
 
 namespace DigiMenuAPI.Application.Common
 {
-    public class AutoMapperProfiles: Profile
+    public class AutoMapperProfiles : Profile
     {
         public AutoMapperProfiles()
         {
+            StoreMappingConfiguration();
             CategoryMappingConfiguration();
-            SubcategoryMappingConfiguration();
             ProductMappingConfiguration();
-            SocialLinkMappingConfiguration();
+            TagMappingConfiguration();
+            FooterLinkMappingConfiguration();
+            ReservationMappingConfiguration();
+        }
+
+        private void StoreMappingConfiguration()
+        {
+            // Mapeo de la configuración global del menú
+            CreateMap<Setting, MenuStoreDto>();
         }
 
         private void ProductMappingConfiguration()
         {
-            CreateMap<Product, ProductDto>()
-                .ForMember(dest => dest.Image, opt => opt.MapFrom(src => src.ImagePath))
-            ;
+            // LECTURA: Mapeamos MainImageUrl de la entidad a ImageUrl del Record
+            CreateMap<Product, ProductReadDto>()
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.MainImageUrl));
 
+            // ESCRITURA: Mapeamos Price del DTO a BasePrice de la entidad
             CreateMap<ProductCreateDto, Product>()
-                .ForMember(dest => dest.ImagePath, opt => opt.MapFrom(src => src.Image))
-            ;
+                .ForMember(dest => dest.BasePrice, opt => opt.MapFrom(src => src.Price))
+                .ForMember(dest => dest.MainImageUrl, opt => opt.Ignore());
 
             CreateMap<ProductUpdateDto, Product>()
-                .ForMember(dest => dest.ImagePath, opt => opt.MapFrom(src => src.Image))
-            .ReverseMap();
-
-            CreateMap<vwProductVisibleList, MenuProductsDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ProductId))
-                .ForMember(dest => dest.Label, opt => opt.MapFrom(src => src.ProductLabel))
-                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.ProductPrice)) 
-                .ForMember(dest => dest.Image, opt => opt.MapFrom(src => src.ProductImage))
-                .ForMember(dest => dest.Subcategory, opt => opt.MapFrom(src => new SubcategoryCategoryDto
-                {
-                    Id = src.SubcategoryId,
-                    Label = src.SubcategoryLabel,
-                    Position = src.SubcategoryPosition,
-                    Category = new CategoryInfoDto
-                    {
-                        Id = src.CategoryId,
-                        Label = src.CategoryLabel,
-                        Position = src.CategoryPosition
-                    }
-                }))
-            ;
-
-            CreateMap<vwGetAllProducts, ProductDto>()
-                .ForMember(dest => dest.Subcategory, opt => opt.MapFrom(src => new SubcategoryDto
-                {
-                    Id = src.SubcategoryId,
-                    Label = src.SubcategoryLabel,
-                    Position = src.SubcategoryPosition,
-                    IsVisible = src.SubcategoryIsVisible,
-                    HasProduct = false, 
-                    Category = new CategoryDto
-                    {
-                        Id = src.CategoryId,
-                        Label = src.CategoryLabel,
-                        Position = src.CategoryPosition,
-                        IsVisible = src.CategoryIsVisible,
-                        HasSubcategory = false 
-                    }
-                }))
-            ;
-
+                .ForMember(dest => dest.BasePrice, opt => opt.MapFrom(src => src.Price))
+                .ForMember(dest => dest.MainImageUrl, opt => opt.Ignore())
+                .ReverseMap();
         }
 
         private void CategoryMappingConfiguration()
         {
-            CreateMap<Category, CategoryDto>();
-
-            CreateMap<Category,CategoryInfoDto>();
-
-            CreateMap<Category, CategorySelectInformation>()
-                .ForMember(dest => dest.Subcategory,
-                           opt => opt.MapFrom(src =>
-                               src.Subcategories
-                                  .Where(s => s.Alive && s.IsVisible)
-                                  .OrderBy(s => s.Position)
-                           )
-            );
+            // LECTURA: Filtrado de productos visibles y ordenados
+            CreateMap<Category, CategoryReadDto>()
+                .ForMember(dest => dest.Products, opt => opt.MapFrom(src =>
+                    src.Products.Where(p => p.IsVisible)
+                                .OrderBy(p => p.DisplayOrder)));
 
             CreateMap<CategoryCreateDto, Category>();
-
-            CreateMap<CategoryUpdateDto, Category>();
-
-            CreateMap<vwGetAllCategories, CategoryDto>();
-
+            CreateMap<CategoryUpdateDto, Category>().ReverseMap();
         }
 
-        private void SubcategoryMappingConfiguration()
+        private void TagMappingConfiguration()
         {
-            CreateMap<Subcategory, SubcategoryDto>();
-
-            CreateMap<Subcategory, SubcategoryInfo>();
-
-            CreateMap<SubcategoryCreateDto, Subcategory>();
-
-            CreateMap<SubcategoryUpdateDto, Subcategory>();
-
-            CreateMap<vwGetAllSubcategories, SubcategoryDto>() 
-                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => new CategoryDto
-                {
-                    Id = src.CategoryId,
-                    Label = src.CategoryLabel,
-                    Position = src.CategoryPosition,
-                    IsVisible = src.CategoryIsVisible,
-                    HasSubcategory = false
-                }))
-            ;
-
+            CreateMap<Tag, TagReadDto>();
+            CreateMap<TagCreateDto, Tag>();
+            CreateMap<TagUpdateDto, Tag>().ReverseMap();
         }
 
-        private void SocialLinkMappingConfiguration()
+        private void FooterLinkMappingConfiguration()
         {
-            CreateMap<SocialLink, SocialLinkDto>();
+            // Nota: Agregué StandardIconReadDto si es que lo usas por separado
+            CreateMap<StandardIcon, StandardIconReadDto>();
 
-            CreateMap<SocialLinkUpdateDto, SocialLink>();
+            CreateMap<FooterLink, FooterLinkReadDto>()
+                .ForMember(dest => dest.SvgContent, opt => opt.MapFrom(src =>
+                    src.StandardIcon != null ? src.StandardIcon.SvgContent : (src.CustomSvgContent ?? "")));
 
+            CreateMap<FooterLinkCreateDto, FooterLink>();
+            CreateMap<FooterLinkUpdateDto, FooterLink>().ReverseMap();
+        }
+
+        private void ReservationMappingConfiguration()
+        {
+            CreateMap<Reservation, ReservationReadDto>();
+            CreateMap<ReservationCreateDto, Reservation>();
         }
     }
 }

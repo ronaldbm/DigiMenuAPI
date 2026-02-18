@@ -24,8 +24,12 @@
         {
             public static readonly EntityInfo Product = new("producto", Gender.Masculine);
             public static readonly EntityInfo Category = new("categoría", Gender.Feminine);
-            public static readonly EntityInfo Subcategory = new("subcategoría", Gender.Feminine);
-            public static readonly EntityInfo SocialLink = new("link", Gender.Masculine);
+            public static readonly EntityInfo Tag = new("etiqueta", Gender.Feminine);
+            public static readonly EntityInfo Setting = new("configuración", Gender.Feminine);
+            public static readonly EntityInfo FooterLink = new("enlace", Gender.Masculine);
+            public static readonly EntityInfo StandardIcon = new("icono", Gender.Masculine);
+            public static readonly EntityInfo Reservation = new("reserva", Gender.Feminine);
+            public static readonly EntityInfo StoreMenu = new("menú", Gender.Masculine);
         }
     }
 }

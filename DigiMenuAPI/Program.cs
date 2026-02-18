@@ -4,41 +4,40 @@ using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Filters;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-//Swagger
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//Automapper
-builder.Services.AddAutoMapper(typeof(Program));
+// Automapper
+builder.Services.AddAutoMapper(cfg => cfg.AddMaps(Assembly.GetExecutingAssembly()));
 
-//EF
-builder.Services.AddDbContext<ApplicationDbContext>(options => 
+// EF
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer("name=DefaultConnection"
 ));
 
-//CORS
-var allowedHosts = builder.Configuration.GetValue<string>("AllowedHosts")!.Split(",");
+// Acceso al contexto HTTP (Necesario para generar URLs de imágenes)
+builder.Services.AddHttpContextAccessor();
 
+// CORS
+var allowedHosts = builder.Configuration.GetValue<string>("AllowedHosts")?.Split(",") ?? ["*"];
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(CORSOptions =>
     {
-        //CORSOptions.WithOrigins(allowedHosts).AllowAnyMethod().AllowAnyHeader();
         CORSOptions.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-
     });
 });
 
-//Cache
+// Cache
 builder.Services.AddOutputCache(options =>
 {
     options.DefaultExpirationTimeSpan = TimeSpan.FromDays(1);
@@ -48,37 +47,35 @@ builder.Services.AddOutputCache(options =>
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .Enrich.FromLogContext()
-
     .WriteTo.Console()
-
     .WriteTo.Logger(lc => lc
         .Filter.ByIncludingOnly(Matching.FromSource("ProductService"))
         .WriteTo.File("Logs/product-log-.txt", rollingInterval: RollingInterval.Day))
-
     .WriteTo.Logger(lc => lc
         .Filter.ByIncludingOnly(Matching.FromSource("CategoryService"))
         .WriteTo.File("Logs/category-log-.txt", rollingInterval: RollingInterval.Day))
-
     .WriteTo.Logger(lc => lc
         .Filter.ByIncludingOnly(Matching.FromSource("SubcategoryService"))
         .WriteTo.File("Logs/subcategory-log-.txt", rollingInterval: RollingInterval.Day))
-
     .WriteTo.Logger(lc => lc
         .Filter.ByIncludingOnly(Matching.FromSource("SocialLinkService"))
         .WriteTo.File("Logs/socialLink-log-.txt", rollingInterval: RollingInterval.Day))
-
     .CreateLogger();
 
 builder.Host.UseSerilog();
 
-//Mensajes propios de Log
+// Mensajes propios de Log
 builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
 
-//Colocar mis interfaces
+// Interfaces
 builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IFooterLinkService, FooterLinkService>();
 builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<ISocialLinkService, SocialLinkService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<IStandardIconService, StandardIconService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<ITagService, TagService>();
 
 var app = builder.Build();
 
@@ -91,6 +88,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Servir archivos físicos
+app.UseStaticFiles();
 
 app.UseCors();
 

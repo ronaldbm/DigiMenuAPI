@@ -1,19 +1,16 @@
 ﻿using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.AddDTOs;
 using DigiMenuAPI.Application.DTOs.ReadDTOs;
+using DigiMenuAPI.Application.DTOs.AddDTOs;
 using DigiMenuAPI.Application.DTOs.UpdateDTOs;
 
 namespace DigiMenuAPI.Application.Interfaces
 {
     public interface ICategoryService
     {
-        Task<OperationResult<int>> Create(CategoryCreateDto categoryDto);
-        Task<OperationResult<bool>> Update(CategoryUpdateDto categoryDto);
-        Task<OperationResult<bool>> UpdatePosition(ItemPositionUpdate categoryDto);
-        Task<OperationResult<bool>> Delete(int Id);
-        Task<List<CategoryDto>> GetAll();
-        Task<CategoryDto?> GetOne(int Id);
-        Task<List<CategoryInfoDto>> GetBasicInformation();
-        Task<List<CategorySelectInformation>> GetCategorySelectInformation();
+        Task<OperationResult<List<CategoryReadDto>>> GetAll();
+        Task<OperationResult<CategoryReadDto>> GetById(int id);
+        Task<OperationResult<CategoryReadDto>> Create(CategoryCreateDto dto);
+        Task<OperationResult<bool>> Update(CategoryUpdateDto dto);
+        Task<OperationResult<bool>> Delete(int id);
     }
 }

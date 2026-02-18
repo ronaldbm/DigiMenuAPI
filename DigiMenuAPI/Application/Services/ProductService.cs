@@ -5,258 +5,112 @@ using DigiMenuAPI.Application.DTOs.AddDTOs;
 using DigiMenuAPI.Application.DTOs.ReadDTOs;
 using DigiMenuAPI.Application.DTOs.UpdateDTOs;
 using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Application.Utils;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
-using static DigiMenuAPI.Application.Common.Constants;
 
 namespace DigiMenuAPI.Application.Services
 {
     public class ProductService : IProductService
     {
-        private readonly ApplicationDbContext context;
-        private readonly IMapper mapper;
-        private readonly LogMessageDispatcher<ProductService> logger;
+        private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
+        private readonly IFileStorageService _fileStorage;
+        private readonly IOutputCacheStore _cacheStore;
+        private const string CacheTag = "tag-menu-publico";
 
-        public ProductService(ApplicationDbContext context, IMapper mapper, LogMessageDispatcher<ProductService> logger)
+        public ProductService(ApplicationDbContext context, IMapper mapper, IFileStorageService fileStorage, IOutputCacheStore cacheStore)
         {
-            this.context = context;
-            this.mapper = mapper;
-            this.logger = logger;
+            _context = context;
+            _mapper = mapper;
+            _fileStorage = fileStorage;
+            _cacheStore = cacheStore;
         }
 
-        #region Create
-        public async Task<OperationResult<int>> Create(ProductCreateDto productDto)
+        public async Task<OperationResult<List<ProductReadDto>>> GetAll()
         {
-            try
-            {
-                bool exists = await context.Product
-                                                    .AnyAsync(p => p.Label == productDto.Label && p.Alive);
+            var products = await _context.Products
+                .AsNoTracking()
+                .OrderBy(c => c.DisplayOrder)
+                .ProjectTo<ProductReadDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
 
-                if (exists)
-                {
-                    logger.LogWarning(MessageBuilder.AlreadyExists(EntityNames.Product), productDto);
-                    return OperationResult<int>.Fail(MessageBuilder.AlreadyExists(EntityNames.Product));
-                }
-
-                // Calcula la posición
-                int nextPosition = await context.Product
-                                                        .Where(p => p.Alive)
-                                                        .CountAsync();
-
-                productDto.Position = nextPosition + 1;
-
-                // Mapea el DTO a la entidad
-                var product = mapper.Map<Product>(productDto);
-                product.ImagePath = ImageConverter.ConvertBase64ToWebP(product.ImagePath);
-                product.Alive = true;
-
-                //Guardar
-                await context.Product.AddAsync(product);
-                await context.SaveChangesAsync();
-
-                logger.LogCreate(EntityNames.Product, product);
-                return OperationResult<int>.Ok(product.Id, MessageBuilder.Created(EntityNames.Product));
-
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex,MessageBuilder.UnexpectedError(EntityNames.Product), productDto);
-                return OperationResult<int>.Fail(MessageBuilder.UnexpectedError(EntityNames.Product));
-            }
+            return OperationResult<List<ProductReadDto>>.Ok(products);
         }
 
-
-        #endregion
-
-        #region Updates
-        public async Task<OperationResult<bool>> Delete(int Id)
+        public async Task<OperationResult<ProductReadDto>> GetById(int id)
         {
-            try
-            {
-                var product = context.Product.FirstOrDefault(p => p.Id == Id && p.Alive);
-            
-                if (product == null) //No se ha encontrado el Id
-                {
-                    logger.LogWarning(MessageBuilder.NotFound(EntityNames.Product), Id);
-                    return OperationResult<bool>.Fail(MessageBuilder.NotFound(EntityNames.Product)); 
-                }
+            var product = await _context.Products
+                .AsNoTracking()
+                .ProjectTo<ProductReadDto>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-                //Modificarle el estado
-                product.Alive = false;
-              
-                //Coloco la posición de todos los demas productos correctamente
-                await context.Product
-                                    .Where(p => p.Position >= product.Position)
-                                    .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Position, p => p.Position - 1));
+            if (product is null)
+                return OperationResult<ProductReadDto>.Fail("Producto no encontrado");
 
-                //Verifico que si se hayan hecho los cambios
-                await context.SaveChangesAsync();
-
-                logger.LogDelete(EntityNames.Product, product);
-                var result = OperationResult<bool>.Ok(true, MessageBuilder.Deleted(EntityNames.Product));
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, MessageBuilder.UnexpectedError(EntityNames.Product), Id);
-                return OperationResult<bool>.Fail(MessageBuilder.UpdatedError(EntityNames.Product));
-            }
-
-
+            return OperationResult<ProductReadDto>.Ok(product);
         }
 
-        public async Task<OperationResult<bool>> Update(ProductUpdateDto productDto)
+        public async Task<OperationResult<ProductReadDto>> Create(ProductCreateDto dto)
         {
-            try
+            var product = _mapper.Map<Product>(dto);
+
+            // Procesar Imagen si existe
+            if (!string.IsNullOrEmpty(dto.Image))
             {
-                bool existsProduct = context
-                                            .Product
-                                            .Any(p => (p.Label == productDto.Label && p.Id != productDto.Id) && p.Alive);
-
-                if (existsProduct)
-                {
-                    logger.LogWarning(MessageBuilder.AlreadyExists(EntityNames.Product), productDto);
-                    return OperationResult<bool>.Fail(MessageBuilder.AlreadyExists(EntityNames.Product));
-                }
-
-                //Obtengo el producto que se ha modificado según el Id y le coloco los datos nuevos
-                var product = await context.Product.FirstOrDefaultAsync(p => p.Id == productDto.Id && p.Alive);
-                mapper.Map(productDto, product);
-
-                if (product is null)
-                {
-                    logger.LogWarning(MessageBuilder.NotFound(EntityNames.Product), productDto);
-                    return OperationResult<bool>.Fail(MessageBuilder.NotFound(EntityNames.Product));
-                }
-
-                product.ImagePath = ImageConverter.ConvertBase64ToWebP(product.ImagePath);
-
-                //Guardo los cambios
-                await context.SaveChangesAsync();
-
-                logger.LogUpdate(EntityNames.Product, product);
-                var result = OperationResult<bool>.Ok(true, MessageBuilder.Updated(EntityNames.Product));
-
-                return result;
+                product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
             }
-            catch (Exception ex)
+
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            return OperationResult<ProductReadDto>.Ok(_mapper.Map<ProductReadDto>(product));
+        }
+
+        public async Task<OperationResult<bool>> Update(ProductUpdateDto dto)
+        {
+            var product = await _context.Products.FindAsync(dto.Id);
+            if (product is null) return OperationResult<bool>.Fail("Producto no encontrado");
+
+            // Guardamos la URL vieja por si hay que borrar el archivo después
+            string? oldImageUrl = product.MainImageUrl;
+
+            _mapper.Map(dto, product);
+
+            // Si el DTO trae una imagen nueva en Base64
+            if (!string.IsNullOrEmpty(dto.Image) && dto.Image.StartsWith("data:image"))
             {
-                logger.LogError(ex,MessageBuilder.UnexpectedError(EntityNames.Product), productDto);
-                return OperationResult<bool>.Fail(MessageBuilder.UpdatedError(EntityNames.Product));
+                // Borrar la anterior del disco
+                if (!string.IsNullOrEmpty(oldImageUrl))
+                    _fileStorage.DeleteFile(oldImageUrl, "products");
 
+                // Guardar la nueva
+                product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
             }
+
+            await _context.SaveChangesAsync();
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            return OperationResult<bool>.Ok(true);
         }
 
-        public async Task<OperationResult<bool>> UpdatePosition(ItemPositionUpdate productDto)
+        public async Task<OperationResult<bool>> Delete(int id)
         {
-            try
-            {
-                var movedProduct = context.Product.FirstOrDefault(p => p.Id == productDto.Id);
-                if (movedProduct == null)
-                {
-                    logger.LogWarning(
-                        MessageBuilder.NotFound(EntityNames.Product),
-                        productDto
-                    ); 
-                    return OperationResult<bool>.Fail(MessageBuilder.NotFound(EntityNames.Product));
-                }
+            var product = await _context.Products.FindAsync(id);
+            if (product is null)
+                return OperationResult<bool>.Fail("Producto no encontrado");
 
-                int oldPosition = movedProduct.Position;
-                int newPosition = productDto.Position;
-                int maxPosition = context.Product.Count(p => p.Alive);
+            // 1. Borrar archivo físico
+            if (!string.IsNullOrEmpty(product.MainImageUrl))
+                _fileStorage.DeleteFile(product.MainImageUrl, "products");
 
-                //Validar si las posiciones son validas
-                if (maxPosition < newPosition || newPosition <= 0)
-                {
-                    logger.LogWarning(MessageBuilder.PositionInvalid(EntityNames.Product), movedProduct);
-                    return OperationResult<bool>.Fail(MessageBuilder.PositionInvalid(EntityNames.Product));
-                }
+            product.IsDeleted = true;
+            await _context.SaveChangesAsync();
 
-                if (newPosition == oldPosition) //No se debe de actualizar nada
-                {
-                    return OperationResult<bool>.Ok(true);
-                }
-
-                //Verificar si el item subio o bajo de posición
-                if (newPosition < oldPosition)
-                {
-                    await context.Product
-                                        .Where(p => p.Position >= newPosition && p.Position < oldPosition)
-                                        .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Position, p => p.Position + 1));
-                }
-                else
-                {
-                    await context.Product
-                        .Where(p => p.Position > oldPosition && p.Position <= newPosition)
-                        .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.Position, p => p.Position - 1));
-                }
-
-                //Guardo la nueva posición
-                movedProduct.Position = newPosition;
-
-                int affected = await context.SaveChangesAsync();
-
-                OperationResult<bool> result;
-                if (affected > 0) {
-                    logger.LogUpdate(EntityNames.Product,movedProduct);
-                    result = OperationResult<bool>.Ok(true, MessageBuilder.Updated(EntityNames.Product));
-                }
-                else
-                {
-                    logger.LogWarning(MessageBuilder.UnexpectedError(EntityNames.Product), movedProduct);
-                    result = OperationResult<bool>.Fail(MessageBuilder.UpdatedError(EntityNames.Product));
-                }
-
-                return result;
-                
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, MessageBuilder.UnexpectedError(EntityNames.Product),productDto);
-                return OperationResult<bool>.Fail(MessageBuilder.UpdatedError(EntityNames.Product));
-            }
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            return OperationResult<bool>.Ok(true);
         }
 
-        #endregion Updates
-
-
-        #region Read
-        public async Task<List<ProductDto>> GetAll()
-        {
-            var productList = await  context   
-                                            .vwGetAllProducts
-                                            .AsNoTracking()
-                                            .OrderBy(p => p.Position)
-                                            .ProjectTo<ProductDto>(mapper.ConfigurationProvider)
-                                            .ToListAsync();
-
-            return productList;
-        }
-
-        public async Task<ProductUpdateDto?> GetOne(int Id)
-        {
-            var product = await context
-                                        .Product
-                                        .AsNoTracking()
-                                        .Where(p => p.Id == Id && p.Alive)
-                                        .ProjectTo<ProductUpdateDto>(mapper.ConfigurationProvider)
-                                        .FirstOrDefaultAsync();
-            return product;
-        }
-
-        public async Task<List<MenuProductsDto>> GetMenu()
-        {
-            var productList = await context
-                                            .vwProductVisibleLists
-                                            .AsNoTracking()
-                                            .ProjectTo<MenuProductsDto>(mapper.ConfigurationProvider)
-                                            .ToListAsync();
-
-            return productList;
-        }
-        #endregion Read
     }
 }

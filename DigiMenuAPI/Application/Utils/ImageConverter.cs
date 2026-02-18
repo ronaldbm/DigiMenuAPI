@@ -1,33 +1,59 @@
-﻿using SixLabors.ImageSharp;
+﻿using DigiMenuAPI.Application.Interfaces;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
-using System;
-using System.IO;
+using SixLabors.ImageSharp.Processing;
 
-public class ImageConverter
+namespace DigiMenuAPI.Application.Services
 {
-    public static string ConvertBase64ToWebP(string? base64Image)
+    public class FileStorageService(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor) : IFileStorageService
     {
-        if (base64Image is null)
-        {
-            return "";
-        }
+        private readonly string _rootPath = env.WebRootPath;
 
-        // Limpiar la cadena base64 eliminando saltos de línea y espacios
-        base64Image = base64Image.Replace("\n", "").Replace("\r", "").Trim();
-
-        // Verificar que la cadena base64 tiene el formato adecuado
-        if (base64Image.StartsWith("data:image", StringComparison.OrdinalIgnoreCase))
+        public async Task<string> SaveFile(string base64Image, string container)
         {
-            // Eliminar el prefijo "data:image/jpeg;base64," o similar
-            var index = base64Image.IndexOf("base64,", StringComparison.Ordinal);
-            if (index > 0)
+            if (string.IsNullOrEmpty(base64Image) || !base64Image.Contains(",")) 
+                return "";
+
+            // 1. Preparar carpeta
+            string folder = Path.Combine(_rootPath, container);
+
+            if (!Directory.Exists(folder)) 
+                Directory.CreateDirectory(folder);
+
+            // 2. Procesar imagen con ImageSharp
+            string fileName = $"{Guid.NewGuid()}.webp";
+            string fullPath = Path.Combine(folder, fileName);
+
+            var base64Data = base64Image.Split(',')[1];
+            byte[] bytes = Convert.FromBase64String(base64Data);
+
+            using (var image = Image.Load(bytes))
             {
-                base64Image = base64Image.Substring(index + 7);
+                // Redimensionar a un tamaño web estándar (máx 800px)
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(800, 0)
+                }));
+
+                await image.SaveAsWebpAsync(fullPath, new WebpEncoder { Quality = 85 });
             }
+
+            // 3. Retornar la URL pública
+            var request = httpContextAccessor.HttpContext.Request;
+            return $"{request.Scheme}://{request.Host}/{container}/{fileName}";
         }
 
-        // Agregar el encabezado MIME para WebP
-        return $"data:image/webp;base64,{base64Image}";
-    }
+        public void DeleteFile(string route, string container)
+        {
+            if (string.IsNullOrEmpty(route)) 
+                return;
 
+            var fileName = Path.GetFileName(route);
+            string fullPath = Path.Combine(_rootPath, container, fileName);
+
+            if (File.Exists(fullPath)) 
+                File.Delete(fullPath);
+        }
+    }
 }
