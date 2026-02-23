@@ -21,11 +21,14 @@ namespace DigiMenuAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult> GetById(int id) => HandleResult(await _service.GetById(id));
 
-        [HttpPost]
-        public async Task<ActionResult> Create([FromBody] ProductCreateDto dto) => HandleResult(await _service.Create(dto));
+        [HttpGet("admin/{id}")]
+        public async Task<ActionResult> GetForEdit(int id) => HandleResult(await _service.GetForEdit(id));
 
+        [HttpPost]
+        public async Task<ActionResult> Create([FromForm] ProductCreateDto dto) => HandleResult(await _service.Create(dto));
+        
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] ProductUpdateDto dto)
+        public async Task<ActionResult> Update(int id, [FromForm] ProductUpdateDto dto)
         {
             if (id != dto.Id)
                 return BadRequest("ID inconsistente");

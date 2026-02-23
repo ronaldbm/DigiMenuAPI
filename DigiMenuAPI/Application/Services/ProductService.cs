@@ -42,6 +42,7 @@ namespace DigiMenuAPI.Application.Services
         public async Task<OperationResult<ProductReadDto>> GetById(int id)
         {
             var product = await _context.Products
+                .Include(p => p.Tags)
                 .AsNoTracking()
                 .ProjectTo<ProductReadDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -52,13 +53,34 @@ namespace DigiMenuAPI.Application.Services
             return OperationResult<ProductReadDto>.Ok(product);
         }
 
+        public async Task<OperationResult<ProductAdminReadDto>> GetForEdit(int id)
+        {
+            var product = await _context.Products
+                .Include(p => p.Tags)
+                .AsNoTracking()
+                .ProjectTo<ProductAdminReadDto>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null) return OperationResult<ProductAdminReadDto>.Fail("Producto no encontrado");
+
+            return OperationResult<ProductAdminReadDto>.Ok(product);
+        }
+
         public async Task<OperationResult<ProductReadDto>> Create(ProductCreateDto dto)
         {
             var product = _mapper.Map<Product>(dto);
 
             // Procesar Imagen si existe
-            if (!string.IsNullOrEmpty(dto.Image))
+
+            if (dto.Image != null && dto.Image.Length > 0)
             {
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                var extension = Path.GetExtension(dto.Image.FileName).ToLower();
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    return OperationResult<ProductReadDto>.Fail("Formato de imagen no permitido");
+                }
                 product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
             }
 
@@ -79,14 +101,20 @@ namespace DigiMenuAPI.Application.Services
 
             _mapper.Map(dto, product);
 
-            // Si el DTO trae una imagen nueva en Base64
-            if (!string.IsNullOrEmpty(dto.Image) && dto.Image.StartsWith("data:image"))
+            if (dto.Image != null && dto.Image.Length > 0)
             {
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                var extension = Path.GetExtension(dto.Image.FileName).ToLower();
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    return OperationResult<bool>.Fail("Formato de imagen no permitido");
+                }
+
                 // Borrar la anterior del disco
                 if (!string.IsNullOrEmpty(oldImageUrl))
                     _fileStorage.DeleteFile(oldImageUrl, "products");
 
-                // Guardar la nueva
                 product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
             }
 

@@ -71,6 +71,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
             {
                 entity.HasKey(t => t.Id);
                 entity.HasQueryFilter(t => !t.IsDeleted);
+                entity.Property(t => t.Color).HasMaxLength(7).HasDefaultValue("#ffffff").IsRequired();
             });
 
             // --- DATA SEEDING ---

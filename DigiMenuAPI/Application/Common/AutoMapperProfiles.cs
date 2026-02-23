@@ -30,13 +30,14 @@ namespace DigiMenuAPI.Application.Common
             CreateMap<Product, ProductReadDto>()
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.MainImageUrl));
 
-            // ESCRITURA: Mapeamos Price del DTO a BasePrice de la entidad
+            CreateMap<Product, ProductAdminReadDto>()
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.MainImageUrl));
+
+            // ESCRITURA:
             CreateMap<ProductCreateDto, Product>()
-                .ForMember(dest => dest.BasePrice, opt => opt.MapFrom(src => src.Price))
                 .ForMember(dest => dest.MainImageUrl, opt => opt.Ignore());
 
             CreateMap<ProductUpdateDto, Product>()
-                .ForMember(dest => dest.BasePrice, opt => opt.MapFrom(src => src.Price))
                 .ForMember(dest => dest.MainImageUrl, opt => opt.Ignore())
                 .ReverseMap();
         }

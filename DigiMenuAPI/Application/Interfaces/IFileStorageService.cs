@@ -2,7 +2,7 @@
 {
     public interface IFileStorageService
     {
-        Task<string> SaveFile(string base64Image, string container);
+        Task<string> SaveFile(IFormFile file, string container);
         void DeleteFile(string route, string container);
     }
 }
