@@ -28,7 +28,8 @@ namespace DigiMenuAPI.Application.Common
         {
             // LECTURA: Mapeamos MainImageUrl de la entidad a ImageUrl del Record
             CreateMap<Product, ProductReadDto>()
-                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.MainImageUrl));
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.MainImageUrl))
+                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src =>  src.Tags));
 
             CreateMap<Product, ProductAdminReadDto>()
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.MainImageUrl));
@@ -56,7 +57,7 @@ namespace DigiMenuAPI.Application.Common
 
         private void TagMappingConfiguration()
         {
-            CreateMap<Tag, TagReadDto>();
+            CreateMap<Tag, TagReadDto>(); 
             CreateMap<TagCreateDto, Tag>();
             CreateMap<TagUpdateDto, Tag>().ReverseMap();
         }

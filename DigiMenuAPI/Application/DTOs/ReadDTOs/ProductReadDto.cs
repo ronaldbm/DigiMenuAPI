@@ -5,11 +5,12 @@ public record ProductReadDto(
     string Name,
     string ShortDescription,
     decimal BasePrice,
+    decimal OfferPrice,
     string ImageUrl,
     List<TagReadDto> Tags
 )
 {
-    public ProductReadDto() : this(0, string.Empty, string.Empty, 0, string.Empty, new List<TagReadDto>()) { }
+    public ProductReadDto() : this(0, string.Empty, string.Empty, 0, 0, string.Empty, new List<TagReadDto>()) { }
 }
 
 public record ProductAdminReadDto(
