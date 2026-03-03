@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 
-namespace DigiMenuAPI.Application.Filters
+namespace DigiMenuAPI.Filters
 {
     /// <summary>
     /// Verifica que la empresa del usuario autenticado tenga activo
