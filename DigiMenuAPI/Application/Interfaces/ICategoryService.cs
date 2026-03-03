@@ -1,7 +1,7 @@
 ﻿using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.ReadDTOs;
-using DigiMenuAPI.Application.DTOs.AddDTOs;
-using DigiMenuAPI.Application.DTOs.UpdateDTOs;
+using DigiMenuAPI.Application.DTOs.Read;
+using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Update;
 
 namespace DigiMenuAPI.Application.Interfaces
 {

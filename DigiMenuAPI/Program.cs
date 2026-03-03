@@ -1,104 +1,150 @@
-using DigiMenuAPI.Application.Interfaces;
+﻿using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Application.Services;
 using DigiMenuAPI.Infrastructure.SQL;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Scalar.AspNetCore;
 using Serilog;
-using Serilog.Filters;
-using System.Reflection;
+using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
-
-// Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Automapper
-builder.Services.AddAutoMapper(cfg => cfg.AddMaps(Assembly.GetExecutingAssembly()));
-
-// EF
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer("name=DefaultConnection"
-));
-
-// Acceso al contexto HTTP (Necesario para generar URLs de im�genes)
-builder.Services.AddHttpContextAccessor();
-
-// CORS
-var allowedHosts = builder.Configuration.GetValue<string>("AllowedHosts")?.Split(",") ?? ["*"];
-builder.Services.AddCors(options =>
+public partial class Program
 {
-    options.AddDefaultPolicy(CORSOptions =>
+    private static void Main(string[] args)
     {
-        CORSOptions.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-    });
-});
+        var builder = WebApplication.CreateBuilder(args);
 
-// Cache
-builder.Services.AddOutputCache(options =>
-{
-    options.DefaultExpirationTimeSpan = TimeSpan.FromDays(1);
-});
+        // ── SERILOG ──────────────────────────────────────────────────────────
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(builder.Configuration)
+            .Enrich.FromLogContext()
+            .CreateLogger();
 
-// Logger con Serilog
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.Logger(lc => lc
-        .Filter.ByIncludingOnly(Matching.FromSource("ProductService"))
-        .WriteTo.File("Logs/product-log-.txt", rollingInterval: RollingInterval.Day))
-    .WriteTo.Logger(lc => lc
-        .Filter.ByIncludingOnly(Matching.FromSource("CategoryService"))
-        .WriteTo.File("Logs/category-log-.txt", rollingInterval: RollingInterval.Day))
-    .WriteTo.Logger(lc => lc
-        .Filter.ByIncludingOnly(Matching.FromSource("SubcategoryService"))
-        .WriteTo.File("Logs/subcategory-log-.txt", rollingInterval: RollingInterval.Day))
-    .WriteTo.Logger(lc => lc
-        .Filter.ByIncludingOnly(Matching.FromSource("SocialLinkService"))
-        .WriteTo.File("Logs/socialLink-log-.txt", rollingInterval: RollingInterval.Day))
-    .CreateLogger();
+        builder.Host.UseSerilog();
 
-builder.Host.UseSerilog();
+        // ── DATABASE ─────────────────────────────────────────────────────────
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Mensajes propios de Log
-builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
+        // ── MULTI-TENANT ─────────────────────────────────────────────────────
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<ITenantService, TenantService>();
 
-// Interfaces
-builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IFileStorageService, FileStorageService>();
-builder.Services.AddScoped<IFooterLinkService, FooterLinkService>();
-builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<IReservationService, ReservationService>();
-builder.Services.AddScoped<IStandardIconService, StandardIconService>();
-builder.Services.AddScoped<IStoreService, StoreService>();
-builder.Services.AddScoped<ITagService, TagService>();
+        // ── MODULE GUARD ─────────────────────────────────────────────────────
+        builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<IModuleGuard, ModuleGuard>();
 
-var app = builder.Build();
+        // ── JWT AUTHENTICATION ────────────────────────────────────────────────
+        var jwtKey = builder.Configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("Jwt:Key no configurado en appsettings.");
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    app.MapOpenApi();
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                ClockSkew = TimeSpan.Zero
+            };
+        });
+
+        builder.Services.AddAuthorization();
+
+        // ── APPLICATION SERVICES ──────────────────────────────────────────────
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<ISettingService, SettingService>();
+        builder.Services.AddScoped<IModuleService, ModuleService>();
+        builder.Services.AddScoped<ICategoryService, CategoryService>();
+        builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddScoped<ITagService, TagService>();
+        builder.Services.AddScoped<IFooterLinkService, FooterLinkService>();
+        builder.Services.AddScoped<IStandardIconService, StandardIconService>();
+        builder.Services.AddScoped<IReservationService, ReservationService>();
+        builder.Services.AddScoped<IStoreService, StoreService>();
+        builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+        builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
+
+        // ── AUTOMAPPER + OUTPUTCACHE + CONTROLLERS ────────────────────────────
+        builder.Services.AddAutoMapper(cfg =>
+            cfg.AddMaps(typeof(Program).Assembly)); 
+        builder.Services.AddOutputCache();
+        builder.Services.AddControllers();
+
+        // ── CORS ─────────────────────────────────────────────────────────────
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("Frontend", policy =>
+                policy
+                    .WithOrigins(
+                        builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+                        ?? ["http://localhost:5173"])
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+        });
+
+        // ── OPENAPI (.NET 10 nativo) + Scalar UI ─────────────────────────────
+        builder.Services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer((document, context, ct) =>
+            {
+                document.Info = new()
+                {
+                    Title = "DigiMenuAPI",
+                    Version = "v1",
+                    Description = "API SaaS multiempresa para menús digitales"
+                };
+
+                // Instancia explícita en lugar de new()
+                if (document.Components == null)
+                    document.Components = new OpenApiComponents();
+
+                if (document.Components.SecuritySchemes == null)
+                    document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>();
+
+                document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Description = "JWT Bearer. Introduce el token sin el prefijo 'Bearer'."
+                };
+
+                return Task.CompletedTask;
+            });
+        });
+        // ════════════════════════════════════════════════════════════════════
+        var app = builder.Build();
+        // ════════════════════════════════════════════════════════════════════
+
+        if (app.Environment.IsDevelopment())
+        {
+            // Expone el JSON del schema en: /openapi/v1.json
+            app.MapOpenApi();
+
+            // UI interactiva en: /scalar/v1
+            app.MapScalarApiReference();
+        }
+
+        app.UseSerilogRequestLogging();
+        app.UseHttpsRedirection();
+        app.UseCors("Frontend");
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.UseOutputCache();
+        app.UseStaticFiles();
+
+        app.MapControllers();
+        app.Run();
+    }
 }
-
-app.UseHttpsRedirection();
-
-// Servir archivos f�sicos
-app.UseStaticFiles();
-
-app.UseCors();
-
-app.UseOutputCache();
-
-app.UseAuthorization();
-
-app.MapControllers();
-app.MapGet("/ping", () => "pong");
-
-app.Run();

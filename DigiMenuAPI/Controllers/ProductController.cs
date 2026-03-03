@@ -1,7 +1,8 @@
-﻿using DigiMenuAPI.Application.DTOs.AddDTOs;
-using DigiMenuAPI.Application.DTOs.UpdateDTOs;
+﻿using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace DigiMenuAPI.Controllers
 {

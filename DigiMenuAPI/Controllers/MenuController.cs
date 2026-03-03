@@ -1,26 +1,29 @@
 ﻿using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Application.DTOs.ReadDTOs;
-using DigiMenuAPI.Application.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 
 namespace DigiMenuAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/menu")]
     public class MenuController : BaseController
     {
         private readonly IStoreService _storeService;
-        private const string MenuCacheTag = "tag-menu-publico";
 
         public MenuController(IStoreService storeService)
         {
             _storeService = storeService;
         }
 
-        [HttpGet(Name = "GetFullMenuStore")]
-        [OutputCache(Tags = [MenuCacheTag])]
-        public async Task<ActionResult> Get() => HandleResult(await _storeService.GetStoreMenu());
-
+        /// <summary>
+        /// Menú público de una empresa identificada por su slug.
+        /// GET /api/menu/mi-restaurante
+        /// No requiere JWT.
+        /// </summary>
+        [HttpGet("{slug}")]
+        [AllowAnonymous]
+        [OutputCache(Tags = ["tag-menu-publico"])]
+        public async Task<ActionResult> Get(string slug) => HandleResult(await _storeService.GetStoreMenu(slug));
     }
 }

@@ -5,7 +5,6 @@ namespace DigiMenuAPI.Infrastructure.Entities
 {
     public class Product : BaseEntity
     {
-
         [Required, MaxLength(150)]
         public string Name { get; set; } = null!;
 
@@ -19,16 +18,18 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public decimal? OfferPrice { get; set; }
 
         public string? MainImageUrl { get; set; }
-
         public int DisplayOrder { get; set; }
         public bool IsVisible { get; set; }
         public bool IsDeleted { get; set; }
 
-        // Relaciones
+        // ── TENANT ──────────────────────────────────────────────────
+        public int CompanyId { get; set; }
+        public Company Company { get; set; } = null!;
+
+        // ── RELACIONES ──────────────────────────────────────────────
         public int CategoryId { get; set; }
         public Category Category { get; set; } = null!;
 
-        // Muchos a Muchos con Tags
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();
     }
 }

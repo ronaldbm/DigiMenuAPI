@@ -1,0 +1,181 @@
+﻿using AutoMapper;
+using DigiMenuAPI.Application.Common;
+using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Read;
+using DigiMenuAPI.Application.DTOs.Update;
+using DigiMenuAPI.Application.Interfaces;
+using DigiMenuAPI.Infrastructure.Entities;
+using DigiMenuAPI.Infrastructure.SQL;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+
+namespace DigiMenuAPI.Application.Services
+{
+    public class ModuleService : IModuleService
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly ITenantService _tenantService;
+        private readonly IMemoryCache _cache;
+
+        public ModuleService(
+            ApplicationDbContext context,
+            ITenantService tenantService,
+            IMemoryCache cache)
+        {
+            _context = context;
+            _tenantService = tenantService;
+            _cache = cache;
+        }
+
+        // ── CATÁLOGO (SuperAdmin) ────────────────────────────────────
+        public async Task<OperationResult<List<PlatformModuleReadDto>>> GetAllPlatformModules()
+        {
+            var modules = await _context.PlatformModules
+                .AsNoTracking()
+                .OrderBy(m => m.DisplayOrder)
+                .Select(m => new PlatformModuleReadDto(
+                    m.Id, m.Code, m.Name, m.Description, m.IsActive, m.DisplayOrder))
+                .ToListAsync();
+
+            return OperationResult<List<PlatformModuleReadDto>>.Ok(modules);
+        }
+
+        // ── ACTIVACIONES POR EMPRESA (SuperAdmin) ────────────────────
+        public async Task<OperationResult<List<CompanyModuleReadDto>>> GetCompanyModules(int companyId)
+        {
+            var modules = await _context.CompanyModules
+                .AsNoTracking()
+                .Include(cm => cm.Company)
+                .Include(cm => cm.PlatformModule)
+                .Where(cm => cm.CompanyId == companyId)
+                .OrderBy(cm => cm.PlatformModule.DisplayOrder)
+                .ToListAsync();
+
+            return OperationResult<List<CompanyModuleReadDto>>.Ok(
+                modules.Select(MapToDto).ToList());
+        }
+
+        public async Task<OperationResult<CompanyModuleReadDto>> ActivateModule(ActivateModuleDto dto)
+        {
+            // Verificar que la empresa existe
+            var companyExists = await _context.Companies.AnyAsync(c => c.Id == dto.CompanyId);
+            if (!companyExists)
+                return OperationResult<CompanyModuleReadDto>.Fail("Empresa no encontrada.");
+
+            // Verificar que el módulo existe en el catálogo
+            var platformModule = await _context.PlatformModules
+                .FirstOrDefaultAsync(m => m.Id == dto.PlatformModuleId && m.IsActive);
+
+            if (platformModule is null)
+                return OperationResult<CompanyModuleReadDto>.Fail("Módulo no encontrado o no disponible.");
+
+            // Verificar si ya existe (reactivar si estaba inactivo)
+            var existing = await _context.CompanyModules
+                .Include(cm => cm.Company)
+                .Include(cm => cm.PlatformModule)
+                .FirstOrDefaultAsync(cm =>
+                    cm.CompanyId == dto.CompanyId &&
+                    cm.PlatformModuleId == dto.PlatformModuleId);
+
+            if (existing is not null)
+            {
+                existing.IsActive = true;
+                existing.ActivatedAt = DateTime.UtcNow;
+                existing.ActivatedByUserId = _tenantService.TryGetCompanyId() ?? 0;
+                existing.ExpiresAt = dto.ExpiresAt;
+                existing.Notes = dto.Notes;
+            }
+            else
+            {
+                existing = new CompanyModule
+                {
+                    CompanyId = dto.CompanyId,
+                    PlatformModuleId = dto.PlatformModuleId,
+                    IsActive = true,
+                    ActivatedAt = DateTime.UtcNow,
+                    ActivatedByUserId = _tenantService.TryGetCompanyId() ?? 0,
+                    ExpiresAt = dto.ExpiresAt,
+                    Notes = dto.Notes
+                };
+                _context.CompanyModules.Add(existing);
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Invalidar cache del módulo
+            _cache.Remove($"module:{dto.CompanyId}:{platformModule.Code}");
+
+            // Recargar con navegación
+            await _context.Entry(existing).Reference(cm => cm.Company).LoadAsync();
+            await _context.Entry(existing).Reference(cm => cm.PlatformModule).LoadAsync();
+
+            return OperationResult<CompanyModuleReadDto>.Ok(MapToDto(existing));
+        }
+
+        public async Task<OperationResult<bool>> DeactivateModule(int companyModuleId)
+        {
+            var cm = await _context.CompanyModules
+                .Include(x => x.PlatformModule)
+                .FirstOrDefaultAsync(x => x.Id == companyModuleId);
+
+            if (cm is null)
+                return OperationResult<bool>.Fail("Activación no encontrada.");
+
+            cm.IsActive = false;
+            await _context.SaveChangesAsync();
+
+            _cache.Remove($"module:{cm.CompanyId}:{cm.PlatformModule.Code}");
+
+            return OperationResult<bool>.Ok(true);
+        }
+
+        public async Task<OperationResult<bool>> UpdateModuleExpiry(UpdateModuleExpiryDto dto)
+        {
+            var cm = await _context.CompanyModules
+                .Include(x => x.PlatformModule)
+                .FirstOrDefaultAsync(x => x.Id == dto.CompanyModuleId);
+
+            if (cm is null)
+                return OperationResult<bool>.Fail("Activación no encontrada.");
+
+            cm.ExpiresAt = dto.ExpiresAt;
+            cm.Notes = dto.Notes;
+            await _context.SaveChangesAsync();
+
+            _cache.Remove($"module:{cm.CompanyId}:{cm.PlatformModule.Code}");
+
+            return OperationResult<bool>.Ok(true);
+        }
+
+        // ── MIS MÓDULOS (empresa autenticada) ────────────────────────
+        public async Task<OperationResult<List<CompanyModuleReadDto>>> GetMyModules()
+        {
+            var companyId = _tenantService.GetCompanyId();
+
+            var modules = await _context.CompanyModules
+                .AsNoTracking()
+                .Include(cm => cm.Company)
+                .Include(cm => cm.PlatformModule)
+                .Where(cm => cm.CompanyId == companyId && cm.IsActive)
+                .ToListAsync();
+
+            return OperationResult<List<CompanyModuleReadDto>>.Ok(
+                modules.Select(MapToDto).ToList());
+        }
+
+        // ── HELPER ──────────────────────────────────────────────────
+        private static CompanyModuleReadDto MapToDto(CompanyModule cm) => new(
+            Id: cm.Id,
+            CompanyId: cm.CompanyId,
+            CompanyName: cm.Company?.Name ?? "",
+            PlatformModuleId: cm.PlatformModuleId,
+            ModuleCode: cm.PlatformModule?.Code ?? "",
+            ModuleName: cm.PlatformModule?.Name ?? "",
+            IsActive: cm.IsActive,
+            ActivatedAt: cm.ActivatedAt,
+            ExpiresAt: cm.ExpiresAt,
+            IsExpired: cm.ExpiresAt.HasValue && cm.ExpiresAt < DateTime.UtcNow,
+            Notes: cm.Notes
+        );
+    }
+}

@@ -1,10 +1,10 @@
 ﻿using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.ReadDTOs;
+using DigiMenuAPI.Application.DTOs.Read;
 
 namespace DigiMenuAPI.Application.Interfaces
 {
     public interface IStoreService
     {
-        Task<OperationResult<MenuStoreDto>> GetStoreMenu();
+        Task<OperationResult<MenuStoreDto>> GetStoreMenu(string slug);
     }
 }

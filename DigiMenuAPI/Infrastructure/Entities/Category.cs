@@ -11,6 +11,11 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public bool IsVisible { get; set; }
         public bool IsDeleted { get; set; }
 
+        // ── TENANT ──────────────────────────────────────────────────
+        public int CompanyId { get; set; }
+        public Company Company { get; set; } = null!;
+
+        // ── NAVEGACIÓN ──────────────────────────────────────────────
         public ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }

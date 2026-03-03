@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.ReadDTOs;
+using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
