@@ -1,10 +1,9 @@
 ﻿using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Application.DTOs.Add;
 using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Infrastructure.Filters;
+using DigiMenuAPI.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace DigiMenuAPI.Controllers
 {

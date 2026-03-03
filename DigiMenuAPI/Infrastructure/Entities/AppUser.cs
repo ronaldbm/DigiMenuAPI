@@ -3,8 +3,11 @@
 namespace DigiMenuAPI.Infrastructure.Entities
 {
     /// <summary>
-    /// Usuario del sistema. Siempre pertenece a una Company.
-    /// Roles: 1=SuperAdmin (plataforma), 2=Admin (empresa), 3=Staff
+    /// Usuario del sistema.
+    /// Roles disponibles:
+    ///   255 = SuperAdmin (plataforma completa, no ligado a un local específico)
+    ///     1 = Admin (propietario/administrador de su empresa)
+    ///     2 = Staff (empleado con acceso limitado a su empresa)
     /// </summary>
     public class AppUser : BaseEntity
     {
@@ -14,15 +17,21 @@ namespace DigiMenuAPI.Infrastructure.Entities
         [Required, MaxLength(150)]
         public string Email { get; set; } = null!;
 
+        /// <summary>
+        /// Hash BCrypt. Nunca almacenar contraseña en texto plano.
+        /// Generar con: BCrypt.Net.BCrypt.HashPassword(password, 12)
+        /// </summary>
         [Required]
         public string PasswordHash { get; set; } = null!;
 
-        /// <summary>1=SuperAdmin, 2=Admin, 3=Staff</summary>
-        public byte Role { get; set; } = 2;
+        /// <summary>255 = SuperAdmin | 1 = Admin | 2 = Staff</summary>
+        public byte Role { get; set; }
 
         public bool IsActive { get; set; } = true;
 
-        // ── TENANT ──────────────────────────────────────────────────
+        public DateTime? LastLoginAt { get; set; }
+
+        // ── Multi-Tenant ─────────────────────────────────────────────
         public int CompanyId { get; set; }
         public Company Company { get; set; } = null!;
     }

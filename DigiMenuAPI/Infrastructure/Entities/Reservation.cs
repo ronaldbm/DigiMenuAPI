@@ -24,19 +24,20 @@ namespace DigiMenuAPI.Infrastructure.Entities
         [MaxLength(500)]
         public string? Comments { get; set; }
 
-        /// <summary>Número de mesa (si el módulo lo requiere).</summary>
         [MaxLength(20)]
         public string? TableNumber { get; set; }
 
-        /// <summary>Alergias o restricciones alimentarias.</summary>
         [MaxLength(500)]
         public string? Allergies { get; set; }
 
-        /// <summary>1=Pending, 2=Confirmed, 3=Cancelled, 4=Completed</summary>
+        /// <summary>
+        /// 1: Pending, 2: Confirmed, 3: Cancelled, 4: Completed
+        /// </summary>
         public byte Status { get; set; } = 1;
+
         public bool IsDeleted { get; set; }
 
-        // ── TENANT ──────────────────────────────────────────────────
+        // ── Multi-Tenant ─────────────────────────────────────────────
         public int CompanyId { get; set; }
         public Company Company { get; set; } = null!;
     }
