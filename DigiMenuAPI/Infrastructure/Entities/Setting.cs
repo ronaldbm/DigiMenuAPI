@@ -2,12 +2,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DigiMenuAPI.Infrastructure.Entities
 {
+    /// <summary>
+    /// Configuración visual y de comportamiento de una Branch.
+    /// Cada sucursal tiene su propio branding, colores, localización y comportamiento del menú.
+    /// Relación 1:1 con Branch.
+    /// </summary>
     public class Setting : BaseEntity
     {
         // ── Multi-Tenant ─────────────────────────────────────────────
-        /// <summary>Relación 1:1 con Company.</summary>
-        public int CompanyId { get; set; }
-        public Company Company { get; set; } = null!;
+        /// <summary>Relación 1:1 con Branch.</summary>
+        public int BranchId { get; set; }
+        public Branch Branch { get; set; } = null!;
 
         // ── Identidad del negocio ─────────────────────────────────────
         [Required, MaxLength(100)]

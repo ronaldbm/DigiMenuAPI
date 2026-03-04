@@ -1,13 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace DigiMenuAPI.Infrastructure.Entities
 {
     /// <summary>
     /// Usuario del sistema.
-    /// Roles disponibles:
-    ///   255 = SuperAdmin (plataforma completa, no ligado a un local específico)
-    ///     1 = Admin (propietario/administrador de su empresa)
-    ///     2 = Staff (empleado con acceso limitado a su empresa)
+    ///
+    /// Roles y alcance:
+    ///   255 = SuperAdmin  → acceso total a la plataforma. BranchId = null.
+    ///     1 = CompanyAdmin → gestiona su Company y todas sus Branches. BranchId = null.
+    ///     2 = BranchAdmin  → gestiona solo su Branch asignada. BranchId requerido.
+    ///     3 = Staff        → acceso operativo limitado a su Branch. BranchId requerido.
+    ///
+    /// Jerarquía de creación:
+    ///   SuperAdmin    → crea CompanyAdmins
+    ///   CompanyAdmin  → crea BranchAdmins (asignados a una Branch)
+    ///   BranchAdmin   → crea Staff (solo en su Branch)
+    ///
+    /// El límite de usuarios por empresa se controla con Company.MaxUsers,
+    /// contando todos los usuarios activos y no eliminados de esa Company.
     /// </summary>
     public class AppUser : BaseEntity
     {
@@ -24,15 +34,23 @@ namespace DigiMenuAPI.Infrastructure.Entities
         [Required]
         public string PasswordHash { get; set; } = null!;
 
-        /// <summary>255 = SuperAdmin | 1 = Admin | 2 = Staff</summary>
+        /// <summary>255 = SuperAdmin | 1 = CompanyAdmin | 2 = BranchAdmin | 3 = Staff</summary>
         public byte Role { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public bool IsDeleted { get; set; }
 
         public DateTime? LastLoginAt { get; set; }
 
         // ── Multi-Tenant ─────────────────────────────────────────────
         public int CompanyId { get; set; }
         public Company Company { get; set; } = null!;
+
+        /// <summary>
+        /// Sucursal asignada. Null para SuperAdmin y CompanyAdmin,
+        /// requerido para BranchAdmin y Staff.
+        /// </summary>
+        public int? BranchId { get; set; }
+        public Branch? Branch { get; set; }
     }
 }

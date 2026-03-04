@@ -1,6 +1,6 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Auth
 {
-    public record LoginDto(
+    public record LoginRequestDto(
         string Email,
         string Password
     );

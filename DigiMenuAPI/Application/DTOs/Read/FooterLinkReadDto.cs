@@ -1,13 +1,9 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Read
-{ 
-    public record FooterLinkReadDto(
-        int Id,
-        string Label,
-        string Url,
-        string SvgContent,
-        int DisplayOrder
-    )
-    {
-        public FooterLinkReadDto() : this(0, string.Empty, string.Empty, string.Empty, 0) { }
-    }
-}
+﻿public record FooterLinkReadDto(
+    int Id,
+    int BranchId,
+    string Label,
+    string Url,
+    string SvgContent,   
+    int DisplayOrder,
+    bool IsVisible
+);

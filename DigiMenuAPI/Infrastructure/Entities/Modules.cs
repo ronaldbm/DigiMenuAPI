@@ -4,8 +4,9 @@ namespace DigiMenuAPI.Infrastructure.Entities
 {
     /// <summary>
     /// Módulo funcional disponible en la plataforma (catálogo global).
-    /// Ejemplos: RESERVATIONS, TABLE_MANAGEMENT, ANALYTICS, ONLINE_ORDERS
-    /// Los módulos los gestiona el SuperAdmin y los activa por empresa.
+    /// Ejemplos: RESERVATIONS, TABLE_MANAGEMENT, ANALYTICS, ONLINE_ORDERS.
+    /// Los módulos los gestiona el SuperAdmin y se activan por Company.
+    /// Una vez activos para la Company, aplican a todas sus Branches.
     /// </summary>
     public class PlatformModule
     {
@@ -27,8 +28,9 @@ namespace DigiMenuAPI.Infrastructure.Entities
     }
 
     /// <summary>
-    /// Módulo activado para una empresa específica (tabla de relación).
+    /// Módulo activado para una empresa específica.
     /// Una empresa no puede tener el mismo módulo dos veces (índice único CompanyId + PlatformModuleId).
+    /// La activación aplica a toda la Company y por ende a todas sus Branches.
     /// </summary>
     public class CompanyModule
     {
@@ -45,10 +47,12 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public bool IsActive { get; set; } = true;
         public DateTime ActivatedAt { get; set; }
 
-        /// <summary>Id del usuario (SuperAdmin) que activó el módulo.</summary>
+        /// <summary>Id del AppUser (SuperAdmin) que activó el módulo.</summary>
         public int ActivatedByUserId { get; set; }
 
+        /// <summary>Fecha de vencimiento del módulo. Null = sin vencimiento.</summary>
         public DateTime? ExpiresAt { get; set; }
+
         public string? Notes { get; set; }
     }
 }

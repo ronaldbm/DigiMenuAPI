@@ -2,14 +2,10 @@
 {
     public record ProductUpdateDto(
         int Id,
+        int CategoryId,
         string Name,
         string? ShortDescription,
         string? LongDescription,
-        decimal BasePrice,
-        decimal? OfferPrice,
-        int DisplayOrder,
-        int CategoryId,
-        bool IsVisible,
         IFormFile? Image,
         List<int>? TagIds
     );

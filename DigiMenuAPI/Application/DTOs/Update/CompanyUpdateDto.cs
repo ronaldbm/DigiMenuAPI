@@ -6,6 +6,9 @@
         string Email,
         string? Phone,
         string? CountryCode,
-        bool IsActive
+        bool IsActive,
+        int PlanId,
+        int MaxBranches,
+        int MaxUsers
     );
 }

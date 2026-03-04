@@ -1,32 +1,57 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Read
-{ 
-
-public record ProductReadDto(
-    int Id,
-    string Name,
-    string ShortDescription,
-    decimal BasePrice,
-    decimal OfferPrice,
-    string ImageUrl,
-    List<TagReadDto> Tags
-)
 {
-    public ProductReadDto() : this(0, string.Empty, string.Empty, 0, 0, string.Empty, new List<TagReadDto>()) { }
-}
+    /// <summary>
+    /// Producto del catálogo global para el panel admin.
+    /// Sin precio (el precio vive en BranchProduct).
+    /// Incluye traducciones para gestión.
+    /// </summary>
+    public record ProductReadDto(
+        int Id,
+        int CompanyId,
+        int CategoryId,
+        string CategoryName,
+        string Name,
+        string? ShortDescription,
+        string? LongDescription,
+        string? MainImageUrl,
+        List<TagReadDto> Tags,
+        List<ProductTranslationReadDto> Translations,
+        DateTime CreatedAt
+    );
 
-public record ProductAdminReadDto(
-    int Id,
-    string Name,
-    string ShortDescription,
-    string LongDescription,
-    decimal BasePrice,
-    decimal OfferPrice,
-    string ImageUrl,
-    int CategoryId,      
-    bool IsVisible,      
-    List<TagReadDto> Tags
-)
-{
-    public ProductAdminReadDto() : this(0, string.Empty, string.Empty, string.Empty, 0, 0, string.Empty, 0, true, new List<TagReadDto>()) { }
-}
+    /// <summary>
+    /// Producto activado en una Branch para el menú público.
+    /// El nombre y descripciones ya vienen resueltos al idioma solicitado.
+    /// La imagen usa ImageOverrideUrl si existe, sino MainImageUrl del catálogo.
+    /// </summary>
+    public record BranchProductMenuDto(
+        int Id,
+        int ProductId,
+        string Name,
+        string? ShortDescription,
+        string? ImageUrl,
+        decimal Price,
+        decimal? OfferPrice,
+        int DisplayOrder,
+        List<TagMenuDto> Tags
+    );
+
+    /// <summary>
+    /// BranchProduct para el panel admin de la Branch.
+    /// Permite ver y editar la configuración de cada producto activado.
+    /// </summary>
+    public record BranchProductReadDto(
+        int Id,
+        int BranchId,
+        int ProductId,
+        string ProductName,
+        int CategoryId,
+        string CategoryName,
+        decimal Price,
+        decimal? OfferPrice,
+        string? ImageOverrideUrl,
+        string? BaseImageUrl,
+        int DisplayOrder,
+        bool IsVisible
+    );
 }

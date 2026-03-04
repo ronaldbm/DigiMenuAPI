@@ -1,12 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace DigiMenuAPI.Application.DTOs.Add
+namespace DigiMenuAPI.Application.DTOs.Create
 {
     public record FooterLinkCreateDto(
+        int BranchId,
         string Label,
         string Url,
-        int? StandardIconId,   // Si eligen uno de nuestra lista
-        string? CustomSvgContent, // Por si pegan su propio código SVG
+        int? StandardIconId,
+        string? CustomSvgContent,
         int DisplayOrder,
         bool IsVisible
     );

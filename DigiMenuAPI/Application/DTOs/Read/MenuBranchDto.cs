@@ -1,15 +1,17 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Read
-{
-    public record SettingReadDto(
-        int Id,
-        int BranchId,
-        // Identidad
+{ 
+    /// <summary>
+    /// DTO raíz del menú público de una Branch.
+    /// Agrupa todo lo que el frontend necesita para renderizar el menú completo.
+    /// </summary>
+    public record MenuBranchDto(
+        // Branding
         string BusinessName,
         string? Tagline,
         string? LogoUrl,
         string? FaviconUrl,
         string? BackgroundImageUrl,
-        // Tema visual
+        // Tema
         bool IsDarkMode,
         string PageBackgroundColor,
         string HeaderBackgroundColor,
@@ -30,32 +32,17 @@
         bool ShowSearchButton,
         bool ShowContactButton,
         // Localización
-        string CountryCode,
-        string PhoneCode,
+        string Language,
         string Currency,
         string CurrencyLocale,
-        string Language,
-        string TimeZone,
         byte Decimals,
         // SEO
         string? MetaTitle,
         string? MetaDescription,
         string? GoogleAnalyticsId,
         string? FacebookPixelId,
-        // Formulario reservas
-        bool FormShowName,
-        bool FormRequireName,
-        bool FormShowPhone,
-        bool FormRequirePhone,
-        bool FormShowTable,
-        bool FormRequireTable,
-        bool FormShowPersons,
-        bool FormRequirePersons,
-        bool FormShowAllergies,
-        bool FormRequireAllergies,
-        bool FormShowBirthday,
-        bool FormRequireBirthday,
-        bool FormShowComments,
-        bool FormRequireComments
+        // Contenido
+        List<CategoryMenuDto> Categories,
+        List<FooterLinkReadDto> FooterLinks
     );
 }

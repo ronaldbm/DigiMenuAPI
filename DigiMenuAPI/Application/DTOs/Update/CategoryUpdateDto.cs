@@ -5,6 +5,5 @@
         string Name,
         int DisplayOrder,
         bool IsVisible
-
     );
 }

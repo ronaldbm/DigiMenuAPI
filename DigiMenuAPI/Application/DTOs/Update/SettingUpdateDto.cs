@@ -1,13 +1,13 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Update
-{
-    public record SettingUpdateDto(
+﻿public record SettingUpdateDto(
+        int Id,
         // Identidad
         string BusinessName,
         string? Tagline,
-        string? FaviconUrl,
-        string? BackgroundImageUrl,
-
-        // Tema
+        string? MetaTitle,
+        string? MetaDescription,
+        string? GoogleAnalyticsId,
+        string? FacebookPixelId,
+        // Tema visual
         bool IsDarkMode,
         string PageBackgroundColor,
         string HeaderBackgroundColor,
@@ -20,7 +20,6 @@
         string TitlesColor,
         string TextColor,
         string BrowserThemeColor,
-
         // Layout
         byte HeaderStyle,
         byte MenuLayout,
@@ -28,7 +27,6 @@
         bool ShowProductDetails,
         bool ShowSearchButton,
         bool ShowContactButton,
-
         // Localización
         string CountryCode,
         string PhoneCode,
@@ -37,26 +35,19 @@
         string Language,
         string TimeZone,
         byte Decimals,
-
-        // SEO
-        string? MetaTitle,
-        string? MetaDescription,
-
-        // Analytics
-        string? GoogleAnalyticsId,
-        string? FacebookPixelId,
-
         // Formulario reservas
-        bool FormShowName, bool FormRequireName,
-        bool FormShowPhone, bool FormRequirePhone,
-        bool FormShowTable, bool FormRequireTable,
-        bool FormShowPersons, bool FormRequirePersons,
-        bool FormShowAllergies, bool FormRequireAllergies,
-        bool FormShowBirthday, bool FormRequireBirthday,
-        bool FormShowComments, bool FormRequireComments,
-
-        // Logo se maneja aparte con IFormFile
-        IFormFile? Logo
+        bool FormShowName,
+        bool FormRequireName,
+        bool FormShowPhone,
+        bool FormRequirePhone,
+        bool FormShowTable,
+        bool FormRequireTable,
+        bool FormShowPersons,
+        bool FormRequirePersons,
+        bool FormShowAllergies,
+        bool FormRequireAllergies,
+        bool FormShowBirthday,
+        bool FormRequireBirthday,
+        bool FormShowComments,
+        bool FormRequireComments
     );
-
-}
