@@ -1,4 +1,4 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Add
+﻿namespace DigiMenuAPI.Application.DTOs.Create
 {
     public record ActivateModuleDto(
         int CompanyId,

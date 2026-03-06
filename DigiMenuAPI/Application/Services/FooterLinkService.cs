@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
@@ -42,6 +42,7 @@ namespace DigiMenuAPI.Application.Services
 
             return OperationResult<List<FooterLinkReadDto>>.Ok(links);
         }
+
         private async Task<OperationResult<FooterLinkReadDto>> GetById(int id)
         {
             var link = await _context.FooterLinks
@@ -49,7 +50,7 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (link is null)
-                return OperationResult<FooterLinkReadDto>.Fail("No encontrado");
+                return OperationResult<FooterLinkReadDto>.Fail("Enlace no encontrado");
 
             return OperationResult<FooterLinkReadDto>.Ok(new FooterLinkReadDto(
                 link.Id,
@@ -81,6 +82,7 @@ namespace DigiMenuAPI.Application.Services
             await _context.SaveChangesAsync();
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
+
             return OperationResult<bool>.Ok(true);
         }
 
@@ -94,6 +96,7 @@ namespace DigiMenuAPI.Application.Services
             await _context.SaveChangesAsync();
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
+
             return OperationResult<bool>.Ok(true);
         }
     }

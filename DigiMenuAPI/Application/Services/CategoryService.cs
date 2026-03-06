@@ -1,14 +1,14 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DigiMenuAPI.Application.Common;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
-using DigiMenuAPI.Application.DTOs.Add;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.EntityFrameworkCore;
 
 namespace DigiMenuAPI.Application.Services
 {
@@ -44,7 +44,7 @@ namespace DigiMenuAPI.Application.Services
                 .ProjectTo<CategoryReadDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-            if (category is null) 
+            if (category is null)
                 return OperationResult<CategoryReadDto>.Fail("Categoría no encontrada");
 
             return OperationResult<CategoryReadDto>.Ok(category);
@@ -64,7 +64,7 @@ namespace DigiMenuAPI.Application.Services
         public async Task<OperationResult<bool>> Update(CategoryUpdateDto dto)
         {
             var category = await _context.Categories.FindAsync(dto.Id);
-            if (category is null) 
+            if (category is null)
                 return OperationResult<bool>.Fail("Categoría no encontrada");
 
             _mapper.Map(dto, category);
@@ -78,16 +78,9 @@ namespace DigiMenuAPI.Application.Services
 
         public async Task<OperationResult<bool>> Delete(int id)
         {
-            // 1. Verificamos si la categoría existe
             var category = await _context.Categories.FindAsync(id);
-            if (category is null) 
+            if (category is null)
                 return OperationResult<bool>.Fail("Categoría no encontrada");
-
-            // 2. Verificamos si tiene productos SIN traerlos a memoria
-            bool hasProducts = await _context.Products.AnyAsync(p => p.CategoryId == id);
-
-            if (hasProducts)
-                return OperationResult<bool>.Fail("No se puede eliminar una categoría que tiene productos asociados.");
 
             category.IsDeleted = true;
             await _context.SaveChangesAsync();

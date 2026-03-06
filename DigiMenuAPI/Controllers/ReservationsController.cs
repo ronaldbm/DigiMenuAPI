@@ -1,5 +1,5 @@
 ﻿using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Filters;
 using Microsoft.AspNetCore.Authorization;
@@ -37,7 +37,6 @@ namespace DigiMenuAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> Create(string slug, [FromBody] ReservationCreateDto dto)
         {
-            // Resolver empresa por slug
             var companyId = await _tenantService.ResolveCompanyBySlugAsync(slug);
             if (companyId is null)
                 return NotFound(new { Success = false, Message = "Empresa no encontrada." });

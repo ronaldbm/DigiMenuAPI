@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.Entities;
@@ -68,6 +68,7 @@ namespace DigiMenuAPI.Application.Services
 
             res.Status = newStatus;
             await _context.SaveChangesAsync();
+
             return OperationResult<bool>.Ok(true);
         }
 
@@ -79,6 +80,7 @@ namespace DigiMenuAPI.Application.Services
 
             res.IsDeleted = true;
             await _context.SaveChangesAsync();
+
             return OperationResult<bool>.Ok(true);
         }
     }

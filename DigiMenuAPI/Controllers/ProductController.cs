@@ -1,8 +1,7 @@
-﻿using DigiMenuAPI.Application.DTOs.Add;
+﻿using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace DigiMenuAPI.Controllers
 {
@@ -27,7 +26,7 @@ namespace DigiMenuAPI.Controllers
 
         [HttpPost]
         public async Task<ActionResult> Create([FromForm] ProductCreateDto dto) => HandleResult(await _service.Create(dto));
-        
+
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(int id, [FromForm] ProductUpdateDto dto)
         {

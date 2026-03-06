@@ -1,4 +1,4 @@
-﻿using DigiMenuAPI.Application.DTOs.Add;
+﻿using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;

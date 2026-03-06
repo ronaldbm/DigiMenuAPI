@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
@@ -32,6 +32,7 @@ namespace DigiMenuAPI.Application.Services
                 .AsNoTracking()
                 .ProjectTo<TagReadDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
             return OperationResult<List<TagReadDto>>.Ok(tags);
         }
 
@@ -55,6 +56,7 @@ namespace DigiMenuAPI.Application.Services
             await _context.SaveChangesAsync();
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
+
             return OperationResult<TagReadDto>.Ok(_mapper.Map<TagReadDto>(tag));
         }
 
@@ -67,7 +69,6 @@ namespace DigiMenuAPI.Application.Services
             _mapper.Map(dto, tag);
             await _context.SaveChangesAsync();
 
-            // Si se cambia el nombre de "Vegan" a "Vegano", el caché debe morir
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 
             return OperationResult<bool>.Ok(true);
@@ -83,6 +84,7 @@ namespace DigiMenuAPI.Application.Services
             await _context.SaveChangesAsync();
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
+
             return OperationResult<bool>.Ok(true);
         }
     }

@@ -1,6 +1,6 @@
 ﻿using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Application.DTOs.Read;
-using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Update;
 
 namespace DigiMenuAPI.Application.Interfaces

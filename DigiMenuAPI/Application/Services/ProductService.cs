@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
@@ -20,7 +20,11 @@ namespace DigiMenuAPI.Application.Services
         private readonly IOutputCacheStore _cacheStore;
         private const string CacheTag = "tag-menu-publico";
 
-        public ProductService(ApplicationDbContext context, IMapper mapper, IFileStorageService fileStorage, IOutputCacheStore cacheStore)
+        public ProductService(
+            ApplicationDbContext context,
+            IMapper mapper,
+            IFileStorageService fileStorage,
+            IOutputCacheStore cacheStore)
         {
             _context = context;
             _mapper = mapper;
@@ -61,7 +65,8 @@ namespace DigiMenuAPI.Application.Services
                 .ProjectTo<ProductAdminReadDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (product == null) return OperationResult<ProductAdminReadDto>.Fail("Producto no encontrado");
+            if (product is null)
+                return OperationResult<ProductAdminReadDto>.Fail("Producto no encontrado");
 
             return OperationResult<ProductAdminReadDto>.Ok(product);
         }
@@ -70,56 +75,53 @@ namespace DigiMenuAPI.Application.Services
         {
             var product = _mapper.Map<Product>(dto);
 
-            // Procesar Imagen si existe
-
-            if (dto.Image != null && dto.Image.Length > 0)
-            {
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-                var extension = Path.GetExtension(dto.Image.FileName).ToLower();
-
-                if (!allowedExtensions.Contains(extension))
-                {
-                    return OperationResult<ProductReadDto>.Fail("Formato de imagen no permitido");
-                }
+            if (dto.Image is not null)
                 product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
+
+            if (dto.TagIds is { Count: > 0 })
+            {
+                var tags = await _context.Tags
+                    .Where(t => dto.TagIds.Contains(t.Id))
+                    .ToListAsync();
+                product.Tags = tags;
             }
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
+
             return OperationResult<ProductReadDto>.Ok(_mapper.Map<ProductReadDto>(product));
         }
 
         public async Task<OperationResult<bool>> Update(ProductUpdateDto dto)
         {
-            var product = await _context.Products.FindAsync(dto.Id);
-            if (product is null) return OperationResult<bool>.Fail("Producto no encontrado");
+            var product = await _context.Products
+                .Include(p => p.Tags)
+                .FirstOrDefaultAsync(p => p.Id == dto.Id);
 
-            // Guardamos la URL vieja por si hay que borrar el archivo después
-            string? oldImageUrl = product.MainImageUrl;
+            if (product is null)
+                return OperationResult<bool>.Fail("Producto no encontrado");
 
             _mapper.Map(dto, product);
 
-            if (dto.Image != null && dto.Image.Length > 0)
+            if (dto.Image is not null)
             {
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-                var extension = Path.GetExtension(dto.Image.FileName).ToLower();
-
-                if (!allowedExtensions.Contains(extension))
-                {
-                    return OperationResult<bool>.Fail("Formato de imagen no permitido");
-                }
-
-                // Borrar la anterior del disco
-                if (!string.IsNullOrEmpty(oldImageUrl))
-                    _fileStorage.DeleteFile(oldImageUrl, "products");
-
+                _fileStorage.DeleteFile(product.MainImageUrl ?? "", "products");
                 product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
+            }
+
+            if (dto.TagIds is not null)
+            {
+                var tags = await _context.Tags
+                    .Where(t => dto.TagIds.Contains(t.Id))
+                    .ToListAsync();
+                product.Tags = tags;
             }
 
             await _context.SaveChangesAsync();
             await _cacheStore.EvictByTagAsync(CacheTag, default);
+
             return OperationResult<bool>.Ok(true);
         }
 
@@ -129,16 +131,12 @@ namespace DigiMenuAPI.Application.Services
             if (product is null)
                 return OperationResult<bool>.Fail("Producto no encontrado");
 
-            // 1. Borrar archivo físico
-            if (!string.IsNullOrEmpty(product.MainImageUrl))
-                _fileStorage.DeleteFile(product.MainImageUrl, "products");
-
             product.IsDeleted = true;
             await _context.SaveChangesAsync();
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
+
             return OperationResult<bool>.Ok(true);
         }
-
     }
 }

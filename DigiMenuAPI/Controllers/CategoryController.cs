@@ -1,4 +1,4 @@
-﻿using DigiMenuAPI.Application.DTOs.Add;
+﻿using DigiMenuAPI.Application.DTOs.Create; 
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +27,7 @@ namespace DigiMenuAPI.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(int id, [FromBody] CategoryUpdateDto dto)
         {
-            if (id != dto.Id) 
+            if (id != dto.Id)
                 return BadRequest("El ID no coincide");
 
             return HandleResult(await _service.Update(dto));

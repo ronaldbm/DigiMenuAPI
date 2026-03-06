@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Application.DTOs.Add;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
@@ -69,21 +70,18 @@ namespace DigiMenuAPI.Application.Services
             if (platformModule is null)
                 return OperationResult<CompanyModuleReadDto>.Fail("Módulo no encontrado o no disponible.");
 
-            // Verificar si ya existe (reactivar si estaba inactivo)
+            // Verificar si ya está activado
             var existing = await _context.CompanyModules
-                .Include(cm => cm.Company)
-                .Include(cm => cm.PlatformModule)
-                .FirstOrDefaultAsync(cm =>
-                    cm.CompanyId == dto.CompanyId &&
-                    cm.PlatformModuleId == dto.PlatformModuleId);
+                .FirstOrDefaultAsync(cm => cm.CompanyId == dto.CompanyId
+                                        && cm.PlatformModuleId == dto.PlatformModuleId);
 
             if (existing is not null)
             {
                 existing.IsActive = true;
-                existing.ActivatedAt = DateTime.UtcNow;
-                existing.ActivatedByUserId = _tenantService.TryGetCompanyId() ?? 0;
                 existing.ExpiresAt = dto.ExpiresAt;
                 existing.Notes = dto.Notes;
+                existing.ActivatedAt = DateTime.UtcNow;
+                existing.ActivatedByUserId = _tenantService.GetCurrentUserId();
             }
             else
             {
@@ -92,21 +90,16 @@ namespace DigiMenuAPI.Application.Services
                     CompanyId = dto.CompanyId,
                     PlatformModuleId = dto.PlatformModuleId,
                     IsActive = true,
-                    ActivatedAt = DateTime.UtcNow,
-                    ActivatedByUserId = _tenantService.TryGetCompanyId() ?? 0,
                     ExpiresAt = dto.ExpiresAt,
-                    Notes = dto.Notes
+                    Notes = dto.Notes,
+                    ActivatedAt = DateTime.UtcNow,
+                    ActivatedByUserId = _tenantService.GetCurrentUserId()
                 };
                 _context.CompanyModules.Add(existing);
             }
 
             await _context.SaveChangesAsync();
 
-            // Invalidar cache del módulo
-            _cache.Remove($"module:{dto.CompanyId}:{platformModule.Code}");
-
-            // Recargar con navegación
-            await _context.Entry(existing).Reference(cm => cm.Company).LoadAsync();
             await _context.Entry(existing).Reference(cm => cm.PlatformModule).LoadAsync();
 
             return OperationResult<CompanyModuleReadDto>.Ok(MapToDto(existing));
@@ -114,68 +107,55 @@ namespace DigiMenuAPI.Application.Services
 
         public async Task<OperationResult<bool>> DeactivateModule(int companyModuleId)
         {
-            var cm = await _context.CompanyModules
-                .Include(x => x.PlatformModule)
-                .FirstOrDefaultAsync(x => x.Id == companyModuleId);
-
-            if (cm is null)
+            var module = await _context.CompanyModules.FindAsync(companyModuleId);
+            if (module is null)
                 return OperationResult<bool>.Fail("Activación no encontrada.");
 
-            cm.IsActive = false;
+            module.IsActive = false;
             await _context.SaveChangesAsync();
-
-            _cache.Remove($"module:{cm.CompanyId}:{cm.PlatformModule.Code}");
 
             return OperationResult<bool>.Ok(true);
         }
 
         public async Task<OperationResult<bool>> UpdateModuleExpiry(UpdateModuleExpiryDto dto)
         {
-            var cm = await _context.CompanyModules
-                .Include(x => x.PlatformModule)
-                .FirstOrDefaultAsync(x => x.Id == dto.CompanyModuleId);
-
-            if (cm is null)
+            var module = await _context.CompanyModules.FindAsync(dto.Id);
+            if (module is null)
                 return OperationResult<bool>.Fail("Activación no encontrada.");
 
-            cm.ExpiresAt = dto.ExpiresAt;
-            cm.Notes = dto.Notes;
+            module.ExpiresAt = dto.ExpiresAt;
             await _context.SaveChangesAsync();
-
-            _cache.Remove($"module:{cm.CompanyId}:{cm.PlatformModule.Code}");
 
             return OperationResult<bool>.Ok(true);
         }
 
-        // ── MIS MÓDULOS (empresa autenticada) ────────────────────────
+        // ── CONSULTA PROPIA (Tenant) ─────────────────────────────────
         public async Task<OperationResult<List<CompanyModuleReadDto>>> GetMyModules()
         {
-            var companyId = _tenantService.GetCompanyId();
+            var companyId = _tenantService.GetCurrentCompanyId();
 
             var modules = await _context.CompanyModules
                 .AsNoTracking()
-                .Include(cm => cm.Company)
                 .Include(cm => cm.PlatformModule)
                 .Where(cm => cm.CompanyId == companyId && cm.IsActive)
+                .OrderBy(cm => cm.PlatformModule.DisplayOrder)
                 .ToListAsync();
 
             return OperationResult<List<CompanyModuleReadDto>>.Ok(
                 modules.Select(MapToDto).ToList());
         }
 
-        // ── HELPER ──────────────────────────────────────────────────
+        // ── Helpers ──────────────────────────────────────────────────
         private static CompanyModuleReadDto MapToDto(CompanyModule cm) => new(
-            Id: cm.Id,
-            CompanyId: cm.CompanyId,
-            CompanyName: cm.Company?.Name ?? "",
-            PlatformModuleId: cm.PlatformModuleId,
-            ModuleCode: cm.PlatformModule?.Code ?? "",
-            ModuleName: cm.PlatformModule?.Name ?? "",
-            IsActive: cm.IsActive,
-            ActivatedAt: cm.ActivatedAt,
-            ExpiresAt: cm.ExpiresAt,
-            IsExpired: cm.ExpiresAt.HasValue && cm.ExpiresAt < DateTime.UtcNow,
-            Notes: cm.Notes
+            cm.Id,
+            cm.CompanyId,
+            cm.PlatformModuleId,
+            cm.PlatformModule.Name,
+            cm.PlatformModule.Code,
+            cm.IsActive,
+            cm.ActivatedAt,
+            cm.ExpiresAt,
+            cm.Notes
         );
     }
 }

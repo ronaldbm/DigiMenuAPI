@@ -1,4 +1,4 @@
-﻿using DigiMenuAPI.Application.DTOs.Add;
+﻿using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -29,6 +29,7 @@ namespace DigiMenuAPI.Controllers
         {
             if (id != dto.Id)
                 return BadRequest("ID inconsistente");
+
             return HandleResult(await _service.Update(dto));
         }
 
