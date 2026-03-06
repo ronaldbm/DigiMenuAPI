@@ -5,6 +5,6 @@ namespace DigiMenuAPI.Application.Interfaces
 {
     public interface IStoreService
     {
-        Task<OperationResult<MenuStoreDto>> GetStoreMenu(string slug);
+        Task<OperationResult<MenuBranchDto>> GetStoreMenu(string slug);
     }
 }

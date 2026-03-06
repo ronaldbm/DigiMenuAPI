@@ -1,5 +1,7 @@
 ﻿public record SettingUpdateDto(
         int Id,
+        int BranchId,
+        IFormFile Logo,
         // Identidad
         string BusinessName,
         string? Tagline,

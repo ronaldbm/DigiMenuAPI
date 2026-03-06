@@ -21,7 +21,7 @@ namespace DigiMenuAPI.Controllers
             _tenantService = tenantService;
         }
 
-        /// <summary>Admin: ver todas las reservas de su empresa.</summary>
+        /// <summary>Admin: ver reservas (CompanyAdmin = todas las branches, BranchAdmin = solo la suya).</summary>
         [HttpGet]
         [Authorize]
         [RequireModule(ModuleCodes.Reservations)]
@@ -29,22 +29,22 @@ namespace DigiMenuAPI.Controllers
             => HandleResult(await _service.GetAll());
 
         /// <summary>
-        /// Público: el cliente hace una reserva.
-        /// Se envía el slug para resolver la empresa.
-        /// Módulo verificado internamente en el servicio.
+        /// Público: el cliente hace una reserva en la Branch identificada por slug.
+        /// POST api/reservations/el-rancho-centro
         /// </summary>
         [HttpPost("{slug}")]
         [AllowAnonymous]
         public async Task<ActionResult> Create(string slug, [FromBody] ReservationCreateDto dto)
         {
-            var companyId = await _tenantService.ResolveCompanyBySlugAsync(slug);
-            if (companyId is null)
-                return NotFound(new { Success = false, Message = "Empresa no encontrada." });
+            var (branchId, companyId) = await _tenantService.ResolveByBranchSlugAsync(slug);
 
-            return HandleResult(await _service.Create(dto, companyId.Value));
+            if (branchId is null || companyId is null)
+                return NotFound(new { Success = false, Message = "Sucursal no encontrada." });
+
+            return HandleResult(await _service.Create(dto, branchId.Value, companyId.Value));
         }
 
-        /// <summary>Admin: cambiar estado de reserva.</summary>
+        /// <summary>Admin: cambiar estado de una reserva.</summary>
         [HttpPatch("{id:int}/status")]
         [Authorize]
         [RequireModule(ModuleCodes.Reservations)]

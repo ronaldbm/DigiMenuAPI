@@ -12,6 +12,7 @@
         string? CountryCode,
         int PlanId,
         int? MaxBranches,   // null = usar el valor del Plan
-        int? MaxUsers       // null = usar el valor del Plan
+        int? MaxUsers,      // null = usar el valor del Plan
+        string Slug
     );
 }

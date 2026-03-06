@@ -16,6 +16,7 @@ namespace DigiMenuAPI.Application.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ITenantService _tenantService;
         private readonly IFileStorageService _fileStorage;
         private readonly IOutputCacheStore _cacheStore;
         private const string CacheTag = "tag-menu-publico";
@@ -23,20 +24,26 @@ namespace DigiMenuAPI.Application.Services
         public ProductService(
             ApplicationDbContext context,
             IMapper mapper,
+            ITenantService tenantService,
             IFileStorageService fileStorage,
             IOutputCacheStore cacheStore)
         {
             _context = context;
             _mapper = mapper;
+            _tenantService = tenantService;
             _fileStorage = fileStorage;
             _cacheStore = cacheStore;
         }
 
         public async Task<OperationResult<List<ProductReadDto>>> GetAll()
         {
-            var products = await _context.Products
+            var branchId = _tenantService.GetBranchId();
+
+            // QueryFilter global ya aplica !IsDeleted — solo falta filtrar por tenant
+            var products = await _context.BranchProducts
                 .AsNoTracking()
-                .OrderBy(c => c.DisplayOrder)
+                .Where(p => p.BranchId == branchId)
+                .OrderBy(p => p.DisplayOrder)
                 .ProjectTo<ProductReadDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
@@ -45,43 +52,62 @@ namespace DigiMenuAPI.Application.Services
 
         public async Task<OperationResult<ProductReadDto>> GetById(int id)
         {
+            var companyId = _tenantService.GetCompanyId();
+
             var product = await _context.Products
-                .Include(p => p.Tags)
                 .AsNoTracking()
+                .Where(p => p.Id == id && p.CompanyId == companyId)
                 .ProjectTo<ProductReadDto>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync();
 
             if (product is null)
-                return OperationResult<ProductReadDto>.Fail("Producto no encontrado");
+                return OperationResult<ProductReadDto>.Fail("Producto no encontrado.");
 
             return OperationResult<ProductReadDto>.Ok(product);
         }
 
         public async Task<OperationResult<ProductAdminReadDto>> GetForEdit(int id)
         {
+            var companyId = _tenantService.GetCompanyId();
+
+            // Incluye traducciones y tags completos para el formulario de edición
             var product = await _context.Products
-                .Include(p => p.Tags)
                 .AsNoTracking()
+                .Where(p => p.Id == id && p.CompanyId == companyId)
+                .Include(p => p.Tags)
+                    .ThenInclude(t => t.Translations)
+                .Include(p => p.Translations)
                 .ProjectTo<ProductAdminReadDto>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync();
 
             if (product is null)
-                return OperationResult<ProductAdminReadDto>.Fail("Producto no encontrado");
+                return OperationResult<ProductAdminReadDto>.Fail("Producto no encontrado.");
 
             return OperationResult<ProductAdminReadDto>.Ok(product);
         }
 
         public async Task<OperationResult<ProductReadDto>> Create(ProductCreateDto dto)
         {
+            var companyId = _tenantService.GetCompanyId();
+
+            // Validar que la categoría pertenece al mismo tenant (QueryFilter cubre !IsDeleted)
+            var categoryBelongs = await _context.Categories
+                .AnyAsync(c => c.Id == dto.CategoryId && c.CompanyId == companyId);
+
+            if (!categoryBelongs)
+                return OperationResult<ProductReadDto>.Fail("La categoría no se ha encontrado.");
+
             var product = _mapper.Map<Product>(dto);
+            product.CompanyId = companyId; // ← siempre desde JWT, nunca del cliente
 
             if (dto.Image is not null)
                 product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
 
             if (dto.TagIds is { Count: > 0 })
             {
+                // Solo tags del mismo tenant — QueryFilter cubre !IsDeleted
                 var tags = await _context.Tags
-                    .Where(t => dto.TagIds.Contains(t.Id))
+                    .Where(t => dto.TagIds.Contains(t.Id) && t.CompanyId == companyId)
                     .ToListAsync();
                 product.Tags = tags;
             }
@@ -96,12 +122,21 @@ namespace DigiMenuAPI.Application.Services
 
         public async Task<OperationResult<bool>> Update(ProductUpdateDto dto)
         {
+            var companyId = _tenantService.GetCompanyId();
+
             var product = await _context.Products
                 .Include(p => p.Tags)
-                .FirstOrDefaultAsync(p => p.Id == dto.Id);
+                .FirstOrDefaultAsync(p => p.Id == dto.Id && p.CompanyId == companyId);
 
             if (product is null)
-                return OperationResult<bool>.Fail("Producto no encontrado");
+                return OperationResult<bool>.Fail("Producto no encontrado.");
+
+            // Validar que la nueva categoría pertenece al mismo tenant
+            var categoryBelongs = await _context.Categories
+                .AnyAsync(c => c.Id == dto.CategoryId && c.CompanyId == companyId);
+
+            if (!categoryBelongs)
+                return OperationResult<bool>.Fail("La categoría no pertenece a tu empresa.");
 
             _mapper.Map(dto, product);
 
@@ -113,8 +148,9 @@ namespace DigiMenuAPI.Application.Services
 
             if (dto.TagIds is not null)
             {
+                // Solo tags del mismo tenant — QueryFilter cubre !IsDeleted
                 var tags = await _context.Tags
-                    .Where(t => dto.TagIds.Contains(t.Id))
+                    .Where(t => dto.TagIds.Contains(t.Id) && t.CompanyId == companyId)
                     .ToListAsync();
                 product.Tags = tags;
             }
@@ -127,9 +163,13 @@ namespace DigiMenuAPI.Application.Services
 
         public async Task<OperationResult<bool>> Delete(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            var companyId = _tenantService.GetCompanyId();
+
+            var product = await _context.Products
+                .FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
+
             if (product is null)
-                return OperationResult<bool>.Fail("Producto no encontrado");
+                return OperationResult<bool>.Fail("Producto no encontrado.");
 
             product.IsDeleted = true;
             await _context.SaveChangesAsync();

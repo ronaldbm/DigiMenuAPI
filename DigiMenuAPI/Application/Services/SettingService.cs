@@ -32,13 +32,15 @@ namespace DigiMenuAPI.Application.Services
             _cacheStore = cacheStore;
         }
 
-        public async Task<OperationResult<SettingReadDto>> Get()
+        public async Task<OperationResult<SettingReadDto>> Get(int branchId)
         {
-            var companyId = _tenantService.GetCompanyId();
+            // Valida que la Branch existe y pertenece al tenant autenticado
+            await _tenantService.ValidateBranchOwnershipAsync(branchId);
 
+            // Setting es 1:1 con Branch — se filtra por BranchId, NO por CompanyId
             var setting = await _context.Settings
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.CompanyId == companyId);
+                .FirstOrDefaultAsync(s => s.BranchId == branchId);
 
             if (setting is null)
                 return OperationResult<SettingReadDto>.Fail("Configuración no encontrada.");
@@ -48,27 +50,26 @@ namespace DigiMenuAPI.Application.Services
 
         public async Task<OperationResult<bool>> Update(SettingUpdateDto dto)
         {
-            var companyId = _tenantService.GetCompanyId();
+            // Valida que la Branch pertenece al tenant antes de cualquier operación
+            await _tenantService.ValidateBranchOwnershipAsync(dto.BranchId);
 
+            // Setting es 1:1 con Branch — filtro por BranchId
             var setting = await _context.Settings
-                .FirstOrDefaultAsync(s => s.CompanyId == companyId);
+                .FirstOrDefaultAsync(s => s.BranchId == dto.BranchId);
 
             if (setting is null)
                 return OperationResult<bool>.Fail("Configuración no encontrada.");
 
-            // Guardar URL anterior por si hay que borrar archivo
-            string? oldLogoUrl = setting.LogoUrl;
-
+            var oldLogoUrl = setting.LogoUrl;
             _mapper.Map(dto, setting);
 
-            // Procesar logo si se envió
-            if (dto.Logo != null && dto.Logo.Length > 0)
+            if (dto.Logo is { Length: > 0 })
             {
                 var ext = Path.GetExtension(dto.Logo.FileName).ToLower();
                 var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".svg" };
 
                 if (!allowed.Contains(ext))
-                    return OperationResult<bool>.Fail("Formato de imagen no permitido.");
+                    return OperationResult<bool>.Fail("Formato no permitido. Usa JPG, PNG, WEBP o SVG.");
 
                 if (!string.IsNullOrEmpty(oldLogoUrl))
                     _fileStorage.DeleteFile(oldLogoUrl, "logos");

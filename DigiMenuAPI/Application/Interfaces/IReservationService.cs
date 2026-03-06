@@ -6,8 +6,19 @@ namespace DigiMenuAPI.Application.Interfaces
 {
     public interface IReservationService
     {
+        /// <summary>
+        /// Admin: reservas de la empresa autenticada.
+        /// BranchAdmin/Staff ven solo su propia Branch.
+        /// CompanyAdmin ve todas las Branches de su empresa.
+        /// </summary>
         Task<OperationResult<List<ReservationReadDto>>> GetAll();
-        Task<OperationResult<int>> Create(ReservationCreateDto dto, int companyId);
+
+        /// <summary>
+        /// Público: el cliente crea una reserva.
+        /// branchId y companyId se resuelven por Branch.Slug en el controller.
+        /// </summary>
+        Task<OperationResult<int>> Create(ReservationCreateDto dto, int branchId, int companyId);
+
         Task<OperationResult<bool>> UpdateStatus(int id, byte newStatus);
         Task<OperationResult<bool>> Delete(int id);
     }

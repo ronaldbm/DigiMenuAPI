@@ -25,66 +25,135 @@ namespace DigiMenuAPI.Application.Services
             _logger = logger;
         }
 
-        public async Task<OperationResult<MenuStoreDto>> GetStoreMenu(string slug)
+        public async Task<OperationResult<MenuBranchDto>> GetStoreMenu(string slug)
         {
             try
             {
-                // 1. Resolver empresa por slug (endpoint público — sin JWT)
-                var company = await _context.Companies
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Slug == slug.ToLower().Trim() && c.IsActive);
-
-                if (company is null)
-                    return OperationResult<MenuStoreDto>.Fail("Menú no encontrado.");
-
-                int companyId = company.Id;
-
-                // 2. Configuración del negocio
-                var settings = await _context.Settings
+                // 1. Resolver Branch por slug — el slug del menú público es de Branch, no de Company
+                //    IgnoreQueryFilters porque IsActive es el control, no IsDeleted
+                var branch = await _context.Branches
                     .AsNoTracking()
                     .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(s => s.CompanyId == companyId);
+                    .Where(b => b.Slug == slug.ToLower().Trim() && b.IsActive && !b.IsDeleted)
+                    .Select(b => new { b.Id, b.CompanyId })
+                    .FirstOrDefaultAsync();
 
-                if (settings is null)
-                    return OperationResult<MenuStoreDto>.Fail("Configuración del negocio no disponible.");
+                if (branch is null)
+                    return OperationResult<MenuBranchDto>.Fail("Menú no encontrado.");
 
-                // 3. Categorías y productos visibles del tenant
+                int branchId = branch.Id;
+                int companyId = branch.CompanyId;
+
+                // 2. Verificar que la Company está activa
+                var companyActive = await _context.Companies
+                    .AsNoTracking()
+                    .AnyAsync(c => c.Id == companyId && c.IsActive);
+
+                if (!companyActive)
+                    return OperationResult<MenuBranchDto>.Fail("Menú no disponible.");
+
+                // 3. Configuración visual de la Branch (Setting es 1:1 con Branch via BranchId)
+                var setting = await _context.Settings
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.BranchId == branchId);
+
+                if (setting is null)
+                    return OperationResult<MenuBranchDto>.Fail("Configuración del menú no disponible.");
+
+                string lang = setting.Language;
+
+                // 4. Categorías activas del catálogo global de la empresa
+                //    IgnoreQueryFilters para controlar manualmente IsDeleted + IsVisible
+                var categoryIds = await _context.BranchProducts
+                    .AsNoTracking()
+                    .IgnoreQueryFilters()
+                    .Where(bp => bp.BranchId == branchId && bp.IsVisible && !bp.IsDeleted)
+                    .Select(bp => bp.CategoryId)
+                    .Distinct()
+                    .ToListAsync();
+
                 var categories = await _context.Categories
                     .AsNoTracking()
                     .IgnoreQueryFilters()
-                    .Where(c => !c.IsDeleted && c.IsVisible && c.CompanyId == companyId)
+                    .Where(c => categoryIds.Contains(c.Id)
+                             && c.CompanyId == companyId
+                             && c.IsVisible
+                             && !c.IsDeleted)
+                    .Include(c => c.Translations)
                     .OrderBy(c => c.DisplayOrder)
-                    .Select(c => new CategoryReadDto(
-                        c.Id,
-                        c.Name,
-                        c.DisplayOrder,
-                        c.Products
-                            .Where(p => !p.IsDeleted && p.IsVisible)
-                            .OrderBy(p => p.DisplayOrder)
-                            .Select(p => new ProductReadDto(
-                                p.Id, p.Name,
-                                p.ShortDescription ?? "",
-                                p.BasePrice, p.OfferPrice ?? 0,
-                                p.MainImageUrl ?? "",
-                                p.Tags.Select(t => new TagReadDto(t.Id, t.Name, t.Color)).ToList()
-                            )).ToList()
-                    ))
                     .ToListAsync();
 
-                // 4. Footer links del tenant
-                var footerLinks = await _context.FooterLinks
+                // 5. BranchProducts visibles de esta Branch con sus productos y tags
+                var branchProducts = await _context.BranchProducts
                     .AsNoTracking()
                     .IgnoreQueryFilters()
-                    .Where(f => !f.IsDeleted && f.IsVisible && f.CompanyId == companyId)
+                    .Where(bp => bp.BranchId == branchId && bp.IsVisible && !bp.IsDeleted)
+                    .Include(bp => bp.Product)
+                        .ThenInclude(p => p.Translations)
+                    .Include(bp => bp.Product)
+                        .ThenInclude(p => p.Tags)
+                            .ThenInclude(t => t.Translations)
+                    .OrderBy(bp => bp.DisplayOrder)
+                    .ToListAsync();
+
+                // 6. Construir CategoryMenuDto con traducción aplicada
+                var categoryDtos = categories.Select(cat =>
+                {
+                    // Nombre con fallback: idioma solicitado → base
+                    var catName = cat.Translations
+                        .FirstOrDefault(t => t.LanguageCode == lang)?.Name
+                        ?? cat.Name;
+
+                    var products = branchProducts
+                        .Where(bp => bp.CategoryId == cat.Id)
+                        .Select(bp =>
+                        {
+                            var prodName = bp.Product.Translations
+                                .FirstOrDefault(t => t.LanguageCode == lang)?.Name
+                                ?? bp.Product.Name;
+
+                            var prodShortDesc = bp.Product.Translations
+                                .FirstOrDefault(t => t.LanguageCode == lang)?.ShortDescription
+                                ?? bp.Product.ShortDescription;
+
+                            var tags = bp.Product.Tags.Select(t => new TagMenuDto(
+                                t.Id,
+                                t.Translations.FirstOrDefault(tr => tr.LanguageCode == lang)?.Name ?? t.Name,
+                                t.Color
+                            )).ToList();
+
+                            return new BranchProductMenuDto(
+                                bp.Id,
+                                bp.ProductId,
+                                prodName,
+                                prodShortDesc,
+                                bp.ImageOverrideUrl ?? bp.Product.MainImageUrl,
+                                bp.Price,
+                                bp.OfferPrice,
+                                bp.DisplayOrder,
+                                tags
+                            );
+                        })
+                        .ToList();
+
+                    return new CategoryMenuDto(cat.Id, catName, cat.DisplayOrder, products);
+                }).ToList();
+
+                // 7. FooterLinks de la Branch — QueryFilter ya aplica !IsDeleted
+                var footerLinks = await _context.FooterLinks
+                    .AsNoTracking()
+                    .Where(f => f.BranchId == branchId)
                     .Include(f => f.StandardIcon)
                     .OrderBy(f => f.DisplayOrder)
                     .Select(f => new FooterLinkReadDto(
-                        f.Id, f.Label, f.Url,
+                        f.Id,
+                        f.Label,
+                        f.Url,
                         f.StandardIcon != null ? f.StandardIcon.SvgContent : (f.CustomSvgContent ?? ""),
                         f.DisplayOrder))
                     .ToListAsync();
 
-                // 5. Módulos activos (para que el frontend sepa qué mostrar)
+                // 8. Módulos activos de la empresa
                 var activeModules = await _context.CompanyModules
                     .AsNoTracking()
                     .Where(cm =>
@@ -94,51 +163,19 @@ namespace DigiMenuAPI.Application.Services
                     .Select(cm => cm.PlatformModule.Code)
                     .ToListAsync();
 
-                // 6. Construir DTO final
-                var storeMenu = new MenuStoreDto(
-                    BusinessName: settings.BusinessName,
-                    Tagline: settings.Tagline,
-                    LogoUrl: settings.LogoUrl,
-                    FaviconUrl: settings.FaviconUrl,
-                    BackgroundImageUrl: settings.BackgroundImageUrl,
-                    IsDarkMode: settings.IsDarkMode,
-                    PageBackgroundColor: settings.PageBackgroundColor,
-                    HeaderBackgroundColor: settings.HeaderBackgroundColor,
-                    HeaderTextColor: settings.HeaderTextColor,
-                    TabBackgroundColor: settings.TabBackgroundColor,
-                    TabTextColor: settings.TabTextColor,
-                    PrimaryColor: settings.PrimaryColor,
-                    PrimaryTextColor: settings.PrimaryTextColor,
-                    SecondaryColor: settings.SecondaryColor,
-                    TitlesColor: settings.TitlesColor,
-                    TextColor: settings.TextColor,
-                    BrowserThemeColor: settings.BrowserThemeColor,
-                    HeaderStyle: settings.HeaderStyle,
-                    MenuLayout: settings.MenuLayout,
-                    ProductDisplay: settings.ProductDisplay,
-                    ShowProductDetails: settings.ShowProductDetails,
-                    ShowSearchButton: settings.ShowSearchButton,
-                    ShowContactButton: settings.ShowContactButton,
-                    CountryCode: settings.CountryCode,
-                    Currency: settings.Currency,
-                    CurrencyLocale: settings.CurrencyLocale,
-                    Language: settings.Language,
-                    Decimals: settings.Decimals,
-                    MetaTitle: settings.MetaTitle,
-                    MetaDescription: settings.MetaDescription,
-                    GoogleAnalyticsId: settings.GoogleAnalyticsId,
-                    FacebookPixelId: settings.FacebookPixelId,
-                    Categories: categories,
-                    FooterLinks: footerLinks,
-                    ActiveModules: activeModules
-                );
+                // 9. Mapear Setting a MenuBranchDto e inyectar contenido dinámico
+                var menuDto = _mapper.Map<MenuBranchDto>(setting) with
+                {
+                    Categories = categoryDtos,
+                    FooterLinks = footerLinks
+                };
 
-                return OperationResult<MenuStoreDto>.Ok(storeMenu);
+                return OperationResult<MenuBranchDto>.Ok(menuDto);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener el menú de la tienda");
-                return OperationResult<MenuStoreDto>.Fail("Error inesperado al cargar el menú.");
+                _logger.LogError(ex, "Error al obtener el menú de la sucursal");
+                return OperationResult<MenuBranchDto>.Fail("Error inesperado al cargar el menú.");
             }
         }
     }

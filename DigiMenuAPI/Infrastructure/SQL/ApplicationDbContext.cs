@@ -88,6 +88,10 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 e.Property(c => c.Phone).HasMaxLength(20);
                 e.Property(c => c.CountryCode).HasMaxLength(3);
 
+                // Slug único global para identificar la empresa en el panel admin
+                e.Property(c => c.Slug).IsRequired().HasMaxLength(60);
+                e.HasIndex(c => c.Slug).IsUnique();
+
                 // RESTRICT: el borrado de Plan no debe eliminar Companies.
                 // Los planes se desactivan (IsActive = false), no se borran.
                 e.HasOne(c => c.Plan)

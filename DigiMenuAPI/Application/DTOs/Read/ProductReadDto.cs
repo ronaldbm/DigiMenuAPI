@@ -1,9 +1,8 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Read
 {
     /// <summary>
-    /// Producto del catálogo global para el panel admin.
-    /// Sin precio (el precio vive en BranchProduct).
-    /// Incluye traducciones para gestión.
+    /// Producto del catálogo global para listados del panel admin.
+    /// Sin precio (el precio vive en BranchProduct por sucursal).
     /// </summary>
     public record ProductReadDto(
         int Id,
@@ -20,9 +19,28 @@
     );
 
     /// <summary>
+    /// Producto completo para el formulario de edición del panel admin.
+    /// Incluye traducciones completas y tags con sus propias traducciones.
+    /// </summary>
+    public record ProductAdminReadDto(
+        int Id,
+        int CompanyId,
+        int CategoryId,
+        string CategoryName,
+        string Name,
+        string? ShortDescription,
+        string? LongDescription,
+        string? MainImageUrl,
+        List<TagReadDto> Tags,           // tags con sus traducciones incluidas
+        List<ProductTranslationReadDto> Translations,
+        DateTime CreatedAt,
+        DateTime? ModifiedAt
+    );
+
+    /// <summary>
     /// Producto activado en una Branch para el menú público.
-    /// El nombre y descripciones ya vienen resueltos al idioma solicitado.
-    /// La imagen usa ImageOverrideUrl si existe, sino MainImageUrl del catálogo.
+    /// Nombre y descripciones ya vienen resueltos al idioma solicitado.
+    /// La imagen usa ImageOverrideUrl si existe, sino MainImageUrl del catálogo global.
     /// </summary>
     public record BranchProductMenuDto(
         int Id,
@@ -38,7 +56,7 @@
 
     /// <summary>
     /// BranchProduct para el panel admin de la Branch.
-    /// Permite ver y editar la configuración de cada producto activado.
+    /// Permite ver y editar la configuración de cada producto activado en esa sucursal.
     /// </summary>
     public record BranchProductReadDto(
         int Id,

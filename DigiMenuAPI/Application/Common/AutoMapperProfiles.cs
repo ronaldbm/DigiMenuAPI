@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using DigiMenuAPI.Application.DTOs.Add;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
@@ -29,7 +28,6 @@ namespace DigiMenuAPI.Application.Common
         // ── Plan ─────────────────────────────────────────────────────
         private void PlanMappings()
         {
-            // Todas las propiedades tienen el mismo nombre → sin configuración adicional
             CreateMap<Plan, PlanReadDto>();
             CreateMap<PlanCreateDto, Plan>();
             CreateMap<PlanUpdateDto, Plan>().ReverseMap();
@@ -40,19 +38,19 @@ namespace DigiMenuAPI.Application.Common
         {
             CreateMap<Company, CompanyReadDto>()
                 .ForMember(d => d.PlanName, o => o.MapFrom(s => s.Plan.Name))
-                .ForMember(d => d.CurrentBranches, o => o.Ignore())       // calculado en servicio con Count()
-                .ForMember(d => d.CurrentUsers, o => o.Ignore())        // calculado en servicio con Count()
-                .ForMember(d => d.ActiveModules, o => o.MapFrom(s =>     // solo módulos activos
+                .ForMember(d => d.CurrentBranches, o => o.Ignore())   // calculado con Count() en servicio
+                .ForMember(d => d.CurrentUsers, o => o.Ignore())   // calculado con Count() en servicio
+                .ForMember(d => d.ActiveModules, o => o.MapFrom(s =>
                     s.CompanyModules.Where(m => m.IsActive).ToList()));
 
             CreateMap<Company, CompanySummaryDto>()
                 .ForMember(d => d.PlanName, o => o.MapFrom(s => s.Plan.Name))
-                .ForMember(d => d.CurrentBranches, o => o.Ignore())       // calculado en servicio
-                .ForMember(d => d.CurrentUsers, o => o.Ignore());       // calculado en servicio
+                .ForMember(d => d.CurrentBranches, o => o.Ignore())
+                .ForMember(d => d.CurrentUsers, o => o.Ignore());
 
             CreateMap<CompanyCreateDto, Company>()
-                .ForMember(d => d.MaxBranches, o => o.Ignore())  // servicio aplica Plan.MaxBranches si null
-                .ForMember(d => d.MaxUsers, o => o.Ignore());  // servicio aplica Plan.MaxUsers si null
+                .ForMember(d => d.MaxBranches, o => o.Ignore())  // servicio aplica Plan.MaxBranches
+                .ForMember(d => d.MaxUsers, o => o.Ignore()); // servicio aplica Plan.MaxUsers
 
             CreateMap<CompanyUpdateDto, Company>().ReverseMap();
         }
@@ -60,7 +58,6 @@ namespace DigiMenuAPI.Application.Common
         // ── Branch ────────────────────────────────────────────────────
         private void BranchMappings()
         {
-            // Todas las propiedades coinciden en nombre
             CreateMap<Branch, BranchReadDto>();
             CreateMap<Branch, BranchSummaryDto>();
             CreateMap<BranchCreateDto, Branch>();
@@ -89,12 +86,14 @@ namespace DigiMenuAPI.Application.Common
             CreateMap<Category, CategoryReadDto>()
                 .ForMember(d => d.Translations, o => o.MapFrom(s => s.Translations));
 
-            // CategoryMenuDto: el nombre resuelto al idioma se hace en el servicio,
-            // no en AutoMapper, porque requiere lógica de fallback.
+            // CategoryMenuDto: nombre resuelto al idioma en el servicio (fallback al base)
             CreateMap<Category, CategoryMenuDto>()
-                .ForMember(d => d.Products, o => o.Ignore()); // servicio inyecta los BranchProducts
+                .ForMember(d => d.Products, o => o.Ignore()); // servicio inyecta BranchProducts
 
-            CreateMap<CategoryCreateDto, Category>();
+            // CompanyId NO viene del DTO — servicio lo inyecta desde JWT
+            CreateMap<CategoryCreateDto, Category>()
+                .ForMember(d => d.CompanyId, o => o.Ignore());
+
             CreateMap<CategoryUpdateDto, Category>().ReverseMap();
         }
 
@@ -106,7 +105,15 @@ namespace DigiMenuAPI.Application.Common
                 .ForMember(d => d.Tags, o => o.MapFrom(s => s.Tags))
                 .ForMember(d => d.Translations, o => o.MapFrom(s => s.Translations));
 
+            // ProductAdminReadDto: igual pero incluye ModifiedAt desde BaseEntity
+            CreateMap<Product, ProductAdminReadDto>()
+                .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name))
+                .ForMember(d => d.Tags, o => o.MapFrom(s => s.Tags))
+                .ForMember(d => d.Translations, o => o.MapFrom(s => s.Translations));
+
+            // CompanyId NO viene del DTO — servicio lo inyecta desde JWT
             CreateMap<ProductCreateDto, Product>()
+                .ForMember(d => d.CompanyId, o => o.Ignore())
                 .ForMember(d => d.MainImageUrl, o => o.Ignore()); // servicio sube imagen
 
             CreateMap<ProductUpdateDto, Product>()
@@ -122,11 +129,11 @@ namespace DigiMenuAPI.Application.Common
                 .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name))
                 .ForMember(d => d.BaseImageUrl, o => o.MapFrom(s => s.Product.MainImageUrl));
 
-            // BranchProductMenuDto: nombre e imagen resueltos en el servicio (fallback de idioma e imagen)
+            // BranchProductMenuDto: nombre e imagen resueltos en el servicio
             CreateMap<BranchProduct, BranchProductMenuDto>()
                 .ForMember(d => d.ProductId, o => o.MapFrom(s => s.ProductId))
-                .ForMember(d => d.Name, o => o.Ignore())            // servicio aplica traducción
-                .ForMember(d => d.ShortDescription, o => o.Ignore()) // servicio aplica traducción
+                .ForMember(d => d.Name, o => o.Ignore())  // servicio aplica traducción
+                .ForMember(d => d.ShortDescription, o => o.Ignore())  // servicio aplica traducción
                 .ForMember(d => d.ImageUrl, o => o.MapFrom(s =>
                     s.ImageOverrideUrl ?? s.Product.MainImageUrl))
                 .ForMember(d => d.Tags, o => o.MapFrom(s => s.Product.Tags));
@@ -149,19 +156,22 @@ namespace DigiMenuAPI.Application.Common
             CreateMap<Tag, TagMenuDto>()
                 .ForMember(d => d.Name, o => o.Ignore()); // servicio aplica traducción
 
-            CreateMap<TagCreateDto, Tag>();
+            // CompanyId NO viene del DTO — servicio lo inyecta desde JWT
+            CreateMap<TagCreateDto, Tag>()
+                .ForMember(d => d.CompanyId, o => o.Ignore());
+
             CreateMap<TagUpdateDto, Tag>().ReverseMap();
         }
 
         // ── Setting ───────────────────────────────────────────────────
         private void SettingMappings()
         {
-            // Todas las propiedades tienen el mismo nombre → sin configuración adicional
+            // Setting es 1:1 con Branch, todas las propiedades comparten nombre
             CreateMap<Setting, SettingReadDto>();
 
-            // MenuBranchDto: comparte propiedades de nombre con Setting
+            // MenuBranchDto: derivado de Setting para el menú público
             CreateMap<Setting, MenuBranchDto>()
-                .ForMember(d => d.Categories, o => o.Ignore())   // servicio inyecta
+                .ForMember(d => d.Categories, o => o.Ignore())  // servicio inyecta
                 .ForMember(d => d.FooterLinks, o => o.Ignore()); // servicio inyecta
 
             CreateMap<SettingUpdateDto, Setting>().ReverseMap();
@@ -174,7 +184,9 @@ namespace DigiMenuAPI.Application.Common
 
             CreateMap<FooterLink, FooterLinkReadDto>()
                 .ForMember(d => d.SvgContent, o => o.MapFrom(s =>
-                    s.StandardIcon != null ? s.StandardIcon.SvgContent : (s.CustomSvgContent ?? "")));
+                    s.StandardIcon != null
+                        ? s.StandardIcon.SvgContent
+                        : (s.CustomSvgContent ?? "")));
 
             CreateMap<FooterLinkCreateDto, FooterLink>();
             CreateMap<FooterLinkUpdateDto, FooterLink>().ReverseMap();
@@ -183,7 +195,6 @@ namespace DigiMenuAPI.Application.Common
         // ── Reservation ───────────────────────────────────────────────
         private void ReservationMappings()
         {
-            // Todas las propiedades tienen el mismo nombre → sin configuración adicional
             CreateMap<Reservation, ReservationReadDto>();
             CreateMap<ReservationCreateDto, Reservation>();
         }
@@ -191,17 +202,17 @@ namespace DigiMenuAPI.Application.Common
         // ── Translations ──────────────────────────────────────────────
         private void TranslationMappings()
         {
-            // CategoryTranslation → TranslationReadDto (comparten Id, LanguageCode, Name)
+            // CategoryTranslation → TranslationReadDto
             CreateMap<CategoryTranslation, TranslationReadDto>();
             CreateMap<CategoryTranslationCreateDto, CategoryTranslation>();
             CreateMap<CategoryTranslationUpdateDto, CategoryTranslation>().ReverseMap();
 
-            // ProductTranslation → ProductTranslationReadDto (mismos nombres)
+            // ProductTranslation → ProductTranslationReadDto (incluye descripciones)
             CreateMap<ProductTranslation, ProductTranslationReadDto>();
             CreateMap<ProductTranslationCreateDto, ProductTranslation>();
             CreateMap<ProductTranslationUpdateDto, ProductTranslation>().ReverseMap();
 
-            // TagTranslation → TranslationReadDto (comparten Id, LanguageCode, Name)
+            // TagTranslation → TranslationReadDto
             CreateMap<TagTranslation, TranslationReadDto>();
             CreateMap<TagTranslationCreateDto, TagTranslation>();
             CreateMap<TagTranslationUpdateDto, TagTranslation>().ReverseMap();
@@ -217,8 +228,8 @@ namespace DigiMenuAPI.Application.Common
                 .ForMember(d => d.ModuleCode, o => o.MapFrom(s => s.PlatformModule.Code));
 
             CreateMap<CompanyModuleCreateDto, CompanyModule>()
-                .ForMember(d => d.ActivatedAt, o => o.Ignore())          // servicio asigna DateTime.UtcNow
-                .ForMember(d => d.ActivatedByUserId, o => o.Ignore());   // servicio toma del JWT
+                .ForMember(d => d.ActivatedAt, o => o.Ignore()) // servicio asigna DateTime.UtcNow
+                .ForMember(d => d.ActivatedByUserId, o => o.Ignore()); // servicio toma del JWT
 
             CreateMap<CompanyModuleUpdateDto, CompanyModule>().ReverseMap();
         }

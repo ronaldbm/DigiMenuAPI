@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using DigiMenuAPI.Application.Common;
-using DigiMenuAPI.Application.DTOs.Add;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
@@ -81,7 +80,7 @@ namespace DigiMenuAPI.Application.Services
                 existing.ExpiresAt = dto.ExpiresAt;
                 existing.Notes = dto.Notes;
                 existing.ActivatedAt = DateTime.UtcNow;
-                existing.ActivatedByUserId = _tenantService.GetCurrentUserId();
+                existing.ActivatedByUserId = _tenantService.GetUserId();
             }
             else
             {
@@ -93,7 +92,7 @@ namespace DigiMenuAPI.Application.Services
                     ExpiresAt = dto.ExpiresAt,
                     Notes = dto.Notes,
                     ActivatedAt = DateTime.UtcNow,
-                    ActivatedByUserId = _tenantService.GetCurrentUserId()
+                    ActivatedByUserId = _tenantService.GetUserId()
                 };
                 _context.CompanyModules.Add(existing);
             }
@@ -119,7 +118,7 @@ namespace DigiMenuAPI.Application.Services
 
         public async Task<OperationResult<bool>> UpdateModuleExpiry(UpdateModuleExpiryDto dto)
         {
-            var module = await _context.CompanyModules.FindAsync(dto.Id);
+            var module = await _context.CompanyModules.FindAsync(dto.CompanyModuleId);
             if (module is null)
                 return OperationResult<bool>.Fail("Activación no encontrada.");
 
@@ -132,7 +131,7 @@ namespace DigiMenuAPI.Application.Services
         // ── CONSULTA PROPIA (Tenant) ─────────────────────────────────
         public async Task<OperationResult<List<CompanyModuleReadDto>>> GetMyModules()
         {
-            var companyId = _tenantService.GetCurrentCompanyId();
+            var companyId = _tenantService.GetCompanyId();
 
             var modules = await _context.CompanyModules
                 .AsNoTracking()
@@ -146,16 +145,15 @@ namespace DigiMenuAPI.Application.Services
         }
 
         // ── Helpers ──────────────────────────────────────────────────
-        private static CompanyModuleReadDto MapToDto(CompanyModule cm) => new(
+        private static CompanyModuleReadDto MapToDto(CompanyModule cm) => 
+            new CompanyModuleReadDto(
             cm.Id,
-            cm.CompanyId,
             cm.PlatformModuleId,
             cm.PlatformModule.Name,
             cm.PlatformModule.Code,
             cm.IsActive,
             cm.ActivatedAt,
-            cm.ExpiresAt,
-            cm.Notes
+            cm.ExpiresAt
         );
     }
 }

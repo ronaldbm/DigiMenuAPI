@@ -5,7 +5,7 @@ namespace DigiMenuAPI.Infrastructure.Entities
     /// <summary>
     /// Módulo funcional disponible en la plataforma (catálogo global).
     /// Ejemplos: RESERVATIONS, TABLE_MANAGEMENT, ANALYTICS, ONLINE_ORDERS.
-    /// Los módulos los gestiona el SuperAdmin y se activan por Company.
+    /// Los módulos los gestiona el SuperAdmin y se activan por Company desde un panel para SuperAdmin.
     /// Una vez activos para la Company, aplican a todas sus Branches.
     /// </summary>
     public class PlatformModule

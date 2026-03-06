@@ -1,5 +1,6 @@
 using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Application.DTOs.Auth;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
@@ -14,91 +15,109 @@ namespace DigiMenuAPI.Application.Services
     public class AuthService : IAuthService
     {
         private readonly ApplicationDbContext _context;
-        private readonly IConfiguration      _config;
-        private readonly ITenantService      _tenantService;
+        private readonly IConfiguration _config;
+        private readonly ITenantService _tenantService;
 
         public AuthService(
             ApplicationDbContext context,
             IConfiguration config,
             ITenantService tenantService)
         {
-            _context       = context;
-            _config        = config;
+            _context = context;
+            _config = config;
             _tenantService = tenantService;
         }
 
-        // ── REGISTER COMPANY ────────────────────────────────────────
-        public async Task<OperationResult<AuthResultDto>> RegisterCompany(RegisterCompanyDto dto)
+        // ── REGISTER COMPANY ─────────────────────────────────────────
+        public async Task<OperationResult<LoginResponseDto>> RegisterCompany(CompanyCreateDto dto)
         {
-            var slug  = dto.Slug.ToLower().Trim();
-            var email = dto.AdminEmail.Trim().ToLower();
+            var companySlug = dto.Slug.ToLower().Trim();
+            var email = dto.Email.Trim().ToLower();
 
-            if (await _context.Companies.AnyAsync(c => c.Slug == slug))
-                return OperationResult<AuthResultDto>.Fail("El slug ya está en uso. Elige otro identificador.");
+            // Slug único a nivel de Company
+            if (await _context.Companies.AnyAsync(c => c.Slug == companySlug))
+                return OperationResult<LoginResponseDto>.Fail("El slug ya está en uso. Elige otro identificador.");
 
             if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == email))
-                return OperationResult<AuthResultDto>.Fail("El email del administrador ya está registrado.");
+                return OperationResult<LoginResponseDto>.Fail("El email del administrador ya está registrado.");
 
-            // Crear empresa
+            // 1. Crear Company
             var company = new Company
             {
-                Name        = dto.CompanyName.Trim(),
-                Slug        = slug,
-                Email       = dto.CompanyEmail.Trim().ToLower(),
-                Phone       = dto.CompanyPhone?.Trim(),
+                Name = dto.Name.Trim(),
+                Slug = companySlug,
+                Email = dto.Email.Trim().ToLower(),
+                Phone = dto.Phone?.Trim(),
                 CountryCode = dto.CountryCode?.ToUpper().Trim(),
-                IsActive    = true
+                IsActive = true
             };
             _context.Companies.Add(company);
             await _context.SaveChangesAsync();
 
-            // Configuración por defecto (Setting 1:1)
+            // 2. Crear Branch principal (el slug de la branch es igual al de la company al inicio)
+            //    Cada Branch tiene su propio slug para la URL pública del menú.
+            var branchSlug = companySlug; // el admin puede cambiarlo luego si necesita
+            if (await _context.Branches.AnyAsync(b => b.Slug == branchSlug))
+                branchSlug = $"{companySlug}-1"; // fallback si ya existe
+
+            var branch = new Branch
+            {
+                CompanyId = company.Id,
+                Name = dto.Name.Trim(),
+                Slug = branchSlug,
+                IsActive = true
+            };
+            _context.Branches.Add(branch);
+            await _context.SaveChangesAsync();
+
+            // 3. Crear Setting para la Branch principal (1:1 con Branch, usa BranchId)
             var setting = new Setting
             {
-                CompanyId            = company.Id,
-                BusinessName         = dto.CompanyName.Trim(),
-                PrimaryColor         = "#E63946",
-                SecondaryColor       = "#457B9D",
-                PageBackgroundColor  = "#F1FAEE",
+                BranchId = branch.Id,
+                BusinessName = dto.Name.Trim(),
+                PrimaryColor = "#E63946",
+                SecondaryColor = "#457B9D",
+                PageBackgroundColor = "#F1FAEE",
                 HeaderBackgroundColor = "#FFFFFF",
-                HeaderTextColor      = "#1D3557",
-                TabBackgroundColor   = "#1D3557",
-                TabTextColor         = "#FFFFFF",
-                PrimaryTextColor     = "#FFFFFF",
-                TitlesColor          = "#1D3557",
-                TextColor            = "#1D3557",
-                BrowserThemeColor    = "#FFFFFF",
-                ShowProductDetails   = true,
-                ProductDisplay       = 1,
-                CountryCode          = dto.CountryCode ?? "CO",
-                Currency             = "USD",
-                CurrencyLocale       = "en-US",
-                Language             = "ES",
-                TimeZone             = "America/Bogota",
-                Decimals             = 2
+                HeaderTextColor = "#1D3557",
+                TabBackgroundColor = "#1D3557",
+                TabTextColor = "#FFFFFF",
+                PrimaryTextColor = "#FFFFFF",
+                TitlesColor = "#1D3557",
+                TextColor = "#1D3557",
+                BrowserThemeColor = "#FFFFFF",
+                ShowProductDetails = true,
+                ProductDisplay = 1,
+                CountryCode = dto.CountryCode?.ToUpper() ?? "CR",
+                PhoneCode = "+506",
+                Currency = "CRC",
+                CurrencyLocale = "es-CR",
+                Language = "es",
+                TimeZone = "America/Costa_Rica",
+                Decimals = 2
             };
             _context.Settings.Add(setting);
 
-            // Primer admin
+            // 4. Crear CompanyAdmin (BranchId = null → gestiona toda la empresa)
             var admin = new AppUser
             {
-                FullName     = dto.AdminFullName.Trim(),
-                Email        = email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.AdminPassword),
-                Role         = 2,
-                CompanyId    = company.Id,
-                IsActive     = true
+                FullName = "Admin " + dto.Name,
+                Email = email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin1234"),
+                Role = 1,      // CompanyAdmin
+                CompanyId = company.Id,
+                BranchId = null,   // CompanyAdmin no pertenece a una Branch específica
+                IsActive = true
             };
             _context.Users.Add(admin);
-
             await _context.SaveChangesAsync();
 
             var token = GenerateJwt(admin, company);
-            return OperationResult<AuthResultDto>.Ok(BuildResult(admin, company, token));
+            return OperationResult<LoginResponseDto>.Ok(BuildResult(admin, company, token));
         }
 
-        // ── LOGIN ───────────────────────────────────────────────────
-        public async Task<OperationResult<AuthResultDto>> Login(LoginDto dto)
+        // ── LOGIN ─────────────────────────────────────────────────────
+        public async Task<OperationResult<LoginResponseDto>> Login(LoginRequestDto dto)
         {
             var email = dto.Email.Trim().ToLower();
 
@@ -108,39 +127,55 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(u => u.Email == email);
 
             if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                return OperationResult<AuthResultDto>.Fail("Credenciales incorrectas.");
+                return OperationResult<LoginResponseDto>.Fail("Credenciales incorrectas.");
 
             if (!user.IsActive)
-                return OperationResult<AuthResultDto>.Fail("Tu cuenta está desactivada.");
+                return OperationResult<LoginResponseDto>.Fail("Tu cuenta está desactivada.");
 
             if (!user.Company.IsActive)
-                return OperationResult<AuthResultDto>.Fail("Tu empresa está desactivada. Contacta al soporte.");
+                return OperationResult<LoginResponseDto>.Fail("Tu empresa está desactivada. Contacta al soporte.");
+
+            user.LastLoginAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
 
             var token = GenerateJwt(user, user.Company);
-            return OperationResult<AuthResultDto>.Ok(BuildResult(user, user.Company, token));
+            return OperationResult<LoginResponseDto>.Ok(BuildResult(user, user.Company, token));
         }
 
-        // ── REGISTER USER (admin crea staff) ────────────────────────
-        public async Task<OperationResult<bool>> RegisterUser(RegisterUserDto dto)
+        // ── REGISTER USER (CompanyAdmin crea staff) ───────────────────
+        public async Task<OperationResult<bool>> RegisterUser(AppUserCreateDto dto)
         {
             var companyId = _tenantService.GetCompanyId();
-            var email     = dto.Email.Trim().ToLower();
+            var email = dto.Email.Trim().ToLower();
 
             if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == email))
                 return OperationResult<bool>.Fail("El email ya está registrado.");
 
-            // Solo Admin puede crear usuarios, y no puede crear SuperAdmins
-            if (dto.Role == 1)
+            if (dto.Role == 255)
                 return OperationResult<bool>.Fail("No puedes asignar el rol SuperAdmin.");
+
+            // BranchAdmin y Staff deben tener BranchId
+            if (dto.Role is 2 or 3 && dto.BranchId is null)
+                return OperationResult<bool>.Fail("BranchAdmin y Staff deben estar asignados a una sucursal.");
+
+            // Validar que la Branch pertenece a la empresa del admin
+            if (dto.BranchId.HasValue)
+            {
+                var branchBelongs = await _context.Branches
+                    .AnyAsync(b => b.Id == dto.BranchId.Value && b.CompanyId == companyId);
+                if (!branchBelongs)
+                    return OperationResult<bool>.Fail("La sucursal indicada no pertenece a tu empresa.");
+            }
 
             var user = new AppUser
             {
-                FullName     = dto.FullName.Trim(),
-                Email        = email,
+                FullName = dto.FullName.Trim(),
+                Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Role         = dto.Role,
-                CompanyId    = companyId,
-                IsActive     = true
+                Role = dto.Role,
+                CompanyId = companyId,
+                BranchId = dto.BranchId,
+                IsActive = true
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -148,46 +183,53 @@ namespace DigiMenuAPI.Application.Services
             return OperationResult<bool>.Ok(true);
         }
 
-        // ── JWT ─────────────────────────────────────────────────────
+        // ── JWT ───────────────────────────────────────────────────────
         private string GenerateJwt(AppUser user, Company company)
         {
-            var key     = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
-            var creds   = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var hours   = double.Parse(_config["Jwt:ExpiresHours"] ?? "8");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var hours = double.Parse(_config["Jwt:ExpiresHours"] ?? "8");
             var expires = DateTime.UtcNow.AddHours(hours);
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
-                new Claim("companyId",   company.Id.ToString()),
-                new Claim("companySlug", company.Slug),
-                new Claim("role",        user.Role.ToString()),
-                new Claim("fullName",    user.FullName)
+                new(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
+                new(JwtRegisteredClaimNames.Email, user.Email),
+                new(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
+                new("userId",        user.Id.ToString()),
+                new("companyId",     company.Id.ToString()),
+                new("companySlug",   company.Slug),
+                new("role",          user.Role.ToString()),
+                new("fullName",      user.FullName)
             };
 
+            // branchId solo se agrega para BranchAdmin (2) y Staff (3)
+            if (user.BranchId.HasValue)
+                claims.Add(new Claim("branchId", user.BranchId.Value.ToString()));
+
             var token = new JwtSecurityToken(
-                issuer:            _config["Jwt:Issuer"],
-                audience:          _config["Jwt:Audience"],
-                claims:            claims,
-                expires:           expires,
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: expires,
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private static AuthResultDto BuildResult(AppUser user, Company company, string token) =>
-            new(
-                Token:       token,
-                FullName:    user.FullName,
-                Email:       user.Email,
-                CompanyId:   company.Id,
+        private static LoginResponseDto BuildResult(AppUser user, Company company, string token) =>
+            new LoginResponseDto(
+                Token: token,
+                FullName: user.FullName,
+                Email: user.Email,
+                CompanyId: company.Id,
                 CompanyName: company.Name,
                 CompanySlug: company.Slug,
-                Role:        user.Role,
-                ExpiresAt:   DateTime.UtcNow.AddHours(8)
+                BranchId: user.BranchId,
+                BranchName: user.BranchId.HasValue ? user.Branch?.Name : null,
+                Role: user.Role,
+                ExpiresAt: DateTime.UtcNow.AddHours(8)
             );
     }
 }

@@ -12,13 +12,19 @@ namespace DigiMenuAPI.Infrastructure.Entities
     ///   MaxUsers    → pool total de usuarios distribuibles entre sus branches
     /// El SuperAdmin puede modificar estos valores al cambiar el plan.
     /// </summary>
-    public class Company
+    public class Company : BaseEntity
     {
-        [Key]
-        public int Id { get; set; }
 
         [Required, MaxLength(100)]
         public string Name { get; set; } = null!;
+
+        /// <summary>
+        /// Identificador único global de la empresa.
+        /// Se usa para identificar la Company en el panel administrativo.
+        /// Ejemplo: "el-rancho", "bar-luna"
+        /// </summary>
+        [Required, MaxLength(60)]
+        public string Slug { get; set; } = null!;
 
         [Required, MaxLength(150)]
         public string Email { get; set; } = null!;
@@ -30,14 +36,11 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public string? CountryCode { get; set; }
 
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? ModifiedAt { get; set; }
 
         // ── Plan y límites ────────────────────────────────────────────
         /// <summary>
         /// Plan de suscripción activo. Define los límites base,
         /// pero MaxBranches y MaxUsers en esta entidad son la fuente de verdad
-        /// (permiten ajustes puntuales sin cambiar el plan).
         /// </summary>
         public int PlanId { get; set; }
         public Plan Plan { get; set; } = null!;

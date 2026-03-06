@@ -29,7 +29,6 @@ namespace DigiMenuAPI.Infrastructure.Entities
 
         /// <summary>
         /// Categoría en la que aparece este producto dentro de esta Branch.
-        /// Puede diferir de la categoría base del Product global.
         /// </summary>
         public int CategoryId { get; set; }
         public Category Category { get; set; } = null!;

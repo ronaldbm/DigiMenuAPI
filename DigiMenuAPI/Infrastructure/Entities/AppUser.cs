@@ -7,11 +7,13 @@ namespace DigiMenuAPI.Infrastructure.Entities
     ///
     /// Roles y alcance:
     ///   255 = SuperAdmin  → acceso total a la plataforma. BranchId = null.
+    ///   254 = SuperAdminCompany → acceso total a una Company específica. BranchId = null.
     ///     1 = CompanyAdmin → gestiona su Company y todas sus Branches. BranchId = null.
     ///     2 = BranchAdmin  → gestiona solo su Branch asignada. BranchId requerido.
     ///     3 = Staff        → acceso operativo limitado a su Branch. BranchId requerido.
     ///
     /// Jerarquía de creación:
+    ///   SuperAdminCompany → crea CompanyAdmins para su propia Company
     ///   SuperAdmin    → crea CompanyAdmins
     ///   CompanyAdmin  → crea BranchAdmins (asignados a una Branch)
     ///   BranchAdmin   → crea Staff (solo en su Branch)
@@ -34,7 +36,7 @@ namespace DigiMenuAPI.Infrastructure.Entities
         [Required]
         public string PasswordHash { get; set; } = null!;
 
-        /// <summary>255 = SuperAdmin | 1 = CompanyAdmin | 2 = BranchAdmin | 3 = Staff</summary>
+        /// <summary>255 = SuperAdmin | 254 = SuperAdminCompany | 1 = CompanyAdmin | 2 = BranchAdmin | 3 = Staff</summary>
         public byte Role { get; set; }
 
         public bool IsActive { get; set; } = true;

@@ -7,7 +7,12 @@ namespace DigiMenuAPI.Application.Interfaces
 {
     public interface IFooterLinkService
     {
-        Task<OperationResult<List<FooterLinkReadDto>>> GetAll();
+        /// <summary>
+        /// Devuelve los footer links de una Branch específica.
+        /// Valida que la Branch pertenece al tenant autenticado.
+        /// </summary>
+        Task<OperationResult<List<FooterLinkReadDto>>> GetAll(int branchId);
+
         Task<OperationResult<FooterLinkReadDto>> Create(FooterLinkCreateDto dto);
         Task<OperationResult<bool>> Update(FooterLinkUpdateDto dto);
         Task<OperationResult<bool>> Delete(int id);

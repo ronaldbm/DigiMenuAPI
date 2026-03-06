@@ -1,4 +1,5 @@
 ﻿using DigiMenuAPI.Application.DTOs.Auth;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,19 +19,19 @@ namespace DigiMenuAPI.Controllers
         /// <summary>Registro de nueva empresa + primer admin. Público.</summary>
         [HttpPost("register-company")]
         [AllowAnonymous]
-        public async Task<ActionResult> RegisterCompany([FromBody] RegisterCompanyDto dto)
+        public async Task<ActionResult> RegisterCompany([FromBody] CompanyCreateDto dto)
             => HandleResult(await _authService.RegisterCompany(dto));
 
         /// <summary>Login. Devuelve JWT con companyId, role, etc.</summary>
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<ActionResult> Login([FromBody] LoginDto dto)
+        public async Task<ActionResult> Login([FromBody] LoginRequestDto dto)
             => HandleResult(await _authService.Login(dto));
 
         /// <summary>Admin crea usuario staff dentro de su empresa.</summary>
         [HttpPost("register-user")]
         [Authorize]
-        public async Task<ActionResult> RegisterUser([FromBody] RegisterUserDto dto)
+        public async Task<ActionResult> RegisterUser([FromBody] AppUserCreateDto dto)
             => HandleResult(await _authService.RegisterUser(dto));
     }
 }
