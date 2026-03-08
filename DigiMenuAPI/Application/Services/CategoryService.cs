@@ -88,7 +88,7 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(c => c.Id == dto.Id && c.CompanyId == companyId);
 
             if (category is null)
-                return OperationResult<bool>.Fail("Categoría no encontrada.");
+                return OperationResult<bool>.NotFound("Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
 
             _mapper.Map(dto, category);
             await _context.SaveChangesAsync();
@@ -106,7 +106,7 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(c => c.Id == id && c.CompanyId == companyId);
 
             if (category is null)
-                return OperationResult<bool>.Fail("Categoría no encontrada.");
+                return OperationResult<bool>.NotFound("Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
 
             category.IsDeleted = true;
             await _context.SaveChangesAsync();

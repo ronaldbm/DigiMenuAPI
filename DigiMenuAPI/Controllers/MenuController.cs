@@ -17,13 +17,22 @@ namespace DigiMenuAPI.Controllers
         }
 
         /// <summary>
-        /// Menú público de una empresa identificada por su slug.
-        /// GET /api/menu/mi-restaurante
-        /// No requiere JWT.
+        /// Menú público de una Branch identificada por companySlug + branchSlug.
+        /// GET /api/menu/el-rancho/centro
+        ///
+        /// El cache se aplica por combinación de slugs (= por Branch específica).
+        /// Un cambio en la empresa A nunca invalida el cache de la empresa B.
+        ///
+        /// Invalidación desde servicios via ICacheService:
+        ///   menu-branch:{branchId}   → Setting, FooterLinks, BranchProducts.
+        ///   menu-company:{companyId} → Category, Product, Tag (catálogo global).
+        ///
+        /// No requiere JWT — endpoint público.
         /// </summary>
-        [HttpGet("{slug}")]
+        [HttpGet("{companySlug}/{branchSlug}")]
         [AllowAnonymous]
-        [OutputCache(Tags = ["tag-menu-publico"])]
-        public async Task<ActionResult> Get(string slug) => HandleResult(await _storeService.GetStoreMenu(slug));
+        [OutputCache(VaryByRouteValueNames = ["companySlug", "branchSlug"])]
+        public async Task<ActionResult> Get(string companySlug, string branchSlug)
+            => HandleResult(await _storeService.GetStoreMenu(companySlug, branchSlug));
     }
 }

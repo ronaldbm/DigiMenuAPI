@@ -7,13 +7,16 @@ namespace DigiMenuAPI.Infrastructure.Entities
     /// Cada Branch tiene su propio menú (BranchProducts), configuración visual,
     /// reservas, footer links y usuarios de staff.
     ///
-    /// El Slug es globalmente único y define la URL pública del menú:
-    ///   digimenu.app/{slug}
+    /// El Slug es único DENTRO de la Company (no globalmente).
+    /// La URL pública se forma con ambos slugs:
+    ///   {companySlug}.digimenu.cr/{branchSlug}
     ///
-    /// Jerarquía:
-    ///   Company (El Rancho S.A.)
-    ///     └── Branch (Sucursal Centro)   → digimenu.app/el-rancho-centro
-    ///     └── Branch (Sucursal Norte)    → digimenu.app/el-rancho-norte
+    /// Configuración separada en 5 entidades 1:1:
+    ///   BranchInfo     → Identidad del negocio
+    ///   BranchTheme    → Tema visual y layout
+    ///   BranchLocale   → Configuración regional
+    ///   BranchSeo      → SEO y analytics
+    ///   BranchReservationForm → Formulario de reservas (módulo RESERVATIONS)
     /// </summary>
     public class Branch : BaseEntity
     {
@@ -26,8 +29,9 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public string Name { get; set; } = null!;
 
         /// <summary>
-        /// Identificador único global para la URL pública del menú.
-        /// Ejemplo: "el-rancho-centro", "bar-luna-mall"
+        /// Identificador único dentro de la Company para la URL pública.
+        /// Único dentro de la Company, no globalmente.
+        /// La URL completa: {company.Slug}.digimenu.cr/{branch.Slug}
         /// </summary>
         [Required, MaxLength(60)]
         public string Slug { get; set; } = null!;
@@ -44,9 +48,18 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public bool IsActive { get; set; } = true;
         public bool IsDeleted { get; set; }
 
-        // ── Navegación ───────────────────────────────────────────────
-        /// <summary>Configuración visual y de comportamiento propia de esta sucursal.</summary>
-        public Setting? Setting { get; set; }
+        // ── Configuración (1:1) ───────────────────────────────────────
+        public BranchInfo? Info { get; set; }
+        public BranchTheme? Theme { get; set; }
+        public BranchLocale? Locale { get; set; }
+        public BranchSeo? Seo { get; set; }
+
+        /// <summary>
+        /// Solo existe si la Branch tiene activo el módulo RESERVATIONS.
+        /// </summary>
+        public BranchReservationForm? ReservationForm { get; set; }
+
+        // ── Contenido ─────────────────────────────────────────────────
         public ICollection<BranchProduct> BranchProducts { get; set; } = new List<BranchProduct>();
         public ICollection<FooterLink> FooterLinks { get; set; } = new List<FooterLink>();
         public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();

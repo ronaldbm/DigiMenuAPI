@@ -73,6 +73,7 @@ public partial class Program
         builder.Services.AddScoped<IReservationService, ReservationService>();
         builder.Services.AddScoped<IStoreService, StoreService>();
         builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+        builder.Services.AddScoped<ICacheService, CacheService>();
         builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
 
         // ── AUTOMAPPER + OUTPUTCACHE + CONTROLLERS ────────────────────────────

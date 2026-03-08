@@ -129,14 +129,14 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(p => p.Id == dto.Id && p.CompanyId == companyId);
 
             if (product is null)
-                return OperationResult<bool>.Fail("Producto no encontrado.");
+                return OperationResult<bool>.NotFound("Producto no encontrado.", errorKey: ErrorKeys.ProductNotFound);
 
             // Validar que la nueva categoría pertenece al mismo tenant
             var categoryBelongs = await _context.Categories
                 .AnyAsync(c => c.Id == dto.CategoryId && c.CompanyId == companyId);
 
             if (!categoryBelongs)
-                return OperationResult<bool>.Fail("La categoría no pertenece a tu empresa.");
+                return OperationResult<bool>.NotFound("La categoría no se ha encontrado a tu empresa.", errorKey: ErrorKeys.CategoryNotFound);
 
             _mapper.Map(dto, product);
 
@@ -169,7 +169,7 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
 
             if (product is null)
-                return OperationResult<bool>.Fail("Producto no encontrado.");
+                return OperationResult<bool>.Forbidden("Producto no encontrado.", errorKey: ErrorKeys.Forbidden);
 
             product.IsDeleted = true;
             await _context.SaveChangesAsync();

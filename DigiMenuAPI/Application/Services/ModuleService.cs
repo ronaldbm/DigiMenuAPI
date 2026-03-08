@@ -108,7 +108,7 @@ namespace DigiMenuAPI.Application.Services
         {
             var module = await _context.CompanyModules.FindAsync(companyModuleId);
             if (module is null)
-                return OperationResult<bool>.Fail("Activación no encontrada.");
+                return OperationResult<bool>.NotFound("Activación no encontrada.", errorKey: ErrorKeys.);
 
             module.IsActive = false;
             await _context.SaveChangesAsync();
@@ -120,7 +120,7 @@ namespace DigiMenuAPI.Application.Services
         {
             var module = await _context.CompanyModules.FindAsync(dto.CompanyModuleId);
             if (module is null)
-                return OperationResult<bool>.Fail("Activación no encontrada.");
+                return OperationResult<bool>.NotFound("Activación no encontrada.", errorKey: ErrorKeys.notf);
 
             module.ExpiresAt = dto.ExpiresAt;
             await _context.SaveChangesAsync();

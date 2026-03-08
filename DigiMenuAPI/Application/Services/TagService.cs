@@ -85,7 +85,7 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(t => t.Id == dto.Id && t.CompanyId == companyId);
 
             if (tag is null)
-                return OperationResult<bool>.Fail("Etiqueta no encontrada.");
+                return OperationResult<bool>.NotFound("Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
 
             _mapper.Map(dto, tag);
             await _context.SaveChangesAsync();
@@ -103,7 +103,7 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(t => t.Id == id && t.CompanyId == companyId);
 
             if (tag is null)
-                return OperationResult<bool>.Fail("Etiqueta no encontrada.");
+                return OperationResult<bool>.NotFound("Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
 
             tag.IsDeleted = true;
             await _context.SaveChangesAsync();

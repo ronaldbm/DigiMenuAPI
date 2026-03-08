@@ -29,14 +29,19 @@ namespace DigiMenuAPI.Controllers
             => HandleResult(await _service.GetAll());
 
         /// <summary>
-        /// Público: el cliente hace una reserva en la Branch identificada por slug.
-        /// POST api/reservations/el-rancho-centro
+        /// Público: el cliente hace una reserva en la Branch identificada por companySlug + branchSlug.
+        /// POST /api/reservations/el-rancho/centro
+        /// Branch.Slug es único dentro de la Company — se necesitan ambos slugs.
         /// </summary>
-        [HttpPost("{slug}")]
+        [HttpPost("{companySlug}/{branchSlug}")]
         [AllowAnonymous]
-        public async Task<ActionResult> Create(string slug, [FromBody] ReservationCreateDto dto)
+        public async Task<ActionResult> Create(
+            string companySlug,
+            string branchSlug,
+            [FromBody] ReservationCreateDto dto)
         {
-            var (branchId, companyId) = await _tenantService.ResolveByBranchSlugAsync(slug);
+            var (branchId, companyId) = await _tenantService
+                .ResolveBySlugAsync(companySlug, branchSlug);
 
             if (branchId is null || companyId is null)
                 return NotFound(new { Success = false, Message = "Sucursal no encontrada." });

@@ -77,16 +77,25 @@ namespace DigiMenuAPI.Application.Services
 
         // ── Resolución pública ────────────────────────────────────────
 
-        public async Task<(int? BranchId, int? CompanyId)> ResolveByBranchSlugAsync(string slug)
+        /// <inheritdoc/>
+        public async Task<(int? BranchId, int? CompanyId)> ResolveBySlugAsync(
+            string companySlug, string branchSlug)
         {
             // Scope propio para romper circularidad de dependencias
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            // Branch.Slug es el identificador público del menú
+            // Branch.Slug es único dentro de la Company — se necesitan ambos slugs.
+            // IgnoreQueryFilters: usamos IsActive/IsDeleted manualmente para control explícito.
             var result = await context.Branches
                 .AsNoTracking()
-                .Where(b => b.Slug == slug.ToLower().Trim() && b.IsActive)
+                .IgnoreQueryFilters()
+                .Where(b =>
+                    b.Company.Slug == companySlug.ToLower().Trim() &&
+                    b.Slug == branchSlug.ToLower().Trim() &&
+                    b.IsActive &&
+                    !b.IsDeleted &&
+                    b.Company.IsActive)
                 .Select(b => new { b.Id, b.CompanyId })
                 .FirstOrDefaultAsync();
 
@@ -96,6 +105,7 @@ namespace DigiMenuAPI.Application.Services
             return (result.Id, result.CompanyId);
         }
 
+        /// <inheritdoc/>
         public async Task ValidateBranchOwnershipAsync(int branchId)
         {
             var companyId = GetCompanyId();
@@ -114,7 +124,6 @@ namespace DigiMenuAPI.Application.Services
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            // IgnoreQueryFilters porque usamos IsActive en lugar de IsDeleted para branches activas
             var belongs = await context.Branches
                 .AsNoTracking()
                 .AnyAsync(b => b.Id == branchId && b.CompanyId == companyId);

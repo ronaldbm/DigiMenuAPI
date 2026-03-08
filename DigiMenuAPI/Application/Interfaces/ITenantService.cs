@@ -36,10 +36,13 @@
         // ── Resolución pública ────────────────────────────────────────
 
         /// <summary>
-        /// Resuelve el CompanyId a partir del slug de la Branch.
-        /// Usado en endpoints públicos sin JWT (ej: menú público, reservas públicas).
+        /// Resuelve BranchId y CompanyId a partir de companySlug + branchSlug.
+        /// Usado en endpoints públicos sin JWT (menú público, reservas públicas).
+        ///
+        /// El slug de Branch es único dentro de la Company, no globalmente.
+        /// Por eso se necesitan ambos slugs para resolver sin ambigüedad.
         /// </summary>
-        Task<(int? BranchId, int? CompanyId)> ResolveByBranchSlugAsync(string slug);
+        Task<(int? BranchId, int? CompanyId)> ResolveBySlugAsync(string companySlug, string branchSlug);
 
         /// <summary>
         /// Verifica que una Branch pertenece a la empresa del usuario autenticado.

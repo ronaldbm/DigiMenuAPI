@@ -163,18 +163,35 @@ namespace DigiMenuAPI.Application.Common
             CreateMap<TagUpdateDto, Tag>().ReverseMap();
         }
 
-        // ── Setting ───────────────────────────────────────────────────
+        // ── BranchSettings ────────────────────────────────────────────────────────
         private void SettingMappings()
         {
-            // Setting es 1:1 con Branch, todas las propiedades comparten nombre
-            CreateMap<Setting, SettingReadDto>();
+            // BranchInfo
+            CreateMap<BranchInfo, BranchInfoReadDto>();
+            CreateMap<BranchInfoUpdateDto, BranchInfo>()
+                .ForMember(d => d.LogoUrl, o => o.Ignore())           // servicio sube imagen
+                .ForMember(d => d.FaviconUrl, o => o.Ignore())        // servicio sube imagen
+                .ForMember(d => d.BackgroundImageUrl, o => o.Ignore()); // servicio sube imagen
 
-            // MenuBranchDto: derivado de Setting para el menú público
-            CreateMap<Setting, MenuBranchDto>()
-                .ForMember(d => d.Categories, o => o.Ignore())  // servicio inyecta
-                .ForMember(d => d.FooterLinks, o => o.Ignore()); // servicio inyecta
+            // BranchTheme
+            CreateMap<BranchTheme, BranchThemeReadDto>();
+            CreateMap<BranchThemeUpdateDto, BranchTheme>().ReverseMap();
 
-            CreateMap<SettingUpdateDto, Setting>().ReverseMap();
+            // BranchLocale
+            CreateMap<BranchLocale, BranchLocaleReadDto>();
+            CreateMap<BranchLocaleUpdateDto, BranchLocale>().ReverseMap();
+
+            // BranchSeo
+            CreateMap<BranchSeo, BranchSeoReadDto>();
+            CreateMap<BranchSeoUpdateDto, BranchSeo>().ReverseMap();
+
+            // BranchReservationForm
+            CreateMap<BranchReservationForm, BranchReservationFormReadDto>();
+            CreateMap<BranchReservationFormUpdateDto, BranchReservationForm>().ReverseMap();
+
+            // MenuBranchDto: se construye desde BranchInfo + BranchTheme + BranchLocale + BranchSeo
+            // La construcción se hace manualmente en StoreService — no hay un AutoMapper directo
+            // porque el origen es multi-entidad y el destino es un DTO plano compuesto.
         }
 
         // ── FooterLink ────────────────────────────────────────────────

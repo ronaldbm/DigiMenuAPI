@@ -32,7 +32,11 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
         // Por Branch
         public DbSet<BranchProduct> BranchProducts { get; set; }
-        public DbSet<Setting> Settings { get; set; }
+        public DbSet<BranchInfo> BranchInfos { get; set; }
+        public DbSet<BranchTheme> BranchThemes { get; set; }
+        public DbSet<BranchLocale> BranchLocales { get; set; }
+        public DbSet<BranchSeo> BranchSeos { get; set; }
+        public DbSet<BranchReservationForm> BranchReservationForms { get; set; }
         public DbSet<FooterLink> FooterLinks { get; set; }
         public DbSet<Reservation> Reservations { get; set; }
 
@@ -53,9 +57,12 @@ namespace DigiMenuAPI.Infrastructure.SQL
             ConfigureProductTranslation(modelBuilder);
             ConfigureTagTranslation(modelBuilder);
             ConfigureBranchProduct(modelBuilder);
-            ConfigureSetting(modelBuilder);
             ConfigureFooterLink(modelBuilder);
-            ConfigureReservation(modelBuilder);
+            ConfigureBranchInfo(modelBuilder);
+            ConfigureBranchTheme(modelBuilder);
+            ConfigureBranchLocale(modelBuilder);
+            ConfigureBranchSeo(modelBuilder);
+            ConfigureBranchReservationForm(modelBuilder); ConfigureReservation(modelBuilder);
 
             SeedData(modelBuilder);
         }
@@ -112,8 +119,10 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 e.Property(br => br.Phone).HasMaxLength(20);
                 e.Property(br => br.Email).HasMaxLength(150);
 
-                // Slug único global para las URLs del menú público: digimenu.app/{slug}
-                e.HasIndex(br => br.Slug).IsUnique();
+                // Slug único DENTRO de la Company — dos empresas distintas pueden
+                // tener branches con el mismo slug sin conflicto.
+                // La URL pública usa {company.Slug}.digimenu.cr/{branch.Slug}
+                e.HasIndex(br => new { br.CompanyId, br.Slug }).IsUnique();
                 e.HasIndex(br => new { br.CompanyId, br.IsDeleted });
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true / IsActive = false).
@@ -122,11 +131,38 @@ namespace DigiMenuAPI.Infrastructure.SQL
                  .HasForeignKey(br => br.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
 
+                // Relaciones 1:1 con las 5 entidades de configuración.
+                // Cada una se configura en su propio método Configure*, aquí solo
+                // se declara el lado inverso para que EF resuelva correctamente el grafo.
+                e.HasOne(br => br.Info)
+                 .WithOne(i => i.Branch)
+                 .HasForeignKey<BranchInfo>(i => i.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(br => br.Theme)
+                 .WithOne(t => t.Branch)
+                 .HasForeignKey<BranchTheme>(t => t.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(br => br.Locale)
+                 .WithOne(l => l.Branch)
+                 .HasForeignKey<BranchLocale>(l => l.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(br => br.Seo)
+                 .WithOne(s => s.Branch)
+                 .HasForeignKey<BranchSeo>(s => s.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(br => br.ReservationForm)
+                 .WithOne(f => f.Branch)
+                 .HasForeignKey<BranchReservationForm>(f => f.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
                 // Filtro global: excluye branches eliminadas de todas las consultas
                 e.HasQueryFilter(br => !br.IsDeleted);
             });
         }
-
         private static void ConfigureAppUser(ModelBuilder b)
         {
             b.Entity<AppUser>(e =>
@@ -354,36 +390,106 @@ namespace DigiMenuAPI.Infrastructure.SQL
             });
         }
 
-        private static void ConfigureSetting(ModelBuilder b)
+        // ── Métodos de configuración ──────────────────────────────────────────────
+        private static void ConfigureBranchInfo(ModelBuilder b)
         {
-            b.Entity<Setting>(e =>
+            b.Entity<BranchInfo>(e =>
+            {
+                e.HasKey(i => i.Id);
+                e.Property(i => i.BusinessName).IsRequired().HasMaxLength(100);
+                e.Property(i => i.Tagline).HasMaxLength(200);
+
+                // 1:1 con Branch
+                e.HasIndex(i => i.BranchId).IsUnique();
+                e.HasOne(i => i.Branch)
+                 .WithOne(br => br.Info)
+                 .HasForeignKey<BranchInfo>(i => i.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureBranchTheme(ModelBuilder b)
+        {
+            b.Entity<BranchTheme>(e =>
+            {
+                e.HasKey(t => t.Id);
+
+                // Valores por defecto de colores
+                e.Property(t => t.PageBackgroundColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
+                e.Property(t => t.HeaderBackgroundColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
+                e.Property(t => t.HeaderTextColor).HasMaxLength(7).HasDefaultValue("#000000");
+                e.Property(t => t.TabBackgroundColor).HasMaxLength(7).HasDefaultValue("#000000");
+                e.Property(t => t.TabTextColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
+                e.Property(t => t.PrimaryColor).HasMaxLength(7).HasDefaultValue("#E63946");
+                e.Property(t => t.PrimaryTextColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
+                e.Property(t => t.SecondaryColor).HasMaxLength(7).HasDefaultValue("#457B9D");
+                e.Property(t => t.TitlesColor).HasMaxLength(7).HasDefaultValue("#000000");
+                e.Property(t => t.TextColor).HasMaxLength(7).HasDefaultValue("#1D3557");
+                e.Property(t => t.BrowserThemeColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
+                e.Property(t => t.HeaderStyle).HasColumnType("tinyint").HasDefaultValue((byte)1);
+                e.Property(t => t.MenuLayout).HasColumnType("tinyint").HasDefaultValue((byte)1);
+                e.Property(t => t.ProductDisplay).HasColumnType("tinyint").HasDefaultValue((byte)1);
+
+                // 1:1 con Branch
+                e.HasIndex(t => t.BranchId).IsUnique();
+                e.HasOne(t => t.Branch)
+                 .WithOne(br => br.Theme)
+                 .HasForeignKey<BranchTheme>(t => t.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureBranchLocale(ModelBuilder b)
+        {
+            b.Entity<BranchLocale>(e =>
+            {
+                e.HasKey(l => l.Id);
+                e.Property(l => l.CountryCode).IsRequired().HasMaxLength(3);
+                e.Property(l => l.PhoneCode).IsRequired().HasMaxLength(6);
+                e.Property(l => l.Currency).IsRequired().HasMaxLength(5);
+                e.Property(l => l.CurrencyLocale).IsRequired().HasMaxLength(10);
+                e.Property(l => l.Language).IsRequired().HasMaxLength(5);
+                e.Property(l => l.TimeZone).IsRequired().HasMaxLength(50);
+
+                // 1:1 con Branch
+                e.HasIndex(l => l.BranchId).IsUnique();
+                e.HasOne(l => l.Branch)
+                 .WithOne(br => br.Locale)
+                 .HasForeignKey<BranchLocale>(l => l.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureBranchSeo(ModelBuilder b)
+        {
+            b.Entity<BranchSeo>(e =>
             {
                 e.HasKey(s => s.Id);
+                e.Property(s => s.MetaTitle).HasMaxLength(100);
+                e.Property(s => s.MetaDescription).HasMaxLength(300);
+                e.Property(s => s.GoogleAnalyticsId).HasMaxLength(50);
+                e.Property(s => s.FacebookPixelId).HasMaxLength(50);
 
-                // Colores con valores por defecto
-                e.Property(s => s.PageBackgroundColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(s => s.HeaderBackgroundColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(s => s.HeaderTextColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(s => s.TabBackgroundColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(s => s.TabTextColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(s => s.PrimaryColor).HasMaxLength(7).HasDefaultValue("#E63946");
-                e.Property(s => s.PrimaryTextColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(s => s.SecondaryColor).HasMaxLength(7).HasDefaultValue("#457B9D");
-                e.Property(s => s.TitlesColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(s => s.TextColor).HasMaxLength(7).HasDefaultValue("#1D3557");
-                e.Property(s => s.BrowserThemeColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-
-                e.Property(s => s.HeaderStyle).HasColumnType("tinyint").HasDefaultValue((byte)1);
-                e.Property(s => s.MenuLayout).HasColumnType("tinyint").HasDefaultValue((byte)1);
-                e.Property(s => s.ProductDisplay).HasColumnType("tinyint").HasDefaultValue((byte)1);
-
-                // Relación 1:1 Branch → Setting (índice único en BranchId)
+                // 1:1 con Branch
                 e.HasIndex(s => s.BranchId).IsUnique();
-
-                // RESTRICT: el borrado de Branch se gestiona lógicamente (IsDeleted = true).
                 e.HasOne(s => s.Branch)
-                 .WithOne(br => br.Setting)
-                 .HasForeignKey<Setting>(s => s.BranchId)
+                 .WithOne(br => br.Seo)
+                 .HasForeignKey<BranchSeo>(s => s.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureBranchReservationForm(ModelBuilder b)
+        {
+            b.Entity<BranchReservationForm>(e =>
+            {
+                e.HasKey(f => f.Id);
+
+                // 1:1 con Branch — opcional, solo existe si el módulo está activo
+                e.HasIndex(f => f.BranchId).IsUnique();
+                e.HasOne(f => f.Branch)
+                 .WithOne(br => br.ReservationForm)
+                 .HasForeignKey<BranchReservationForm>(f => f.BranchId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
         }
@@ -450,7 +556,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
             SeedMasterCompany(b);
             SeedMasterBranch(b);
             SeedMasterUser(b);
-            SeedMasterSetting(b);
+            SeedMasterBranchConfig(b);
             SeedMasterTags(b);
             SeedMasterCategories(b);
             SeedMasterProducts(b);
@@ -598,59 +704,94 @@ namespace DigiMenuAPI.Infrastructure.SQL
             });
         }
 
-        private static void SeedMasterSetting(ModelBuilder b)
+        private static void SeedMasterBranchConfig(ModelBuilder b)
         {
-            b.Entity<Setting>().HasData(new Setting
+            var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            b.Entity<BranchInfo>().HasData(new BranchInfo
             {
-                Id                   = 1,
-                BranchId             = 1,
-                BusinessName         = "DigiMenu Demo",
-                Tagline              = "El mejor menú digital para tu restaurante",
-                IsDarkMode           = false,
-                PageBackgroundColor  = "#F1FAEE",
-                HeaderBackgroundColor= "#1D3557",
-                HeaderTextColor      = "#FFFFFF",
-                TabBackgroundColor   = "#457B9D",
-                TabTextColor         = "#FFFFFF",
-                PrimaryColor         = "#E63946",
-                PrimaryTextColor     = "#FFFFFF",
-                SecondaryColor       = "#457B9D",
-                TitlesColor          = "#1D3557",
-                TextColor            = "#1D3557",
-                BrowserThemeColor    = "#1D3557",
-                HeaderStyle          = 1,
-                MenuLayout           = 1,
-                ProductDisplay       = 1,
-                ShowProductDetails   = true,
-                ShowSearchButton     = true,
-                ShowContactButton    = true,
-                CountryCode          = "CR",
-                PhoneCode            = "+506",
-                Currency             = "CRC",
-                CurrencyLocale       = "es-CR",
-                Language             = "es",
-                TimeZone             = "America/Costa_Rica",
-                Decimals             = 0,
-                MetaTitle            = "DigiMenu Demo",
-                MetaDescription      = "El mejor menú digital para tu restaurante",
-                FormShowName         = true,
-                FormRequireName      = true,
-                FormShowPhone        = true,
-                FormRequirePhone     = true,
-                FormShowTable        = false,
-                FormRequireTable     = false,
-                FormShowPersons      = true,
-                FormRequirePersons   = true,
-                FormShowAllergies    = false,
+                Id = 1,
+                BranchId = 1,
+                BusinessName = "DigiMenu Demo",
+                Tagline = "El mejor menú digital para tu restaurante",
+                LogoUrl = null,
+                FaviconUrl = null,
+                BackgroundImageUrl = null,
+                CreatedAt = seed
+            });
+
+            b.Entity<BranchTheme>().HasData(new BranchTheme
+            {
+                Id = 1,
+                BranchId = 1,
+                IsDarkMode = false,
+                PageBackgroundColor = "#F1FAEE",
+                HeaderBackgroundColor = "#1D3557",
+                HeaderTextColor = "#FFFFFF",
+                TabBackgroundColor = "#457B9D",
+                TabTextColor = "#FFFFFF",
+                PrimaryColor = "#E63946",
+                PrimaryTextColor = "#FFFFFF",
+                SecondaryColor = "#457B9D",
+                TitlesColor = "#1D3557",
+                TextColor = "#1D3557",
+                BrowserThemeColor = "#1D3557",
+                HeaderStyle = 1,
+                MenuLayout = 1,
+                ProductDisplay = 1,
+                ShowProductDetails = true,
+                ShowSearchButton = true,
+                ShowContactButton = true,
+                CreatedAt = seed
+            });
+
+            b.Entity<BranchLocale>().HasData(new BranchLocale
+            {
+                Id = 1,
+                BranchId = 1,
+                CountryCode = "CR",
+                PhoneCode = "+506",
+                Currency = "CRC",
+                CurrencyLocale = "es-CR",
+                Language = "es",
+                TimeZone = "America/Costa_Rica",
+                Decimals = 0,
+                CreatedAt = seed
+            });
+
+            b.Entity<BranchSeo>().HasData(new BranchSeo
+            {
+                Id = 1,
+                BranchId = 1,
+                MetaTitle = "DigiMenu Demo",
+                MetaDescription = "El mejor menú digital para tu restaurante",
+                GoogleAnalyticsId = null,
+                FacebookPixelId = null,
+                CreatedAt = seed
+            });
+
+            // BranchReservationForm del seed — la empresa demo tiene el módulo activo
+            b.Entity<BranchReservationForm>().HasData(new BranchReservationForm
+            {
+                Id = 1,
+                BranchId = 1,
+                FormShowName = true,
+                FormRequireName = true,
+                FormShowPhone = true,
+                FormRequirePhone = true,
+                FormShowTable = false,
+                FormRequireTable = false,
+                FormShowPersons = true,
+                FormRequirePersons = true,
+                FormShowAllergies = false,
                 FormRequireAllergies = false,
-                FormShowBirthday     = false,
-                FormRequireBirthday  = false,
-                FormShowComments     = true,
-                FormRequireComments  = false,
-                CreatedAt            = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                FormShowBirthday = false,
+                FormRequireBirthday = false,
+                FormShowComments = true,
+                FormRequireComments = false,
+                CreatedAt = seed
             });
         }
-
         private static void SeedMasterTags(ModelBuilder b)
         {
             var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);

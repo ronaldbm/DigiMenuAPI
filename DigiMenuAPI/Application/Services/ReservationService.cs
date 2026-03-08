@@ -90,11 +90,11 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(r => r.Id == id && r.Branch.CompanyId == companyId);
 
             if (res is null)
-                return OperationResult<bool>.Fail("Reserva no encontrada.");
+                return OperationResult<bool>.NotFound("Reserva no encontrada.", errorKey: ErrorKeys.ReservationNotFound);
 
             // BranchAdmin/Staff solo pueden operar sobre su Branch
             if (branchId.HasValue && res.BranchId != branchId.Value)
-                return OperationResult<bool>.Fail("No tienes permiso para modificar esta reserva.");
+                return OperationResult<bool>.Forbidden("No tienes permiso para modificar esta reserva.", errorKey: ErrorKeys.Forbidden);
 
             res.Status = newStatus;
             await _context.SaveChangesAsync();
@@ -111,10 +111,10 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(r => r.Id == id && r.Branch.CompanyId == companyId);
 
             if (res is null)
-                return OperationResult<bool>.Fail("Reserva no encontrada.");
+                return OperationResult<bool>.NotFound("Reserva no encontrada.", errorKey: ErrorKeys.ReservationNotFound);
 
             if (branchId.HasValue && res.BranchId != branchId.Value)
-                return OperationResult<bool>.Fail("No tienes permiso para eliminar esta reserva.");
+                return OperationResult<bool>.Forbidden("No tienes permiso para eliminar esta reserva.", errorKey: ErrorKeys.Forbidden);
 
             res.IsDeleted = true;
             await _context.SaveChangesAsync();

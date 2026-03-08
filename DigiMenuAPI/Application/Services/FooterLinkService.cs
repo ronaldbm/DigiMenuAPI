@@ -77,12 +77,12 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(f => f.Id == dto.Id && f.Branch.CompanyId == companyId);
 
             if (link is null)
-                return OperationResult<bool>.Fail("Enlace no encontrado.");
+                return OperationResult<bool>.NotFound("Enlace no encontrado.", errorKey: ErrorKeys.FooterLinkNotFound);
 
             // BranchAdmin/Staff: validar que el link pertenece a su propia Branch
             var ownBranchId = _tenantService.TryGetBranchId();
             if (ownBranchId.HasValue && link.BranchId != ownBranchId.Value)
-                return OperationResult<bool>.Fail("No tienes permiso para modificar este enlace.");
+                return OperationResult<bool>.Forbidden("No tienes permiso para modificar este enlace.", errorKey: ErrorKeys.FooterLinkNotOwned);
 
             _mapper.Map(dto, link);
             await _context.SaveChangesAsync();
@@ -101,12 +101,12 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(f => f.Id == id && f.Branch.CompanyId == companyId);
 
             if (link is null)
-                return OperationResult<bool>.Fail("Enlace no encontrado.");
+                return OperationResult<bool>.NotFound("Enlace no encontrado.", errorKey: ErrorKeys.FooterLinkNotFound);
 
             // BranchAdmin/Staff: validar que el link pertenece a su propia Branch
             var ownBranchId = _tenantService.TryGetBranchId();
             if (ownBranchId.HasValue && link.BranchId != ownBranchId.Value)
-                return OperationResult<bool>.Fail("No tienes permiso para eliminar este enlace.");
+                return OperationResult<bool>.Forbidden("No tienes permiso para eliminar este enlace.", errorKey: ErrorKeys.TagNotOwned);
 
             link.IsDeleted = true;
             await _context.SaveChangesAsync();
