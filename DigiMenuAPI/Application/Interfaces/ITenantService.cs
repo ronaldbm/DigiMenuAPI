@@ -50,5 +50,11 @@
         /// Lanza UnauthorizedAccessException si no pasa la validación.
         /// </summary>
         Task ValidateBranchOwnershipAsync(int branchId);
+
+        /// <summary>
+        /// Devuelve el UserId del JWT o null si no hay sesión activa.
+        /// Para contextos donde el usuario puede ser anónimo.
+        /// </summary>
+        int? TryGetUserId();
     }
 }

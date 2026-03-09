@@ -1,4 +1,3 @@
-using BCrypt.Net;
 using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Application.DTOs.Auth;
 using DigiMenuAPI.Application.DTOs.Create;
@@ -37,15 +36,22 @@ namespace DigiMenuAPI.Application.Services
             var companySlug = SlugHelper.Slugify(dto.Slug);
             var email = dto.Email.Trim().ToLower();
 
-            // Slug único globalmente a nivel de Company (define el subdominio)
+            // Validar complejidad de contraseña del primer admin
+            var passwordError = PasswordValidator.Validate(dto.Password);
+            if (passwordError is not null)
+                return OperationResult<LoginResponseDto>.ValidationError(
+                    passwordError, ErrorKeys.WeakPassword);
+
             if (await _context.Companies.AnyAsync(c => c.Slug == companySlug))
-                return OperationResult<LoginResponseDto>.Fail(
-                    "El slug ya está en uso. Elige otro identificador.");
+                return OperationResult<LoginResponseDto>.Conflict(
+                    "El slug ya está en uso. Elige otro identificador.",
+                    ErrorKeys.SlugAlreadyExists);
 
             if (await _context.Users.IgnoreQueryFilters()
                     .AnyAsync(u => u.Email == email))
-                return OperationResult<LoginResponseDto>.Fail(
-                    "El email del administrador ya está registrado.");
+                return OperationResult<LoginResponseDto>.Conflict(
+                    "El email del administrador ya está registrado.",
+                    ErrorKeys.EmailAlreadyExists);
 
             // 1. Crear Company
             var company = new Company
@@ -60,10 +66,7 @@ namespace DigiMenuAPI.Application.Services
             _context.Companies.Add(company);
             await _context.SaveChangesAsync();
 
-            // 2. Crear Branch principal.
-            //    SlugHelper.GenerateUnique garantiza unicidad dentro de la Company.
-            //    La Company recién creada no tiene branches, pero se usa el helper
-            //    por consistencia y para reutilizar la misma lógica en BranchService.
+            // 2. Crear Branch principal
             var existingBranchSlugs = await _context.Branches
                 .Where(b => b.CompanyId == company.Id)
                 .Select(b => b.Slug)
@@ -75,21 +78,20 @@ namespace DigiMenuAPI.Application.Services
             {
                 CompanyId = company.Id,
                 Name = dto.Name.Trim(),
-                Slug = branchSlug,     // → {companySlug}.digimenu.cr/principal
+                Slug = branchSlug,
                 IsActive = true
             };
             _context.Branches.Add(branch);
             await _context.SaveChangesAsync();
 
-            // 3. Crear BranchInfo — identidad del negocio
+            // 3. Crear BranchInfo
             _context.BranchInfos.Add(new BranchInfo
             {
                 BranchId = branch.Id,
                 BusinessName = dto.Name.Trim()
-                // Tagline, Logo, Favicon, BackgroundImage → el admin los completa luego
             });
 
-            // 4. Crear BranchTheme — tema visual con colores por defecto de DigiMenu
+            // 4. Crear BranchTheme
             _context.BranchThemes.Add(new BranchTheme
             {
                 BranchId = branch.Id,
@@ -113,7 +115,7 @@ namespace DigiMenuAPI.Application.Services
                 ShowContactButton = false
             });
 
-            // 5. Crear BranchLocale — configuración regional derivada del registro
+            // 5. Crear BranchLocale
             _context.BranchLocales.Add(new BranchLocale
             {
                 BranchId = branch.Id,
@@ -126,27 +128,24 @@ namespace DigiMenuAPI.Application.Services
                 Decimals = 2
             });
 
-            // 6. Crear BranchSeo — vacío, el admin lo completa luego
+            // 6. Crear BranchSeo
             _context.BranchSeos.Add(new BranchSeo
             {
                 BranchId = branch.Id
-                // Todos los campos son opcionales
             });
 
-            // BranchReservationForm NO se crea aquí.
-            // Se crea cuando el CompanyAdmin activa el módulo RESERVATIONS
-            // desde el panel de módulos (ModuleService).
-
-            // 7. Crear CompanyAdmin (BranchId = null → gestiona toda la empresa)
+            // 7. Crear CompanyAdmin
+            // MustChangePassword = false — el admin registra su propia contraseña
             var admin = new AppUser
             {
-                FullName = "Admin " + dto.Name,
+                FullName = dto.AdminFullName.Trim(),
                 Email = email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin1234"),
-                Role = 1,    // CompanyAdmin
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                Role = UserRoles.CompanyAdmin,
                 CompanyId = company.Id,
-                BranchId = null, // CompanyAdmin no pertenece a una Branch específica
-                IsActive = true
+                BranchId = null,
+                IsActive = true,
+                MustChangePassword = false
             };
             _context.Users.Add(admin);
             await _context.SaveChangesAsync();
@@ -166,42 +165,52 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync(u => u.Email == email);
 
             if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                return OperationResult<LoginResponseDto>.Fail("Credenciales incorrectas.");
+                return OperationResult<LoginResponseDto>.Fail(
+                    "Credenciales incorrectas.",
+                    OperationResultError.Forbidden,
+                    ErrorKeys.InvalidCredentials);
 
             if (!user.IsActive)
-                return OperationResult<LoginResponseDto>.Fail(
-                    "Tu cuenta está desactivada.");
+                return OperationResult<LoginResponseDto>.Forbidden(
+                    "Tu cuenta está desactivada.",
+                    ErrorKeys.AccountDisabled);
 
             if (!user.Company.IsActive)
-                return OperationResult<LoginResponseDto>.Fail(
-                    "Tu empresa está desactivada. Contacta al soporte.");
+                return OperationResult<LoginResponseDto>.Forbidden(
+                    "Tu empresa está desactivada. Contacta al soporte.",
+                    ErrorKeys.CompanyDisabled);
 
             user.LastLoginAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             var token = GenerateJwt(user, user.Company);
             return OperationResult<LoginResponseDto>.Ok(BuildResult(user, user.Company, token));
+            // MustChangePassword se incluye en BuildResult — el frontend lo lee y redirige
         }
 
-        // ── REGISTER USER (CompanyAdmin crea staff) ───────────────────
+        // ── REGISTER USER ─────────────────────────────────────────────
         public async Task<OperationResult<bool>> RegisterUser(AppUserCreateDto dto)
         {
             var companyId = _tenantService.GetCompanyId();
+            var callerRole = _tenantService.GetUserRole();
             var email = dto.Email.Trim().ToLower();
 
             if (await _context.Users.IgnoreQueryFilters()
                     .AnyAsync(u => u.Email == email))
-                return OperationResult<bool>.ValidationError("El email ya está registrado.", errorKey: ErrorKeys.EmailAlreadyExists);
+                return OperationResult<bool>.Conflict(
+                    "El email ya está registrado.",
+                    ErrorKeys.EmailAlreadyExists);
 
-            if (dto.Role == 255)
-                return OperationResult<bool>.Forbidden("No puedes asignar el rol SuperAdmin.", errorKey: ErrorKeys.CannotAssignSuperAdmin);
+            if (!UserRoles.CanAssign(callerRole, dto.Role))
+                return OperationResult<bool>.Forbidden(
+                    "No tienes permiso para asignar este rol.",
+                    ErrorKeys.CannotAssignSuperAdmin);
 
-            // BranchAdmin y Staff deben tener BranchId
-            if (dto.Role is 2 or 3 && dto.BranchId is null)
+            if (UserRoles.NeedsBranch(dto.Role) && dto.BranchId is null)
                 return OperationResult<bool>.ValidationError(
-                    "BranchAdmin y Staff deben estar asignados a una sucursal.", errorKey: ErrorKeys.ValidationFailed);
+                    "BranchAdmin y Staff deben estar asignados a una sucursal.",
+                    ErrorKeys.BranchRequiredForRole);
 
-            // Validar que la Branch pertenece a la empresa del admin
             if (dto.BranchId.HasValue)
             {
                 var branchBelongs = await _context.Branches
@@ -209,20 +218,70 @@ namespace DigiMenuAPI.Application.Services
 
                 if (!branchBelongs)
                     return OperationResult<bool>.NotFound(
-                        "La sucursal indicada no pertenece a tu empresa.", errorKey: ErrorKeys.BranchNotFound);
+                        "La sucursal indicada no pertenece a tu empresa.",
+                        ErrorKeys.BranchNotFound);
             }
+
+            // Generar contraseña temporal — el usuario deberá cambiarla en su primer login
+            var temporaryPassword = PasswordValidator.GenerateTemporary();
 
             var user = new AppUser
             {
                 FullName = dto.FullName.Trim(),
                 Email = email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(temporaryPassword),
                 Role = dto.Role,
                 CompanyId = companyId,
                 BranchId = dto.BranchId,
-                IsActive = true
+                IsActive = true,
+                MustChangePassword = true   // ← forzar cambio en primer login
             };
             _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            // TODO: enviar email con contraseña temporal via SendGrid
+            // await _emailService.SendTemporaryPasswordAsync(user.Email, temporaryPassword);
+            // Por ahora la contraseña temporal se devuelve en la respuesta para
+            // que el CompanyAdmin pueda entregársela al usuario manualmente.
+            // IMPORTANTE: eliminar este campo cuando se integre el email.
+
+            return OperationResult<bool>.Ok(true, $"Usuario creado. Contraseña temporal: {temporaryPassword}");
+        }
+
+        // ── CHANGE PASSWORD ───────────────────────────────────────────
+        public async Task<OperationResult<bool>> ChangePassword(ChangePasswordDto dto)
+        {
+            var userId = _tenantService.GetUserId();
+
+            var user = await _context.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user is null)
+                return OperationResult<bool>.NotFound(
+                    "Usuario no encontrado.",
+                    ErrorKeys.Unauthorized);
+
+            // Verificar contraseña actual
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+                return OperationResult<bool>.ValidationError(
+                    "La contraseña actual es incorrecta.",
+                    ErrorKeys.IncorrectPassword);
+
+            // Validar complejidad de la nueva contraseña
+            var passwordError = PasswordValidator.Validate(dto.NewPassword);
+            if (passwordError is not null)
+                return OperationResult<bool>.ValidationError(
+                    passwordError, ErrorKeys.WeakPassword);
+
+            // Evitar reusar la misma contraseña
+            if (BCrypt.Net.BCrypt.Verify(dto.NewPassword, user.PasswordHash))
+                return OperationResult<bool>.ValidationError(
+                    "La nueva contraseña debe ser diferente a la actual.",
+                    ErrorKeys.WeakPassword);
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            user.MustChangePassword = false;  // ← limpiar flag
             await _context.SaveChangesAsync();
 
             return OperationResult<bool>.Ok(true);
@@ -247,8 +306,7 @@ namespace DigiMenuAPI.Application.Services
                 new("fullName",    user.FullName)
             };
 
-            // branchId solo para BranchAdmin (2) y Staff (3)
-            if (user.BranchId.HasValue)
+            if (UserRoles.NeedsBranch(user.Role) && user.BranchId.HasValue)
                 claims.Add(new Claim("branchId", user.BranchId.Value.ToString()));
 
             var token = new JwtSecurityToken(
@@ -274,12 +332,11 @@ namespace DigiMenuAPI.Application.Services
                 BranchId: user.BranchId,
                 BranchName: user.BranchId.HasValue ? user.Branch?.Name : null,
                 Role: user.Role,
-                ExpiresAt: DateTime.UtcNow.AddHours(8)
+                ExpiresAt: DateTime.UtcNow.AddHours(8),
+                MustChangePassword: user.MustChangePassword  // ← nuevo campo
             );
 
-        // ── Helpers de localización por país ──────────────────────────
-        // Valores por defecto razonables para los países objetivo del SaaS.
-        // El admin puede ajustar desde BranchLocale en cualquier momento.
+        // ── Helpers de localización ───────────────────────────────────
 
         private static string ResolvePhoneCode(string? countryCode) =>
             countryCode?.ToUpper() switch
@@ -292,7 +349,7 @@ namespace DigiMenuAPI.Application.Services
                 "SV" => "+503",
                 "HN" => "+504",
                 "NI" => "+505",
-                _ => "+506"  // CR por defecto
+                _ => "+506"
             };
 
         private static string ResolveCurrency(string? countryCode) =>

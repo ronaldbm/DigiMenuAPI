@@ -37,6 +37,11 @@
         public const string CannotAssignSuperAdmin = "CANNOT_ASSIGN_SUPER_ADMIN";
         public const string BranchRequiredForRole = "BRANCH_REQUIRED_FOR_ROLE";
 
+        public const string WeakPassword = "WEAK_PASSWORD";
+        public const string IncorrectPassword = "INCORRECT_PASSWORD";
+        public const string MustChangePassword = "MUST_CHANGE_PASSWORD";
+        public const string PasswordChangeFailed = "PASSWORD_CHANGE_FAILED";
+
         // ── Company ───────────────────────────────────────────────────
         public const string CompanyNotFound = "COMPANY_NOT_FOUND";
 

@@ -22,7 +22,7 @@ namespace DigiMenuAPI.Controllers
         public async Task<ActionResult> RegisterCompany([FromBody] CompanyCreateDto dto)
             => HandleResult(await _authService.RegisterCompany(dto));
 
-        /// <summary>Login. Devuelve JWT con companyId, role, etc.</summary>
+        /// <summary>Login. Devuelve JWT + MustChangePassword flag.</summary>
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult> Login([FromBody] LoginRequestDto dto)
@@ -33,5 +33,14 @@ namespace DigiMenuAPI.Controllers
         [Authorize]
         public async Task<ActionResult> RegisterUser([FromBody] AppUserCreateDto dto)
             => HandleResult(await _authService.RegisterUser(dto));
+
+        /// <summary>
+        /// Cambia la contraseña del usuario autenticado.
+        /// Requiere la contraseña actual. Limpia MustChangePassword al completarse.
+        /// </summary>
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+            => HandleResult(await _authService.ChangePassword(dto));
     }
 }

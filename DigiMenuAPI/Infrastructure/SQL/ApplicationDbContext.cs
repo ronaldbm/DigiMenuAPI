@@ -1,12 +1,23 @@
+using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Security.Claims;
 
 namespace DigiMenuAPI.Infrastructure.SQL
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public ApplicationDbContext(
+            DbContextOptions<ApplicationDbContext> options,
+            IHttpContextAccessor httpContextAccessor)
+            : base(options)
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
 
         // ── Tablas ───────────────────────────────────────────────────
         // Plataforma (gestionadas por SuperAdmin)
@@ -697,7 +708,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 FullName     = "Super Admin",
                 Email        = "admin@digimenu.app",
                 PasswordHash = "$2a$12$REEMPLAZAR_CON_HASH_REAL",
-                Role         = 255,
+                Role         = UserRoles.SuperAdmin,
                 IsActive     = true,
                 IsDeleted    = false,
                 CreatedAt    = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
@@ -888,21 +899,49 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
         private void ApplyAuditInfo()
         {
-            var entries = ChangeTracker.Entries<BaseEntity>();
+            // Leer userId del JWT una sola vez para todas las entidades del batch
+            var userId = ResolveCurrentUserId();
+            var now = DateTime.UtcNow;
 
-            foreach (var entry in entries)
+            foreach (var entry in ChangeTracker.Entries<BaseEntity>())
             {
                 if (entry.State == EntityState.Added)
                 {
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                    entry.Entity.CreatedAt = now;
+                    entry.Entity.CreatedUserId = userId;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
-                    entry.Entity.ModifiedAt = DateTime.UtcNow;
-                    // Evitamos que se modifique la fecha de creación original
+                    entry.Entity.ModifiedAt = now;
+                    entry.Entity.ModifiedUserId = userId;
+
+                    // Proteger campos de creación — nunca se sobreescriben
                     entry.Property(x => x.CreatedAt).IsModified = false;
+                    entry.Property(x => x.CreatedUserId).IsModified = false;
                 }
             }
+        }
+
+        /// <summary>
+        /// Extrae el UserId del JWT del HttpContext actual.
+        /// Devuelve null en:
+        ///   - Contextos sin request HTTP (migraciones, seed, background jobs)
+        ///   - Endpoints públicos sin JWT (menú público, reservas anónimas)
+        ///   - JWT sin claim "userId"
+        /// </summary>
+        private int? ResolveCurrentUserId()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+
+            if (user is null || user.Identity?.IsAuthenticated != true)
+                return null;
+
+            var claim = user.FindFirstValue("userId");
+
+            if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
+                return null;
+
+            return userId;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

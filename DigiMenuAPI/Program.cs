@@ -8,6 +8,7 @@ using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Text;
+using DigiMenuAPI.Application.Utils;
 
 public partial class Program
 {
@@ -23,14 +24,14 @@ public partial class Program
 
         builder.Host.UseSerilog();
 
-        // ── DATABASE ─────────────────────────────────────────────────────────
-        builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
         // ── MULTI-TENANT ─────────────────────────────────────────────────────
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ITenantService, TenantService>();
 
+        // ── DATABASE ─────────────────────────────────────────────────────────
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        
         // ── MODULE GUARD ─────────────────────────────────────────────────────
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<IModuleGuard, ModuleGuard>();

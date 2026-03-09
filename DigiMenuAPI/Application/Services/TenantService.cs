@@ -1,4 +1,5 @@
-﻿using DigiMenuAPI.Application.Interfaces;
+﻿using DigiMenuAPI.Application.Common;
+using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -112,11 +113,12 @@ namespace DigiMenuAPI.Application.Services
             var role = GetUserRole();
 
             // SuperAdmin puede acceder a cualquier Branch
-            if (role == 255) return;
+            if (UserRoles.IsPlatformLevel(role)) return;
 
             // BranchAdmin (2) y Staff (3): solo pueden operar sobre su propia Branch
             var ownBranchId = TryGetBranchId();
-            if (ownBranchId.HasValue && ownBranchId.Value != branchId)
+            // BranchAdmin y Staff: solo pueden operar sobre su propia Branch
+            if (UserRoles.NeedsBranch(role) && ownBranchId.HasValue && ownBranchId.Value != branchId)
                 throw new UnauthorizedAccessException(
                     "No tienes permiso para operar sobre esta sucursal.");
 
@@ -131,6 +133,14 @@ namespace DigiMenuAPI.Application.Services
             if (!belongs)
                 throw new UnauthorizedAccessException(
                     "La sucursal no pertenece a tu empresa o no existe.");
+        }
+
+        public int? TryGetUserId()
+        {
+            var claim = GetClaim("userId");
+            if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var id))
+                return null;
+            return id;
         }
 
         // ── Helpers ───────────────────────────────────────────────────

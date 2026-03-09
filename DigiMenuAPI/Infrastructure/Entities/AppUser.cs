@@ -20,6 +20,12 @@ namespace DigiMenuAPI.Infrastructure.Entities
     ///
     /// El límite de usuarios por empresa se controla con Company.MaxUsers,
     /// contando todos los usuarios activos y no eliminados de esa Company.
+    /// 
+    /// Flujo de contraseña temporal:
+    ///   MustChangePassword = true → el usuario fue creado con contraseña temporal.
+    ///   El login devuelve este flag en LoginResponseDto.
+    ///   El frontend redirige al formulario de cambio de contraseña.
+    ///   Al cambiar exitosamente, MustChangePassword se pone en false.
     /// </summary>
     public class AppUser : BaseEntity
     {
@@ -41,6 +47,13 @@ namespace DigiMenuAPI.Infrastructure.Entities
 
         public bool IsActive { get; set; } = true;
         public bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// Indica que el usuario debe cambiar su contraseña en el próximo login.
+        /// Se activa cuando un admin crea un usuario con contraseña temporal.
+        /// Se desactiva cuando el usuario cambia su contraseña exitosamente.
+        /// </summary>
+        public bool MustChangePassword { get; set; }
 
         public DateTime? LastLoginAt { get; set; }
 

@@ -9,5 +9,12 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<LoginResponseDto>> RegisterCompany(CompanyCreateDto dto);
         Task<OperationResult<LoginResponseDto>> Login(LoginRequestDto dto);
         Task<OperationResult<bool>> RegisterUser(AppUserCreateDto dto);
+
+        /// <summary>
+        /// Cambia la contraseña del usuario autenticado.
+        /// Requiere la contraseña actual para confirmar identidad.
+        /// Al completarse, MustChangePassword queda en false.
+        /// </summary>
+        Task<OperationResult<bool>> ChangePassword(ChangePasswordDto dto);
     }
 }
