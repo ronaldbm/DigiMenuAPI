@@ -22,7 +22,7 @@ namespace DigiMenuAPI.Controllers
         public async Task<ActionResult> RegisterCompany([FromBody] CompanyCreateDto dto)
             => HandleResult(await _authService.RegisterCompany(dto));
 
-        /// <summary>Login. Devuelve JWT + MustChangePassword flag.</summary>
+        /// <summary>Login. Devuelve JWT + MustChangePassword.</summary>
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult> Login([FromBody] LoginRequestDto dto)
@@ -34,13 +34,34 @@ namespace DigiMenuAPI.Controllers
         public async Task<ActionResult> RegisterUser([FromBody] AppUserCreateDto dto)
             => HandleResult(await _authService.RegisterUser(dto));
 
-        /// <summary>
-        /// Cambia la contraseña del usuario autenticado.
-        /// Requiere la contraseña actual. Limpia MustChangePassword al completarse.
-        /// </summary>
+        /// <summary>Cambia contraseña del usuario autenticado.</summary>
         [HttpPost("change-password")]
         [Authorize]
         public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
             => HandleResult(await _authService.ChangePassword(dto));
+
+        /// <summary>
+        /// Solicita recuperación de contraseña.
+        /// Siempre devuelve 200 — nunca confirma si el email existe.
+        /// </summary>
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+            => HandleResult(await _authService.ForgotPassword(dto));
+
+        /// <summary>
+        /// Valida token de recuperación. El frontend llama esto al
+        /// cargar la página de reset para verificar antes de mostrar el form.
+        /// </summary>
+        [HttpGet("validate-reset-token/{token}")]
+        [AllowAnonymous]
+        public async Task<ActionResult> ValidateResetToken(string token)
+            => HandleResult(await _authService.ValidateResetToken(token));
+
+        /// <summary>Aplica nueva contraseña usando el token del email.</summary>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+            => HandleResult(await _authService.ResetPassword(dto));
     }
 }

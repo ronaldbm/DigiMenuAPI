@@ -1,6 +1,10 @@
 ﻿using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Application.Services;
+using DigiMenuAPI.Application.Services.Email;
+using DigiMenuAPI.Application.Utils;
+using DigiMenuAPI.Infrastructure.Email;
 using DigiMenuAPI.Infrastructure.SQL;
+using DigiMenuIC.Application.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -8,7 +12,6 @@ using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Text;
-using DigiMenuAPI.Application.Utils;
 
 public partial class Program
 {
@@ -61,6 +64,17 @@ public partial class Program
         });
 
         builder.Services.AddAuthorization();
+
+        // ── EMAIL ─────────────────────────────────────────────────────────────────
+        var emailProvider = builder.Configuration["Email:Provider"] ?? "SendGrid";
+
+        if (emailProvider.Equals("Smtp", StringComparison.OrdinalIgnoreCase))
+            builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+        else
+            builder.Services.AddScoped<IEmailService, SendGridEmailService>();
+
+        builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
+        builder.Services.AddHostedService<EmailOutboxProcessor>();
 
         // ── APPLICATION SERVICES ──────────────────────────────────────────────
         builder.Services.AddScoped<IAuthService, AuthService>();

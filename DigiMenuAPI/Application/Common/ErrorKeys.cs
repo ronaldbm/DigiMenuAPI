@@ -41,6 +41,7 @@
         public const string IncorrectPassword = "INCORRECT_PASSWORD";
         public const string MustChangePassword = "MUST_CHANGE_PASSWORD";
         public const string PasswordChangeFailed = "PASSWORD_CHANGE_FAILED";
+        public const string InvalidResetToken = "INVALID_RESET_TOKEN";
 
         // ── Company ───────────────────────────────────────────────────
         public const string CompanyNotFound = "COMPANY_NOT_FOUND";

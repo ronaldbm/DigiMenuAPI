@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirmación de reserva</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center" style="padding:40px 20px;">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+                    <tr>
+                        <td style="background:#1D3557;padding:32px;text-align:center;">
+                            <h1 style="color:#ffffff;margin:0;font-size:28px;">{{BUSINESS_NAME}}</h1>
+                            <p style="color:#A8C8E8;margin:8px 0 0;">Confirmación de reserva</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px 32px;">
+                            <h2 style="color:#1D3557;margin:0 0 16px;">¡Tu reserva está confirmada, {{CLIENT_NAME}}!</h2>
+                            <p style="color:#444;line-height:1.6;">Estos son los detalles de tu reserva:</p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+                                <tr>
+                                    <td style="padding:12px;background:#f8f9fa;border-radius:4px 4px 0 0;border-bottom:1px solid #e0e0e0;">
+                                        <span style="color:#888;font-size:12px;">FECHA</span><br />
+                                        <strong style="color:#1D3557;">{{RESERVATION_DATE}}</strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px;background:#f8f9fa;border-bottom:1px solid #e0e0e0;">
+                                        <span style="color:#888;font-size:12px;">HORA</span><br />
+                                        <strong style="color:#1D3557;">{{RESERVATION_TIME}}</strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px;background:#f8f9fa;border-bottom:1px solid #e0e0e0;">
+                                        <span style="color:#888;font-size:12px;">PERSONAS</span><br />
+                                        <strong style="color:#1D3557;">{{GUEST_COUNT}}</strong>
+                                    </td>
+                                </tr>
+                                {{NOTES_ROW}}
+                                {{PHONE_ROW}}
+                                {{ADDRESS_ROW}}
+                            </table>
+
+                            <p style="color:#888;font-size:13px;">
+                                Si necesitas cancelar o modificar tu reserva, contáctanos directamente.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background:#f4f4f4;padding:20px 32px;text-align:center;">
+                            <p style="color:#888;font-size:12px;margin:0;">
+                                © {{YEAR}} {{BUSINESS_NAME}}. Reserva gestionada con DigiMenu.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

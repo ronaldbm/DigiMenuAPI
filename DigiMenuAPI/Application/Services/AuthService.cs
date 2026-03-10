@@ -1,10 +1,13 @@
+using BCrypt.Net;
 using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Application.DTOs.Auth;
 using DigiMenuAPI.Application.DTOs.Create;
+using DigiMenuAPI.Application.DTOs.Email;
 using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Application.Utils;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
+using DigiMenuIC.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,15 +21,20 @@ namespace DigiMenuAPI.Application.Services
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _config;
         private readonly ITenantService _tenantService;
+        private readonly IEmailQueueService _emailQueue;
+
+        private string AppUrl => _config["Email:AppUrl"] ?? "https://app.digimenu.cr";
 
         public AuthService(
             ApplicationDbContext context,
             IConfiguration config,
-            ITenantService tenantService)
+            ITenantService tenantService,
+            IEmailQueueService emailQueue)
         {
             _context = context;
             _config = config;
             _tenantService = tenantService;
+            _emailQueue = emailQueue;
         }
 
         // ── REGISTER COMPANY ──────────────────────────────────────────
@@ -67,6 +75,7 @@ namespace DigiMenuAPI.Application.Services
             await _context.SaveChangesAsync();
 
             // 2. Crear Branch principal
+            //    SlugHelper.GenerateUnique garantiza unicidad dentro de la Company
             var existingBranchSlugs = await _context.Branches
                 .Where(b => b.CompanyId == company.Id)
                 .Select(b => b.Slug)
@@ -91,7 +100,7 @@ namespace DigiMenuAPI.Application.Services
                 BusinessName = dto.Name.Trim()
             });
 
-            // 4. Crear BranchTheme
+            // 4. Crear BranchTheme — valores por defecto de la paleta DigiMenu
             _context.BranchThemes.Add(new BranchTheme
             {
                 BranchId = branch.Id,
@@ -115,7 +124,7 @@ namespace DigiMenuAPI.Application.Services
                 ShowContactButton = false
             });
 
-            // 5. Crear BranchLocale
+            // 5. Crear BranchLocale — valores derivados del país registrado
             _context.BranchLocales.Add(new BranchLocale
             {
                 BranchId = branch.Id,
@@ -128,14 +137,18 @@ namespace DigiMenuAPI.Application.Services
                 Decimals = 2
             });
 
-            // 6. Crear BranchSeo
+            // 6. Crear BranchSeo — vacío, el admin lo completa después
             _context.BranchSeos.Add(new BranchSeo
             {
                 BranchId = branch.Id
             });
 
+            // BranchReservationForm NO se crea aquí.
+            // Se crea cuando el CompanyAdmin activa el módulo RESERVATIONS
+            // desde el panel de módulos (ModuleService).
+
             // 7. Crear CompanyAdmin
-            // MustChangePassword = false — el admin registra su propia contraseña
+            // MustChangePassword = false — el admin eligió su propia contraseña
             var admin = new AppUser
             {
                 FullName = dto.AdminFullName.Trim(),
@@ -149,6 +162,15 @@ namespace DigiMenuAPI.Application.Services
             };
             _context.Users.Add(admin);
             await _context.SaveChangesAsync();
+
+            // 8. Encolar email de bienvenida
+            await _emailQueue.QueueWelcomeAsync(new WelcomeEmailDto(
+                ToEmail: email,
+                AdminFullName: dto.AdminFullName.Trim(),
+                CompanyName: company.Name,
+                CompanySlug: company.Slug,
+                LoginUrl: $"{AppUrl}/login"
+            ), company.Id);
 
             var token = GenerateJwt(admin, company);
             return OperationResult<LoginResponseDto>.Ok(BuildResult(admin, company, token));
@@ -234,18 +256,26 @@ namespace DigiMenuAPI.Application.Services
                 CompanyId = companyId,
                 BranchId = dto.BranchId,
                 IsActive = true,
-                MustChangePassword = true   // ← forzar cambio en primer login
+                MustChangePassword = true  // forzar cambio en primer login
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // TODO: enviar email con contraseña temporal via SendGrid
-            // await _emailService.SendTemporaryPasswordAsync(user.Email, temporaryPassword);
-            // Por ahora la contraseña temporal se devuelve en la respuesta para
-            // que el CompanyAdmin pueda entregársela al usuario manualmente.
-            // IMPORTANTE: eliminar este campo cuando se integre el email.
+            // Cargar nombre de la empresa para el email
+            var company = await _context.Companies
+                .AsNoTracking()
+                .FirstAsync(c => c.Id == companyId);
 
-            return OperationResult<bool>.Ok(true, $"Usuario creado. Contraseña temporal: {temporaryPassword}");
+            // Encolar email con contraseña temporal
+            await _emailQueue.QueueTemporaryPasswordAsync(new TemporaryPasswordEmailDto(
+                ToEmail: email,
+                FullName: dto.FullName.Trim(),
+                CompanyName: company.Name,
+                TemporaryPassword: temporaryPassword,
+                LoginUrl: $"{AppUrl}/login"
+            ), companyId);
+
+            return OperationResult<bool>.Ok(true);
         }
 
         // ── CHANGE PASSWORD ───────────────────────────────────────────
@@ -262,13 +292,11 @@ namespace DigiMenuAPI.Application.Services
                     "Usuario no encontrado.",
                     ErrorKeys.Unauthorized);
 
-            // Verificar contraseña actual
             if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
                 return OperationResult<bool>.ValidationError(
                     "La contraseña actual es incorrecta.",
                     ErrorKeys.IncorrectPassword);
 
-            // Validar complejidad de la nueva contraseña
             var passwordError = PasswordValidator.Validate(dto.NewPassword);
             if (passwordError is not null)
                 return OperationResult<bool>.ValidationError(
@@ -281,7 +309,97 @@ namespace DigiMenuAPI.Application.Services
                     ErrorKeys.WeakPassword);
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-            user.MustChangePassword = false;  // ← limpiar flag
+            user.MustChangePassword = false;
+            await _context.SaveChangesAsync();
+
+            return OperationResult<bool>.Ok(true);
+        }
+
+        // ── FORGOT PASSWORD ───────────────────────────────────────────
+        public async Task<OperationResult<bool>> ForgotPassword(ForgotPasswordDto dto)
+        {
+            var email = dto.Email.Trim().ToLower();
+
+            var user = await _context.Users
+                .IgnoreQueryFilters()
+                .Include(u => u.Company)
+                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+
+            // Siempre devuelve Ok — nunca confirmamos si el email existe
+            // Esto previene enumeration attacks
+            if (user is null || !user.IsActive || !user.Company.IsActive)
+                return OperationResult<bool>.Ok(true);
+
+            // Invalidar tokens anteriores pendientes del mismo usuario
+            var previousTokens = await _context.PasswordResetRequests
+                .Where(r => r.UserId == user.Id && !r.IsUsed && r.ExpiresAt > DateTime.UtcNow)
+                .ToListAsync();
+
+            foreach (var t in previousTokens)
+                t.IsUsed = true;
+
+            // Crear nuevo token
+            var token = Guid.NewGuid().ToString("N"); // 32 chars sin guiones
+            var resetRequest = new PasswordResetRequest
+            {
+                CompanyId = user.CompanyId,
+                UserId = user.Id,
+                Token = token,
+                ExpiresAt = DateTime.UtcNow.AddHours(1),
+                IsUsed = false
+            };
+            _context.PasswordResetRequests.Add(resetRequest);
+            await _context.SaveChangesAsync();
+
+            // Encolar email con link de recuperación
+            var resetUrl = $"{AppUrl}/reset-password?token={token}";
+            await _emailQueue.QueueForgotPasswordAsync(new ForgotPasswordEmailDto(
+                ToEmail: user.Email,
+                FullName: user.FullName,
+                ResetUrl: resetUrl,
+                ExpiresAt: resetRequest.ExpiresAt
+            ), user.CompanyId);
+
+            return OperationResult<bool>.Ok(true);
+        }
+
+        // ── VALIDATE RESET TOKEN ──────────────────────────────────────
+        public async Task<OperationResult<bool>> ValidateResetToken(string token)
+        {
+            var request = await _context.PasswordResetRequests
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(r => r.Token == token);
+
+            if (request is null || request.IsUsed || request.ExpiresAt < DateTime.UtcNow)
+                return OperationResult<bool>.ValidationError(
+                    "El enlace de recuperación es inválido o ha expirado.",
+                    ErrorKeys.InvalidResetToken);
+
+            return OperationResult<bool>.Ok(true);
+        }
+
+        // ── RESET PASSWORD ────────────────────────────────────────────
+        public async Task<OperationResult<bool>> ResetPassword(ResetPasswordDto dto)
+        {
+            var request = await _context.PasswordResetRequests
+                .IgnoreQueryFilters()
+                .Include(r => r.User)
+                .FirstOrDefaultAsync(r => r.Token == dto.Token);
+
+            if (request is null || request.IsUsed || request.ExpiresAt < DateTime.UtcNow)
+                return OperationResult<bool>.ValidationError(
+                    "El enlace de recuperación es inválido o ha expirado.",
+                    ErrorKeys.InvalidResetToken);
+
+            var passwordError = PasswordValidator.Validate(dto.NewPassword);
+            if (passwordError is not null)
+                return OperationResult<bool>.ValidationError(
+                    passwordError, ErrorKeys.WeakPassword);
+
+            request.User.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            request.User.MustChangePassword = false;
+            request.IsUsed = true; // invalidar token — no reutilizable
+
             await _context.SaveChangesAsync();
 
             return OperationResult<bool>.Ok(true);
@@ -306,6 +424,7 @@ namespace DigiMenuAPI.Application.Services
                 new("fullName",    user.FullName)
             };
 
+            // BranchId solo para roles que requieren Branch asignada
             if (UserRoles.NeedsBranch(user.Role) && user.BranchId.HasValue)
                 claims.Add(new Claim("branchId", user.BranchId.Value.ToString()));
 
@@ -333,10 +452,12 @@ namespace DigiMenuAPI.Application.Services
                 BranchName: user.BranchId.HasValue ? user.Branch?.Name : null,
                 Role: user.Role,
                 ExpiresAt: DateTime.UtcNow.AddHours(8),
-                MustChangePassword: user.MustChangePassword  // ← nuevo campo
+                MustChangePassword: user.MustChangePassword
             );
 
-        // ── Helpers de localización ───────────────────────────────────
+        // ── Helpers de localización por país ──────────────────────────
+        // Valores por defecto razonables para los países objetivo del SaaS.
+        // El admin puede ajustar desde BranchLocale en cualquier momento.
 
         private static string ResolvePhoneCode(string? countryCode) =>
             countryCode?.ToUpper() switch

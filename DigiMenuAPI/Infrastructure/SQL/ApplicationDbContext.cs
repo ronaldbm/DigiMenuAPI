@@ -2,6 +2,7 @@ using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.ComponentModel.Design;
 using System.Security.Claims;
 
 namespace DigiMenuAPI.Infrastructure.SQL
@@ -30,6 +31,11 @@ namespace DigiMenuAPI.Infrastructure.SQL
         public DbSet<CompanyModule> CompanyModules { get; set; }
         public DbSet<Branch> Branches { get; set; }
         public DbSet<AppUser> Users { get; set; }
+
+        // Emails
+        public DbSet<PasswordResetRequest> PasswordResetRequests { get; set; }
+        public DbSet<OutboxEmail> OutboxEmails { get; set; }
+        public DbSet<OutboxEmailBody> OutboxEmailBodies { get; set; }
 
         // Catálogo global (por Company)
         public DbSet<Category> Categories { get; set; }
@@ -61,6 +67,8 @@ namespace DigiMenuAPI.Infrastructure.SQL
             ConfigureAppUser(modelBuilder);
             ConfigurePlatformModule(modelBuilder);
             ConfigureCompanyModule(modelBuilder);
+            ConfigureOutboxEmail(modelBuilder);
+            ConfigurePasswordResetRequest(modelBuilder);
             ConfigureCategory(modelBuilder);
             ConfigureProduct(modelBuilder);
             ConfigureTag(modelBuilder);
@@ -199,6 +207,77 @@ namespace DigiMenuAPI.Infrastructure.SQL
                  .WithMany(br => br.Users)
                  .HasForeignKey(u => u.BranchId)
                  .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+        private static void ConfigurePasswordResetRequest(ModelBuilder b)
+        {
+            b.Entity<PasswordResetRequest>(e =>
+            {
+                e.HasKey(x => x.Id);
+
+                // Búsqueda rápida por token al validar
+                e.HasIndex(x => x.Token).IsUnique();
+
+                // Tokens activos por usuario
+                e.HasIndex(x => new { x.UserId, x.IsUsed, x.ExpiresAt });
+
+                e.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+            });
+        }
+        private static void ConfigureOutboxEmail(ModelBuilder b)
+        {
+            b.Entity<OutboxEmail>(e =>
+            {
+                e.HasKey(x => x.Id);
+
+                // Status y EmailType como tinyint en BD
+                e.Property(x => x.Status)
+                 .HasConversion<byte>();
+
+                e.Property(x => x.EmailType)
+                 .HasConversion<byte>();
+
+                // Índice principal del processor — solo Pending(0) y Failed(2)
+                e.HasIndex(x => new { x.Status, x.NextRetryAt })
+                 .HasFilter("[Status] IN (0, 2)");
+
+                // Índice para panel admin — por empresa, tipo y estado
+                e.HasIndex(x => new { x.CompanyId, x.EmailType, x.Status });
+
+                // Sin QueryFilter global — el processor procesa todos los tenants
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                e.HasOne(x => x.Branch)
+                 .WithMany()
+                 .HasForeignKey(x => x.BranchId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            b.Entity<OutboxEmailBody>(e =>
+            {
+                // Shared primary key
+                e.HasKey(x => x.OutboxEmailId);
+
+                e.HasOne(x => x.OutboxEmail)
+                 .WithOne(x => x.Body)
+                 .HasForeignKey<OutboxEmailBody>(x => x.OutboxEmailId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                // Sin límite — el HTML puede ser extenso
+                e.Property(x => x.HtmlBody)
+                 .HasColumnType("nvarchar(max)");
             });
         }
 
