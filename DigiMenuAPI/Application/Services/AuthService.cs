@@ -1,4 +1,3 @@
-using BCrypt.Net;
 using DigiMenuAPI.Application.Common;
 using DigiMenuAPI.Application.DTOs.Auth;
 using DigiMenuAPI.Application.DTOs.Create;
@@ -75,7 +74,6 @@ namespace DigiMenuAPI.Application.Services
             await _context.SaveChangesAsync();
 
             // 2. Crear Branch principal
-            //    SlugHelper.GenerateUnique garantiza unicidad dentro de la Company
             var existingBranchSlugs = await _context.Branches
                 .Where(b => b.CompanyId == company.Id)
                 .Select(b => b.Slug)
@@ -129,11 +127,11 @@ namespace DigiMenuAPI.Application.Services
             {
                 BranchId = branch.Id,
                 CountryCode = dto.CountryCode?.ToUpper() ?? "CR",
-                PhoneCode = ResolvePhoneCode(dto.CountryCode),
-                Currency = ResolveCurrency(dto.CountryCode),
-                CurrencyLocale = ResolveCurrencyLocale(dto.CountryCode),
+                PhoneCode = LocaleHelper.ResolvePhoneCode(dto.CountryCode),
+                Currency = LocaleHelper.ResolveCurrency(dto.CountryCode),
+                CurrencyLocale = LocaleHelper.ResolveCurrencyLocale(dto.CountryCode),
                 Language = "es",
-                TimeZone = ResolveTimeZone(dto.CountryCode),
+                TimeZone = LocaleHelper.ResolveTimeZone(dto.CountryCode),
                 Decimals = 2
             });
 
@@ -143,11 +141,12 @@ namespace DigiMenuAPI.Application.Services
                 BranchId = branch.Id
             });
 
-            // BranchReservationForm NO se crea aquí.
-            // Se crea cuando el CompanyAdmin activa el módulo RESERVATIONS
-            // desde el panel de módulos (ModuleService).
+            // 7. Inicializar horario semanal de la Branch con defaults
+            //    El admin puede ajustar cada día desde el panel de configuración
+            _context.BranchSchedules.AddRange(
+                BranchScheduleInitializer.Generate(branch.Id));
 
-            // 7. Crear CompanyAdmin
+            // 8. Crear CompanyAdmin
             // MustChangePassword = false — el admin eligió su propia contraseña
             var admin = new AppUser
             {
@@ -163,7 +162,7 @@ namespace DigiMenuAPI.Application.Services
             _context.Users.Add(admin);
             await _context.SaveChangesAsync();
 
-            // 8. Encolar email de bienvenida
+            // 9. Encolar email de bienvenida
             await _emailQueue.QueueWelcomeAsync(new WelcomeEmailDto(
                 ToEmail: email,
                 AdminFullName: dto.AdminFullName.Trim(),
@@ -208,74 +207,6 @@ namespace DigiMenuAPI.Application.Services
             var token = GenerateJwt(user, user.Company);
             return OperationResult<LoginResponseDto>.Ok(BuildResult(user, user.Company, token));
             // MustChangePassword se incluye en BuildResult — el frontend lo lee y redirige
-        }
-
-        // ── REGISTER USER ─────────────────────────────────────────────
-        public async Task<OperationResult<bool>> RegisterUser(AppUserCreateDto dto)
-        {
-            var companyId = _tenantService.GetCompanyId();
-            var callerRole = _tenantService.GetUserRole();
-            var email = dto.Email.Trim().ToLower();
-
-            if (await _context.Users.IgnoreQueryFilters()
-                    .AnyAsync(u => u.Email == email))
-                return OperationResult<bool>.Conflict(
-                    "El email ya está registrado.",
-                    ErrorKeys.EmailAlreadyExists);
-
-            if (!UserRoles.CanAssign(callerRole, dto.Role))
-                return OperationResult<bool>.Forbidden(
-                    "No tienes permiso para asignar este rol.",
-                    ErrorKeys.CannotAssignSuperAdmin);
-
-            if (UserRoles.NeedsBranch(dto.Role) && dto.BranchId is null)
-                return OperationResult<bool>.ValidationError(
-                    "BranchAdmin y Staff deben estar asignados a una sucursal.",
-                    ErrorKeys.BranchRequiredForRole);
-
-            if (dto.BranchId.HasValue)
-            {
-                var branchBelongs = await _context.Branches
-                    .AnyAsync(b => b.Id == dto.BranchId.Value && b.CompanyId == companyId);
-
-                if (!branchBelongs)
-                    return OperationResult<bool>.NotFound(
-                        "La sucursal indicada no pertenece a tu empresa.",
-                        ErrorKeys.BranchNotFound);
-            }
-
-            // Generar contraseña temporal — el usuario deberá cambiarla en su primer login
-            var temporaryPassword = PasswordValidator.GenerateTemporary();
-
-            var user = new AppUser
-            {
-                FullName = dto.FullName.Trim(),
-                Email = email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(temporaryPassword),
-                Role = dto.Role,
-                CompanyId = companyId,
-                BranchId = dto.BranchId,
-                IsActive = true,
-                MustChangePassword = true  // forzar cambio en primer login
-            };
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            // Cargar nombre de la empresa para el email
-            var company = await _context.Companies
-                .AsNoTracking()
-                .FirstAsync(c => c.Id == companyId);
-
-            // Encolar email con contraseña temporal
-            await _emailQueue.QueueTemporaryPasswordAsync(new TemporaryPasswordEmailDto(
-                ToEmail: email,
-                FullName: dto.FullName.Trim(),
-                CompanyName: company.Name,
-                TemporaryPassword: temporaryPassword,
-                LoginUrl: $"{AppUrl}/login"
-            ), companyId);
-
-            return OperationResult<bool>.Ok(true);
         }
 
         // ── CHANGE PASSWORD ───────────────────────────────────────────
@@ -338,8 +269,8 @@ namespace DigiMenuAPI.Application.Services
             foreach (var t in previousTokens)
                 t.IsUsed = true;
 
-            // Crear nuevo token
-            var token = Guid.NewGuid().ToString("N"); // 32 chars sin guiones
+            // Crear nuevo token — Guid sin guiones, 32 chars, no predecible
+            var token = Guid.NewGuid().ToString("N");
             var resetRequest = new PasswordResetRequest
             {
                 CompanyId = user.CompanyId,
@@ -398,7 +329,7 @@ namespace DigiMenuAPI.Application.Services
 
             request.User.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
             request.User.MustChangePassword = false;
-            request.IsUsed = true; // invalidar token — no reutilizable
+            request.IsUsed = true;
 
             await _context.SaveChangesAsync();
 
@@ -428,7 +359,7 @@ namespace DigiMenuAPI.Application.Services
             if (UserRoles.NeedsBranch(user.Role) && user.BranchId.HasValue)
                 claims.Add(new Claim("branchId", user.BranchId.Value.ToString()));
 
-            var token = new JwtSecurityToken(
+            var jwtToken = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
@@ -436,7 +367,7 @@ namespace DigiMenuAPI.Application.Services
                 signingCredentials: creds
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return new JwtSecurityTokenHandler().WriteToken(jwtToken);
         }
 
         private static LoginResponseDto BuildResult(
@@ -454,65 +385,5 @@ namespace DigiMenuAPI.Application.Services
                 ExpiresAt: DateTime.UtcNow.AddHours(8),
                 MustChangePassword: user.MustChangePassword
             );
-
-        // ── Helpers de localización por país ──────────────────────────
-        // Valores por defecto razonables para los países objetivo del SaaS.
-        // El admin puede ajustar desde BranchLocale en cualquier momento.
-
-        private static string ResolvePhoneCode(string? countryCode) =>
-            countryCode?.ToUpper() switch
-            {
-                "MX" => "+52",
-                "CO" => "+57",
-                "US" => "+1",
-                "GT" => "+502",
-                "PA" => "+507",
-                "SV" => "+503",
-                "HN" => "+504",
-                "NI" => "+505",
-                _ => "+506"
-            };
-
-        private static string ResolveCurrency(string? countryCode) =>
-            countryCode?.ToUpper() switch
-            {
-                "MX" => "MXN",
-                "CO" => "COP",
-                "US" => "USD",
-                "GT" => "GTQ",
-                "PA" => "USD",
-                "SV" => "USD",
-                "HN" => "HNL",
-                "NI" => "NIO",
-                _ => "CRC"
-            };
-
-        private static string ResolveCurrencyLocale(string? countryCode) =>
-            countryCode?.ToUpper() switch
-            {
-                "MX" => "es-MX",
-                "CO" => "es-CO",
-                "US" => "en-US",
-                "GT" => "es-GT",
-                "PA" => "es-PA",
-                "SV" => "es-SV",
-                "HN" => "es-HN",
-                "NI" => "es-NI",
-                _ => "es-CR"
-            };
-
-        private static string ResolveTimeZone(string? countryCode) =>
-            countryCode?.ToUpper() switch
-            {
-                "MX" => "America/Mexico_City",
-                "CO" => "America/Bogota",
-                "US" => "America/New_York",
-                "GT" => "America/Guatemala",
-                "PA" => "America/Panama",
-                "SV" => "America/El_Salvador",
-                "HN" => "America/Tegucigalpa",
-                "NI" => "America/Managua",
-                _ => "America/Costa_Rica"
-            };
     }
 }

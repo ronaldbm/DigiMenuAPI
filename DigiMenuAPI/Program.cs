@@ -89,6 +89,9 @@ public partial class Program
         builder.Services.AddScoped<IStoreService, StoreService>();
         builder.Services.AddScoped<IFileStorageService, FileStorageService>();
         builder.Services.AddScoped<ICacheService, CacheService>();
+        builder.Services.AddScoped<IBranchService, BranchService>();
+        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IScheduleService, ScheduleService>();
         builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
 
         // ── AUTOMAPPER + OUTPUTCACHE + CONTROLLERS ────────────────────────────

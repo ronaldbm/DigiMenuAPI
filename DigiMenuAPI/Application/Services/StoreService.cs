@@ -165,7 +165,40 @@ namespace DigiMenuAPI.Application.Services
                         f.DisplayOrder))
                     .ToListAsync();
 
-                // 8. Construir MenuBranchDto manualmente desde las 4 entidades.
+                // 8. Horario semanal — ordenado Lun-Dom
+                var weeklySchedule = await _context.BranchSchedules
+                    .AsNoTracking()
+                    .Where(s => s.BranchId == branchId.Value)
+                    .OrderBy(s => s.DayOfWeek == 0 ? 7 : s.DayOfWeek)
+                    .Select(s => new BranchScheduleReadDto(
+                        s.Id,
+                        s.DayOfWeek,
+                        DayNames[s.DayOfWeek],
+                        s.IsOpen,
+                        s.OpenTime,
+                        s.CloseTime))
+                    .ToListAsync();
+
+                // 9. Días especiales próximos — desde hoy, máximo 30 días
+                var today = DateTime.UtcNow.Date;
+                var upcomingSpecialDays = await _context.BranchSpecialDays
+                    .AsNoTracking()
+                    .Where(d =>
+                        d.BranchId == branchId.Value &&
+                        d.Date >= today &&
+                        d.Date <= today.AddDays(30))
+                    .OrderBy(d => d.Date)
+                    .Select(d => new BranchSpecialDayReadDto(
+                        d.Id,
+                        d.Date,
+                        d.IsClosed,
+                        d.OpenTime,
+                        d.CloseTime,
+                        d.Reason,
+                        d.CreatedAt))
+                    .ToListAsync();
+
+                // 10. Construir MenuBranchDto manualmente desde las 4 entidades.
                 //    No se usa AutoMapper porque el origen es multi-entidad
                 //    y el destino es un DTO plano compuesto.
                 var menuDto = new MenuBranchDto(
@@ -206,7 +239,10 @@ namespace DigiMenuAPI.Application.Services
                     seo?.FacebookPixelId,
                     // Contenido dinámico
                     categoryDtos,
-                    footerLinks
+                    footerLinks,
+                    //Horarios
+                    WeeklySchedule: weeklySchedule.Any() ? weeklySchedule : null,
+                    UpcomingSpecialDays: upcomingSpecialDays.Any() ? upcomingSpecialDays : null
                 );
 
                 return OperationResult<MenuBranchDto>.Ok(menuDto);
@@ -218,5 +254,7 @@ namespace DigiMenuAPI.Application.Services
                     "Error inesperado al cargar el menú.");
             }
         }
+
+        private static readonly string[] DayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
     }
 }

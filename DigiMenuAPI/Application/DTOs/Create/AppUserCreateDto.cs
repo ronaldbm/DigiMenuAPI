@@ -1,18 +1,18 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Create
 {
     /// <summary>
-    /// El rol máximo que se puede asignar depende del rol del creador:
-    ///   SuperAdmin    → puede crear Role 1 (CompanyAdmin)
-    ///   CompanyAdmin  → puede crear Role 2 (BranchAdmin)
-    ///   BranchAdmin   → puede crear Role 3 (Staff)
-    /// Esta validación se hace en el servicio.
+    /// DTO para crear un usuario dentro de la empresa autenticada.
+    /// CompanyId se inyecta desde el JWT — no viene en el body.
+    ///
+    /// Jerarquía de roles permitidos según el creador:
+    ///   CompanyAdmin  → puede crear BranchAdmin (2) y Staff (3)
+    ///   BranchAdmin   → puede crear Staff (3) solo en su propia Branch
+    ///   Staff         → sin permiso de crear usuarios
     /// </summary>
     public record AppUserCreateDto(
-        int CompanyId,
-        int? BranchId,
         string FullName,
         string Email,
-        string Password,
-        byte Role
+        byte Role,
+        int? BranchId   // requerido para BranchAdmin y Staff, null para CompanyAdmin
     );
 }

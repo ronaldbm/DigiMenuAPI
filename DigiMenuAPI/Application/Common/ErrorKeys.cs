@@ -40,8 +40,13 @@
         public const string WeakPassword = "WEAK_PASSWORD";
         public const string IncorrectPassword = "INCORRECT_PASSWORD";
         public const string MustChangePassword = "MUST_CHANGE_PASSWORD";
-        public const string PasswordChangeFailed = "PASSWORD_CHANGE_FAILED";
         public const string InvalidResetToken = "INVALID_RESET_TOKEN";
+        public const string PasswordChangeFailed = "PASSWORD_CHANGE_FAILED";
+
+        // ── AppUser ───────────────────────────────────────────────────
+        public const string UserNotFound = "USER_NOT_FOUND";
+        public const string UserLimitReached = "USER_LIMIT_REACHED";
+        public const string CannotModifySelf = "CANNOT_MODIFY_SELF";
 
         // ── Company ───────────────────────────────────────────────────
         public const string CompanyNotFound = "COMPANY_NOT_FOUND";
@@ -50,6 +55,10 @@
         public const string BranchNotFound = "BRANCH_NOT_FOUND";
         public const string BranchNotOwned = "BRANCH_NOT_OWNED";
         public const string BranchConfigMissing = "BRANCH_CONFIG_MISSING";
+        public const string BranchLimitReached = "BRANCH_LIMIT_REACHED";
+        public const string BranchSlugAlreadyExists = "BRANCH_SLUG_ALREADY_EXISTS";
+        public const string BranchInactive = "BRANCH_INACTIVE";
+        public const string BranchHasActiveUsers = "BRANCH_HAS_ACTIVE_USERS";
 
         // ── BranchInfo ────────────────────────────────────────────────
         public const string BranchInfoNotFound = "BRANCH_INFO_NOT_FOUND";
@@ -84,7 +93,25 @@
         public const string FooterLinkNotFound = "FOOTER_LINK_NOT_FOUND";
         public const string FooterLinkNotOwned = "FOOTER_LINK_NOT_OWNED";
 
+        // ── Schedule ──────────────────────────────────────────────────
+        public const string ScheduleNotFound = "SCHEDULE_NOT_FOUND";
+        public const string InvalidScheduleDay = "INVALID_SCHEDULE_DAY";
+        public const string ScheduleOpenTimeRequired = "SCHEDULE_OPEN_TIME_REQUIRED";
+        public const string ScheduleCloseTimeRequired = "SCHEDULE_CLOSE_TIME_REQUIRED";
+        public const string ScheduleCloseBeforeOpen = "SCHEDULE_CLOSE_BEFORE_OPEN";
+
+        // ── SpecialDay ────────────────────────────────────────────────
+        public const string SpecialDayNotFound = "SPECIAL_DAY_NOT_FOUND";
+        public const string SpecialDayPastDate = "SPECIAL_DAY_PAST_DATE";
+        public const string SpecialDayDuplicate = "SPECIAL_DAY_DUPLICATE";
+        public const string SpecialDayHoursRequired = "SPECIAL_DAY_HOURS_REQUIRED";
+        public const string SpecialDayCloseBeforeOpen = "SPECIAL_DAY_CLOSE_BEFORE_OPEN";
+
         // ── Reservation ───────────────────────────────────────────────
+        public const string ReservationBranchClosed = "RESERVATION_BRANCH_CLOSED";
+        public const string ReservationOutsideHours = "RESERVATION_OUTSIDE_HOURS";
+        public const string ReservationTooCloseToClosing = "RESERVATION_TOO_CLOSE_TO_CLOSING";
+        public const string ReservationCapacityExceeded = "RESERVATION_CAPACITY_EXCEEDED";
         public const string ReservationNotFound = "RESERVATION_NOT_FOUND";
         public const string ReservationNotOwned = "RESERVATION_NOT_OWNED";
 

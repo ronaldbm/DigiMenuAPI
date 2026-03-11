@@ -15,6 +15,9 @@
         bool FormShowBirthday,
         bool FormRequireBirthday,
         bool FormShowComments,
-        bool FormRequireComments
+        bool FormRequireComments,
+        int MaxCapacity,
+        int MinutesBeforeClosing,
+        int MaxCapacityPerReservation
     );
 }

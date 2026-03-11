@@ -63,7 +63,8 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public ICollection<BranchProduct> BranchProducts { get; set; } = new List<BranchProduct>();
         public ICollection<FooterLink> FooterLinks { get; set; } = new List<FooterLink>();
         public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
-
+        public ICollection<BranchSchedule> Schedules { get; set; } = new List<BranchSchedule>();
+        public ICollection<BranchSpecialDay> SpecialDays { get; set; } = new List<BranchSpecialDay>();
         /// <summary>
         /// Usuarios asignados a esta Branch (BranchAdmin y Staff).
         /// El CompanyAdmin no pertenece a ninguna Branch (BranchId = null en AppUser).

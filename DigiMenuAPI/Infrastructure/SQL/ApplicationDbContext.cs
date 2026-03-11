@@ -56,6 +56,8 @@ namespace DigiMenuAPI.Infrastructure.SQL
         public DbSet<BranchReservationForm> BranchReservationForms { get; set; }
         public DbSet<FooterLink> FooterLinks { get; set; }
         public DbSet<Reservation> Reservations { get; set; }
+        public DbSet<BranchSchedule> BranchSchedules { get; set; }
+        public DbSet<BranchSpecialDay> BranchSpecialDays { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -81,7 +83,10 @@ namespace DigiMenuAPI.Infrastructure.SQL
             ConfigureBranchTheme(modelBuilder);
             ConfigureBranchLocale(modelBuilder);
             ConfigureBranchSeo(modelBuilder);
-            ConfigureBranchReservationForm(modelBuilder); ConfigureReservation(modelBuilder);
+            ConfigureBranchReservationForm(modelBuilder); 
+            ConfigureReservation(modelBuilder);
+            ConfigureBranchSchedule(modelBuilder);
+            ConfigureBranchSpecialDay(modelBuilder);
 
             SeedData(modelBuilder);
         }
@@ -609,6 +614,49 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 // Filtro global: excluye footer links eliminados de todas las consultas
                 e.HasQueryFilter(f => !f.IsDeleted);
+            });
+        }
+
+        private static void ConfigureBranchSchedule(ModelBuilder b)
+        {
+            b.Entity<BranchSchedule>(e =>
+            {
+                e.HasKey(x => x.Id);
+
+                // Un solo registro por día por Branch — garantía de integridad
+                e.HasIndex(x => new { x.BranchId, x.DayOfWeek }).IsUnique();
+
+                e.Property(x => x.DayOfWeek).HasColumnType("tinyint");
+
+                // Cascade: los horarios se eliminan físicamente si se elimina la Branch
+                // BranchSchedule no tiene soft delete propio
+                e.HasOne(x => x.Branch)
+                 .WithMany(br => br.Schedules)
+                 .HasForeignKey(x => x.BranchId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+
+        private static void ConfigureBranchSpecialDay(ModelBuilder b)
+        {
+            b.Entity<BranchSpecialDay>(e =>
+            {
+                e.HasKey(x => x.Id);
+
+                // Una Branch no puede tener dos registros para la misma fecha
+                e.HasIndex(x => new { x.BranchId, x.Date }).IsUnique();
+
+                // Índice para la consulta de reservas y menú público por fecha
+                e.HasIndex(x => new { x.BranchId, x.Date });
+
+                e.Property(x => x.Date).HasColumnType("date");
+                e.Property(x => x.Reason).IsRequired().HasMaxLength(200);
+
+                // Cascade: los días especiales se eliminan físicamente con la Branch
+                e.HasOne(x => x.Branch)
+                 .WithMany(br => br.SpecialDays)
+                 .HasForeignKey(x => x.BranchId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
         }
 

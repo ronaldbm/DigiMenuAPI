@@ -1,14 +1,18 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Update
 {
     /// <summary>
-    /// El rol y CompanyId no se pueden cambiar después de creado.
-    /// Para reasignar a otra Branch se usa BranchId.
+    /// Edición de datos básicos de un usuario.
+    ///
+    /// Restricciones:
+    ///   - CompanyId no se puede cambiar (siempre del tenant autenticado)
+    ///   - Role no se puede cambiar después de creado — eliminar y recrear si es necesario
+    ///   - IsActive se maneja por separado con PATCH /toggle-active
+    ///   - BranchId se puede reasignar dentro de la misma empresa
     /// </summary>
     public record AppUserUpdateDto(
         int Id,
-        int? BranchId,
         string FullName,
         string Email,
-        bool IsActive
+        int? BranchId 
     );
 }
