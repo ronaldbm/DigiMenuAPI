@@ -1,4 +1,6 @@
-﻿namespace DigiMenuAPI.Infrastructure.Entities
+﻿using AppCore.Domain.Entities;
+
+namespace DigiMenuAPI.Infrastructure.Entities
 {
     /// <summary>
     /// Configuración del formulario público de reservas de una Branch.

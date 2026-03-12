@@ -1,9 +1,10 @@
-﻿using DigiMenuAPI.Application.Common;
+﻿using AppCore.Application.Common;
+using AppCore.Domain.Entities;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Infrastructure.Entities;
+using AppCore.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ namespace DigiMenuAPI.Application.Services
         private readonly ApplicationDbContext _context;
         private readonly ITenantService _tenantService;
 
-        // Nombres en español — índice = DayOfWeek (.NET: 0=Dom … 6=Sáb)
+        // Nombres en español — índice = DayOfWeek (.NET:                                                                                                                                                                                                                                                                                                                                                            0=Dom … 6=Sáb)
         private static readonly string[] DayNames =
             ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 

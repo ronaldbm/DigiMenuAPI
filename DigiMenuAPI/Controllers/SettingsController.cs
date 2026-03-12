@@ -1,7 +1,7 @@
-﻿using DigiMenuAPI.Application.Common;
+﻿using AppCore.Application.Common;
+using AppCore.Filters;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

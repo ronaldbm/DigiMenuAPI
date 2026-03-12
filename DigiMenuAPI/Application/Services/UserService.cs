@@ -1,14 +1,14 @@
 ﻿using AutoMapper;
-using DigiMenuAPI.Application.Common;
+using AppCore.Application.Common;
+using AppCore.Application.DTOs.Email;
+using AppCore.Application.Interfaces;
+using AppCore.Application.Utils;
+using AppCore.Domain.Entities;
 using DigiMenuAPI.Application.DTOs.Create;
-using DigiMenuAPI.Application.DTOs.Email;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Application.Utils;
-using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
-using DigiMenuIC.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiMenuAPI.Application.Services

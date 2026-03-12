@@ -1,7 +1,8 @@
-﻿using DigiMenuAPI.Application.Common;
+﻿using AppCore.Application.Common;
+using AppCore.Application.Utils;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Application.Utils;
+using AppCore.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
 

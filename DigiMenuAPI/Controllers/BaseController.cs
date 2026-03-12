@@ -1,4 +1,4 @@
-﻿using DigiMenuAPI.Application.Common;
+﻿using AppCore.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DigiMenuAPI.Controllers

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using AppCore.Domain.Entities;
+using AutoMapper;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
@@ -213,7 +214,8 @@ namespace DigiMenuAPI.Application.Common
         private void ReservationMappings()
         {
             CreateMap<Reservation, ReservationReadDto>();
-            CreateMap<ReservationCreateDto, Reservation>();
+            CreateMap<ReservationCreateDto
+                , Reservation>();
         }
 
         // ── Translations ──────────────────────────────────────────────

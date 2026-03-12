@@ -1,4 +1,4 @@
-﻿using DigiMenuAPI.Application.Common;
+﻿using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Auth;
 using DigiMenuAPI.Application.DTOs.Create;
 

@@ -1,3 +1,4 @@
+using AppCore.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace DigiMenuAPI.Infrastructure.Entities

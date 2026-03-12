@@ -1,9 +1,10 @@
 ﻿using AutoMapper;
-using DigiMenuAPI.Application.Common;
+using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
+using AppCore.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.AspNetCore.OutputCaching;

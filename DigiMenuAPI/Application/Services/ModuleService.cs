@@ -1,10 +1,11 @@
 ﻿using AutoMapper;
-using DigiMenuAPI.Application.Common;
+using AppCore.Application.Common;
+using AppCore.Domain.Entities;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
-using DigiMenuAPI.Infrastructure.Entities;
+using AppCore.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;

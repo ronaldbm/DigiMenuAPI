@@ -1,10 +1,12 @@
-﻿using DigiMenuAPI.Application.Interfaces;
+﻿using AppCore.Application.Interfaces;
+using AppCore.Application.Services;
+using AppCore.Application.Services.Email;
+using AppCore.Application.Utils;
+using AppCore.Infrastructure.Email;
+using AppCore.Infrastructure.SQL;
+using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Application.Services;
-using DigiMenuAPI.Application.Services.Email;
-using DigiMenuAPI.Application.Utils;
-using DigiMenuAPI.Infrastructure.Email;
 using DigiMenuAPI.Infrastructure.SQL;
-using DigiMenuIC.Application.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,6 +36,11 @@ public partial class Program
         // ── DATABASE ─────────────────────────────────────────────────────────
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+        // AppCore services depend on CoreDbContext — ApplicationDbContext extends it,
+        // so we register a scoped factory so CoreDbContext resolves to the same instance.
+        builder.Services.AddScoped<CoreDbContext>(sp =>
+            sp.GetRequiredService<ApplicationDbContext>());
         
         // ── MODULE GUARD ─────────────────────────────────────────────────────
         builder.Services.AddMemoryCache();

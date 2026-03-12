@@ -1,42 +1,20 @@
-using DigiMenuAPI.Application.Common;
+using AppCore.Infrastructure.SQL;
 using DigiMenuAPI.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using System.ComponentModel.Design;
-using System.Security.Claims;
 
 namespace DigiMenuAPI.Infrastructure.SQL
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : CoreDbContext
     {
-
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
         public ApplicationDbContext(
             DbContextOptions<ApplicationDbContext> options,
             IHttpContextAccessor httpContextAccessor)
-            : base(options)
+            : base(options, httpContextAccessor)
         {
-            _httpContextAccessor = httpContextAccessor;
         }
 
-        // ── Tablas ───────────────────────────────────────────────────
-        // Plataforma (gestionadas por SuperAdmin)
-        public DbSet<Plan> Plans { get; set; }
-        public DbSet<PlatformModule> PlatformModules { get; set; }
-        public DbSet<StandardIcon> StandardIcons { get; set; }
-
-        // Tenant raíz
-        public DbSet<Company> Companies { get; set; }
-        public DbSet<CompanyModule> CompanyModules { get; set; }
-        public DbSet<Branch> Branches { get; set; }
-        public DbSet<AppUser> Users { get; set; }
-
-        // Emails
-        public DbSet<PasswordResetRequest> PasswordResetRequests { get; set; }
-        public DbSet<OutboxEmail> OutboxEmails { get; set; }
-        public DbSet<OutboxEmailBody> OutboxEmailBodies { get; set; }
-
+        // ── Tablas DigiMenu-específicas ───────────────────────────────
         // Catálogo global (por Company)
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
@@ -49,28 +27,14 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
         // Por Branch
         public DbSet<BranchProduct> BranchProducts { get; set; }
-        public DbSet<BranchInfo> BranchInfos { get; set; }
-        public DbSet<BranchTheme> BranchThemes { get; set; }
-        public DbSet<BranchLocale> BranchLocales { get; set; }
-        public DbSet<BranchSeo> BranchSeos { get; set; }
         public DbSet<BranchReservationForm> BranchReservationForms { get; set; }
         public DbSet<FooterLink> FooterLinks { get; set; }
         public DbSet<Reservation> Reservations { get; set; }
-        public DbSet<BranchSchedule> BranchSchedules { get; set; }
-        public DbSet<BranchSpecialDay> BranchSpecialDays { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            ConfigurePlan(modelBuilder);
-            ConfigureCompany(modelBuilder);
-            ConfigureBranch(modelBuilder);
-            ConfigureAppUser(modelBuilder);
-            ConfigurePlatformModule(modelBuilder);
-            ConfigureCompanyModule(modelBuilder);
-            ConfigureOutboxEmail(modelBuilder);
-            ConfigurePasswordResetRequest(modelBuilder);
             ConfigureCategory(modelBuilder);
             ConfigureProduct(modelBuilder);
             ConfigureTag(modelBuilder);
@@ -79,248 +43,13 @@ namespace DigiMenuAPI.Infrastructure.SQL
             ConfigureTagTranslation(modelBuilder);
             ConfigureBranchProduct(modelBuilder);
             ConfigureFooterLink(modelBuilder);
-            ConfigureBranchInfo(modelBuilder);
-            ConfigureBranchTheme(modelBuilder);
-            ConfigureBranchLocale(modelBuilder);
-            ConfigureBranchSeo(modelBuilder);
-            ConfigureBranchReservationForm(modelBuilder); 
+            ConfigureBranchReservationForm(modelBuilder);
             ConfigureReservation(modelBuilder);
-            ConfigureBranchSchedule(modelBuilder);
-            ConfigureBranchSpecialDay(modelBuilder);
 
-            SeedData(modelBuilder);
+            SeedMenuData(modelBuilder);
         }
 
-        // ── Configuraciones ──────────────────────────────────────────
-
-        private static void ConfigurePlan(ModelBuilder b)
-        {
-            b.Entity<Plan>(e =>
-            {
-                e.HasKey(p => p.Id);
-                e.Property(p => p.Code).IsRequired().HasMaxLength(50);
-                e.Property(p => p.Name).IsRequired().HasMaxLength(100);
-                e.Property(p => p.Description).HasMaxLength(300);
-                e.Property(p => p.MonthlyPrice).HasPrecision(18, 2);
-                e.Property(p => p.AnnualPrice).HasPrecision(18, 2);
-
-                // Código único para referencias en código
-                e.HasIndex(p => p.Code).IsUnique();
-            });
-        }
-
-        private static void ConfigureCompany(ModelBuilder b)
-        {
-            b.Entity<Company>(e =>
-            {
-                e.HasKey(c => c.Id);
-                e.Property(c => c.Name).IsRequired().HasMaxLength(100);
-                e.Property(c => c.Email).IsRequired().HasMaxLength(150);
-                e.Property(c => c.Phone).HasMaxLength(20);
-                e.Property(c => c.CountryCode).HasMaxLength(3);
-
-                // Slug único global para identificar la empresa en el panel admin
-                e.Property(c => c.Slug).IsRequired().HasMaxLength(60);
-                e.HasIndex(c => c.Slug).IsUnique();
-
-                // RESTRICT: el borrado de Plan no debe eliminar Companies.
-                // Los planes se desactivan (IsActive = false), no se borran.
-                e.HasOne(c => c.Plan)
-                 .WithMany(p => p.Companies)
-                 .HasForeignKey(c => c.PlanId)
-                 .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
-
-        private static void ConfigureBranch(ModelBuilder b)
-        {
-            b.Entity<Branch>(e =>
-            {
-                e.HasKey(br => br.Id);
-                e.Property(br => br.Name).IsRequired().HasMaxLength(100);
-                e.Property(br => br.Slug).IsRequired().HasMaxLength(60);
-                e.Property(br => br.Address).HasMaxLength(200);
-                e.Property(br => br.Phone).HasMaxLength(20);
-                e.Property(br => br.Email).HasMaxLength(150);
-
-                // Slug único DENTRO de la Company — dos empresas distintas pueden
-                // tener branches con el mismo slug sin conflicto.
-                // La URL pública usa {company.Slug}.digimenu.cr/{branch.Slug}
-                e.HasIndex(br => new { br.CompanyId, br.Slug }).IsUnique();
-                e.HasIndex(br => new { br.CompanyId, br.IsDeleted });
-
-                // RESTRICT: todos los borrados son lógicos (IsDeleted = true / IsActive = false).
-                e.HasOne(br => br.Company)
-                 .WithMany(c => c.Branches)
-                 .HasForeignKey(br => br.CompanyId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                // Relaciones 1:1 con las 5 entidades de configuración.
-                // Cada una se configura en su propio método Configure*, aquí solo
-                // se declara el lado inverso para que EF resuelva correctamente el grafo.
-                e.HasOne(br => br.Info)
-                 .WithOne(i => i.Branch)
-                 .HasForeignKey<BranchInfo>(i => i.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                e.HasOne(br => br.Theme)
-                 .WithOne(t => t.Branch)
-                 .HasForeignKey<BranchTheme>(t => t.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                e.HasOne(br => br.Locale)
-                 .WithOne(l => l.Branch)
-                 .HasForeignKey<BranchLocale>(l => l.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                e.HasOne(br => br.Seo)
-                 .WithOne(s => s.Branch)
-                 .HasForeignKey<BranchSeo>(s => s.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                e.HasOne(br => br.ReservationForm)
-                 .WithOne(f => f.Branch)
-                 .HasForeignKey<BranchReservationForm>(f => f.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                // Filtro global: excluye branches eliminadas de todas las consultas
-                e.HasQueryFilter(br => !br.IsDeleted);
-            });
-        }
-        private static void ConfigureAppUser(ModelBuilder b)
-        {
-            b.Entity<AppUser>(e =>
-            {
-                e.HasKey(u => u.Id);
-                e.Property(u => u.FullName).IsRequired().HasMaxLength(100);
-                e.Property(u => u.Email).IsRequired().HasMaxLength(150);
-                e.Property(u => u.PasswordHash).IsRequired();
-                e.Property(u => u.Role).HasColumnType("tinyint");
-
-                e.HasIndex(u => u.Email).IsUnique();
-                e.HasIndex(u => new { u.CompanyId, u.IsDeleted, u.IsActive });
-                e.HasIndex(u => new { u.BranchId, u.IsDeleted });
-
-                // RESTRICT: los usuarios se desactivan lógicamente (IsActive = false / IsDeleted = true).
-                e.HasOne(u => u.Company)
-                 .WithMany(c => c.Users)
-                 .HasForeignKey(u => u.CompanyId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                // BranchId es nullable: CompanyAdmin y SuperAdmin no pertenecen a una Branch específica.
-                e.HasOne(u => u.Branch)
-                 .WithMany(br => br.Users)
-                 .HasForeignKey(u => u.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
-        private static void ConfigurePasswordResetRequest(ModelBuilder b)
-        {
-            b.Entity<PasswordResetRequest>(e =>
-            {
-                e.HasKey(x => x.Id);
-
-                // Búsqueda rápida por token al validar
-                e.HasIndex(x => x.Token).IsUnique();
-
-                // Tokens activos por usuario
-                e.HasIndex(x => new { x.UserId, x.IsUsed, x.ExpiresAt });
-
-                e.HasOne(x => x.User)
-                 .WithMany()
-                 .HasForeignKey(x => x.UserId)
-                 .OnDelete(DeleteBehavior.Cascade);
-
-                e.HasOne(x => x.Company)
-                 .WithMany()
-                 .HasForeignKey(x => x.CompanyId)
-                 .OnDelete(DeleteBehavior.NoAction);
-
-            });
-        }
-        private static void ConfigureOutboxEmail(ModelBuilder b)
-        {
-            b.Entity<OutboxEmail>(e =>
-            {
-                e.HasKey(x => x.Id);
-
-                // Status y EmailType como tinyint en BD
-                e.Property(x => x.Status)
-                 .HasConversion<byte>();
-
-                e.Property(x => x.EmailType)
-                 .HasConversion<byte>();
-
-                // Índice principal del processor — solo Pending(0) y Failed(2)
-                e.HasIndex(x => new { x.Status, x.NextRetryAt })
-                 .HasFilter("[Status] IN (0, 2)");
-
-                // Índice para panel admin — por empresa, tipo y estado
-                e.HasIndex(x => new { x.CompanyId, x.EmailType, x.Status });
-
-                // Sin QueryFilter global — el processor procesa todos los tenants
-                e.HasOne(x => x.Company)
-                 .WithMany()
-                 .HasForeignKey(x => x.CompanyId)
-                 .OnDelete(DeleteBehavior.NoAction);
-
-                e.HasOne(x => x.Branch)
-                 .WithMany()
-                 .HasForeignKey(x => x.BranchId)
-                 .OnDelete(DeleteBehavior.NoAction);
-            });
-
-            b.Entity<OutboxEmailBody>(e =>
-            {
-                // Shared primary key
-                e.HasKey(x => x.OutboxEmailId);
-
-                e.HasOne(x => x.OutboxEmail)
-                 .WithOne(x => x.Body)
-                 .HasForeignKey<OutboxEmailBody>(x => x.OutboxEmailId)
-                 .OnDelete(DeleteBehavior.Cascade);
-
-                // Sin límite — el HTML puede ser extenso
-                e.Property(x => x.HtmlBody)
-                 .HasColumnType("nvarchar(max)");
-            });
-        }
-
-        private static void ConfigurePlatformModule(ModelBuilder b)
-        {
-            b.Entity<PlatformModule>(e =>
-            {
-                e.HasKey(pm => pm.Id);
-                e.Property(pm => pm.Code).IsRequired().HasMaxLength(50);
-                e.Property(pm => pm.Name).IsRequired().HasMaxLength(100);
-                e.Property(pm => pm.Description).HasMaxLength(300);
-
-                e.HasIndex(pm => pm.Code).IsUnique();
-            });
-        }
-
-        private static void ConfigureCompanyModule(ModelBuilder b)
-        {
-            b.Entity<CompanyModule>(e =>
-            {
-                e.HasKey(cm => cm.Id);
-
-                // Una empresa no puede tener el mismo módulo dos veces
-                e.HasIndex(cm => new { cm.CompanyId, cm.PlatformModuleId }).IsUnique();
-                e.HasIndex(cm => new { cm.CompanyId, cm.IsActive });
-
-                // RESTRICT: todos los borrados son lógicos (IsActive = false).
-                e.HasOne(cm => cm.Company)
-                 .WithMany(c => c.CompanyModules)
-                 .HasForeignKey(cm => cm.CompanyId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                e.HasOne(cm => cm.PlatformModule)
-                 .WithMany()
-                 .HasForeignKey(cm => cm.PlatformModuleId)
-                 .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
+        // ── Configuraciones DigiMenu-específicas ──────────────────────
 
         private static void ConfigureCategory(ModelBuilder b)
         {
@@ -333,7 +62,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(c => c.Company)
-                 .WithMany(co => co.Categories)
+                 .WithMany()
                  .HasForeignKey(c => c.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
 
@@ -354,7 +83,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(p => p.Company)
-                 .WithMany(c => c.Products)
+                 .WithMany()
                  .HasForeignKey(p => p.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
 
@@ -385,7 +114,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(t => t.Company)
-                 .WithMany(c => c.Tags)
+                 .WithMany()
                  .HasForeignKey(t => t.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
 
@@ -466,7 +195,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(bp => bp.Branch)
-                 .WithMany(br => br.BranchProducts)
+                 .WithMany()
                  .HasForeignKey(bp => bp.BranchId)
                  .OnDelete(DeleteBehavior.Restrict);
 
@@ -485,95 +214,6 @@ namespace DigiMenuAPI.Infrastructure.SQL
             });
         }
 
-        // ── Métodos de configuración ──────────────────────────────────────────────
-        private static void ConfigureBranchInfo(ModelBuilder b)
-        {
-            b.Entity<BranchInfo>(e =>
-            {
-                e.HasKey(i => i.Id);
-                e.Property(i => i.BusinessName).IsRequired().HasMaxLength(100);
-                e.Property(i => i.Tagline).HasMaxLength(200);
-
-                // 1:1 con Branch
-                e.HasIndex(i => i.BranchId).IsUnique();
-                e.HasOne(i => i.Branch)
-                 .WithOne(br => br.Info)
-                 .HasForeignKey<BranchInfo>(i => i.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
-
-        private static void ConfigureBranchTheme(ModelBuilder b)
-        {
-            b.Entity<BranchTheme>(e =>
-            {
-                e.HasKey(t => t.Id);
-
-                // Valores por defecto de colores
-                e.Property(t => t.PageBackgroundColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.HeaderBackgroundColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.HeaderTextColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(t => t.TabBackgroundColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(t => t.TabTextColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.PrimaryColor).HasMaxLength(7).HasDefaultValue("#E63946");
-                e.Property(t => t.PrimaryTextColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.SecondaryColor).HasMaxLength(7).HasDefaultValue("#457B9D");
-                e.Property(t => t.TitlesColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(t => t.TextColor).HasMaxLength(7).HasDefaultValue("#1D3557");
-                e.Property(t => t.BrowserThemeColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.HeaderStyle).HasColumnType("tinyint").HasDefaultValue((byte)1);
-                e.Property(t => t.MenuLayout).HasColumnType("tinyint").HasDefaultValue((byte)1);
-                e.Property(t => t.ProductDisplay).HasColumnType("tinyint").HasDefaultValue((byte)1);
-
-                // 1:1 con Branch
-                e.HasIndex(t => t.BranchId).IsUnique();
-                e.HasOne(t => t.Branch)
-                 .WithOne(br => br.Theme)
-                 .HasForeignKey<BranchTheme>(t => t.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
-
-        private static void ConfigureBranchLocale(ModelBuilder b)
-        {
-            b.Entity<BranchLocale>(e =>
-            {
-                e.HasKey(l => l.Id);
-                e.Property(l => l.CountryCode).IsRequired().HasMaxLength(3);
-                e.Property(l => l.PhoneCode).IsRequired().HasMaxLength(6);
-                e.Property(l => l.Currency).IsRequired().HasMaxLength(5);
-                e.Property(l => l.CurrencyLocale).IsRequired().HasMaxLength(10);
-                e.Property(l => l.Language).IsRequired().HasMaxLength(5);
-                e.Property(l => l.TimeZone).IsRequired().HasMaxLength(50);
-
-                // 1:1 con Branch
-                e.HasIndex(l => l.BranchId).IsUnique();
-                e.HasOne(l => l.Branch)
-                 .WithOne(br => br.Locale)
-                 .HasForeignKey<BranchLocale>(l => l.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
-
-        private static void ConfigureBranchSeo(ModelBuilder b)
-        {
-            b.Entity<BranchSeo>(e =>
-            {
-                e.HasKey(s => s.Id);
-                e.Property(s => s.MetaTitle).HasMaxLength(100);
-                e.Property(s => s.MetaDescription).HasMaxLength(300);
-                e.Property(s => s.GoogleAnalyticsId).HasMaxLength(50);
-                e.Property(s => s.FacebookPixelId).HasMaxLength(50);
-
-                // 1:1 con Branch
-                e.HasIndex(s => s.BranchId).IsUnique();
-                e.HasOne(s => s.Branch)
-                 .WithOne(br => br.Seo)
-                 .HasForeignKey<BranchSeo>(s => s.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-            });
-        }
-
         private static void ConfigureBranchReservationForm(ModelBuilder b)
         {
             b.Entity<BranchReservationForm>(e =>
@@ -583,7 +223,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 // 1:1 con Branch — opcional, solo existe si el módulo está activo
                 e.HasIndex(f => f.BranchId).IsUnique();
                 e.HasOne(f => f.Branch)
-                 .WithOne(br => br.ReservationForm)
+                 .WithOne()
                  .HasForeignKey<BranchReservationForm>(f => f.BranchId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
@@ -602,7 +242,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(f => f.Branch)
-                 .WithMany(br => br.FooterLinks)
+                 .WithMany()
                  .HasForeignKey(f => f.BranchId)
                  .OnDelete(DeleteBehavior.Restrict);
 
@@ -614,49 +254,6 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 // Filtro global: excluye footer links eliminados de todas las consultas
                 e.HasQueryFilter(f => !f.IsDeleted);
-            });
-        }
-
-        private static void ConfigureBranchSchedule(ModelBuilder b)
-        {
-            b.Entity<BranchSchedule>(e =>
-            {
-                e.HasKey(x => x.Id);
-
-                // Un solo registro por día por Branch — garantía de integridad
-                e.HasIndex(x => new { x.BranchId, x.DayOfWeek }).IsUnique();
-
-                e.Property(x => x.DayOfWeek).HasColumnType("tinyint");
-
-                // Cascade: los horarios se eliminan físicamente si se elimina la Branch
-                // BranchSchedule no tiene soft delete propio
-                e.HasOne(x => x.Branch)
-                 .WithMany(br => br.Schedules)
-                 .HasForeignKey(x => x.BranchId)
-                 .OnDelete(DeleteBehavior.Cascade);
-            });
-        }
-
-        private static void ConfigureBranchSpecialDay(ModelBuilder b)
-        {
-            b.Entity<BranchSpecialDay>(e =>
-            {
-                e.HasKey(x => x.Id);
-
-                // Una Branch no puede tener dos registros para la misma fecha
-                e.HasIndex(x => new { x.BranchId, x.Date }).IsUnique();
-
-                // Índice para la consulta de reservas y menú público por fecha
-                e.HasIndex(x => new { x.BranchId, x.Date });
-
-                e.Property(x => x.Date).HasColumnType("date");
-                e.Property(x => x.Reason).IsRequired().HasMaxLength(200);
-
-                // Cascade: los días especiales se eliminan físicamente con la Branch
-                e.HasOne(x => x.Branch)
-                 .WithMany(br => br.SpecialDays)
-                 .HasForeignKey(x => x.BranchId)
-                 .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
@@ -675,7 +272,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(r => r.Branch)
-                 .WithMany(br => br.Reservations)
+                 .WithMany()
                  .HasForeignKey(r => r.BranchId)
                  .OnDelete(DeleteBehavior.Restrict);
 
@@ -684,230 +281,20 @@ namespace DigiMenuAPI.Infrastructure.SQL
             });
         }
 
-        // ── Data Seeding ─────────────────────────────────────────────
+        // ── Data Seeding DigiMenu-específico ──────────────────────────
 
-        private static void SeedData(ModelBuilder b)
+        private static void SeedMenuData(ModelBuilder b)
         {
-            SeedPlans(b);
-            SeedStandardIcons(b);
-            SeedPlatformModules(b);
-            SeedMasterCompany(b);
-            SeedMasterBranch(b);
-            SeedMasterUser(b);
-            SeedMasterBranchConfig(b);
+            SeedMasterBranchReservationForm(b);
             SeedMasterTags(b);
             SeedMasterCategories(b);
             SeedMasterProducts(b);
             SeedMasterFooterLinks(b);
-            SeedMasterCompanyModules(b);
         }
 
-        private static void SeedPlans(ModelBuilder b)
-        {
-            b.Entity<Plan>().HasData(
-                new Plan
-                {
-                    Id           = 1,
-                    Code         = "BASIC",
-                    Name         = "Básico",
-                    Description  = "Ideal para negocios con una sola sucursal.",
-                    MonthlyPrice = 0m,
-                    AnnualPrice  = null,
-                    MaxBranches  = 1,
-                    MaxUsers     = 3,
-                    IsPublic     = true,
-                    IsActive     = true,
-                    DisplayOrder = 1
-                },
-                new Plan
-                {
-                    Id           = 2,
-                    Code         = "PRO",
-                    Name         = "Pro",
-                    Description  = "Para negocios en crecimiento con hasta 3 sucursales.",
-                    MonthlyPrice = 29.99m,
-                    AnnualPrice  = 24.99m,
-                    MaxBranches  = 3,
-                    MaxUsers     = 10,
-                    IsPublic     = true,
-                    IsActive     = true,
-                    DisplayOrder = 2
-                },
-                new Plan
-                {
-                    Id           = 3,
-                    Code         = "BUSINESS",
-                    Name         = "Business",
-                    Description  = "Para cadenas con múltiples locales.",
-                    MonthlyPrice = 79.99m,
-                    AnnualPrice  = 64.99m,
-                    MaxBranches  = 10,
-                    MaxUsers     = 30,
-                    IsPublic     = true,
-                    IsActive     = true,
-                    DisplayOrder = 3
-                },
-                new Plan
-                {
-                    Id           = 4,
-                    Code         = "ENTERPRISE",
-                    Name         = "Enterprise",
-                    Description  = "Sin límites. Ideal para grandes cadenas y franquicias.",
-                    MonthlyPrice = 199.99m,
-                    AnnualPrice  = 159.99m,
-                    MaxBranches  = -1,   // -1 = ilimitado
-                    MaxUsers     = -1,   // -1 = ilimitado
-                    IsPublic     = true,
-                    IsActive     = true,
-                    DisplayOrder = 4
-                }
-            );
-        }
-
-        private static void SeedStandardIcons(ModelBuilder b)
-        {
-            b.Entity<StandardIcon>().HasData(
-                new StandardIcon { Id = 1, Name = "Facebook",  SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'></path></svg>" },
-                new StandardIcon { Id = 2, Name = "Instagram", SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='2' width='20' height='20' rx='5' ry='5'></rect><path d='M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z'></path><line x1='17.5' y1='6.5' x2='17.51' y2='6.5'></line></svg>" },
-                new StandardIcon { Id = 3, Name = "WhatsApp",  SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-14h.1c4.3 0 7.9 3.5 8.4 7.7z'></path><path d='M17 16l-4-4 4-4'></path></svg>" },
-                new StandardIcon { Id = 4, Name = "TikTok",    SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5'></path></svg>" },
-                new StandardIcon { Id = 5, Name = "YouTube",   SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z'></path><polygon points='9.75 15.02 15.5 12 9.75 8.98 9.75 15.02'></polygon></svg>" },
-                new StandardIcon { Id = 6, Name = "X",         SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4l16 16M4 20L20 4'/></svg>" },
-                new StandardIcon { Id = 7, Name = "Web",       SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>" }
-            );
-        }
-
-        private static void SeedPlatformModules(ModelBuilder b)
-        {
-            b.Entity<PlatformModule>().HasData(
-                new PlatformModule { Id = 1, Code = "RESERVATIONS",     Name = "Reservaciones",      Description = "Gestión de reservas de mesas desde el menú público.",   IsActive = true, DisplayOrder = 1 },
-                new PlatformModule { Id = 2, Code = "TABLE_MANAGEMENT", Name = "Gestión de Mesas",   Description = "Control visual del estado de las mesas del local.",     IsActive = true, DisplayOrder = 2 },
-                new PlatformModule { Id = 3, Code = "ANALYTICS",        Name = "Analíticas",         Description = "Reportes de visitas, productos más vistos y reservas.", IsActive = true, DisplayOrder = 3 },
-                new PlatformModule { Id = 4, Code = "ONLINE_ORDERS",    Name = "Pedidos en Línea",   Description = "Permite recibir pedidos directamente desde el menú.",   IsActive = true, DisplayOrder = 4 }
-            );
-        }
-
-        private static void SeedMasterCompany(ModelBuilder b)
-        {
-            // Empresa maestra de la plataforma (para demo y desarrollo).
-            // PlanId = 4 (ENTERPRISE) → sin límites de branches ni usuarios.
-            b.Entity<Company>().HasData(new Company
-            {
-                Id          = 1,
-                Name        = "DigiMenu Platform",
-                Email       = "admin@digimenu.app",
-                Phone       = "+50600000000",
-                CountryCode = "CR",
-                IsActive    = true,
-                PlanId      = 4,
-                MaxBranches = -1,
-                MaxUsers    = -1,
-                CreatedAt   = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-            });
-        }
-
-        private static void SeedMasterBranch(ModelBuilder b)
-        {
-            b.Entity<Branch>().HasData(new Branch
-            {
-                Id        = 1,
-                CompanyId = 1,
-                Name      = "Sucursal Principal",
-                Slug      = "digimenu-platform",
-                Address   = "San José, Costa Rica",
-                Phone     = "+50600000000",
-                Email     = "admin@digimenu.app",
-                IsActive  = true,
-                IsDeleted = false,
-                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-            });
-        }
-
-        private static void SeedMasterUser(ModelBuilder b)
-        {
-            // ⚠️ IMPORTANTE: cambiar la contraseña en el primer despliegue a producción.
-            // Hash generado con BCrypt.Net.BCrypt.HashPassword("Master@2026!", 12)
-            b.Entity<AppUser>().HasData(new AppUser
-            {
-                Id           = 1,
-                CompanyId    = 1,
-                BranchId     = null,   // SuperAdmin no pertenece a una Branch específica
-                FullName     = "Super Admin",
-                Email        = "admin@digimenu.app",
-                PasswordHash = "$2a$12$REEMPLAZAR_CON_HASH_REAL",
-                Role         = UserRoles.SuperAdmin,
-                IsActive     = true,
-                IsDeleted    = false,
-                CreatedAt    = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-            });
-        }
-
-        private static void SeedMasterBranchConfig(ModelBuilder b)
+        private static void SeedMasterBranchReservationForm(ModelBuilder b)
         {
             var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            b.Entity<BranchInfo>().HasData(new BranchInfo
-            {
-                Id = 1,
-                BranchId = 1,
-                BusinessName = "DigiMenu Demo",
-                Tagline = "El mejor menú digital para tu restaurante",
-                LogoUrl = null,
-                FaviconUrl = null,
-                BackgroundImageUrl = null,
-                CreatedAt = seed
-            });
-
-            b.Entity<BranchTheme>().HasData(new BranchTheme
-            {
-                Id = 1,
-                BranchId = 1,
-                IsDarkMode = false,
-                PageBackgroundColor = "#F1FAEE",
-                HeaderBackgroundColor = "#1D3557",
-                HeaderTextColor = "#FFFFFF",
-                TabBackgroundColor = "#457B9D",
-                TabTextColor = "#FFFFFF",
-                PrimaryColor = "#E63946",
-                PrimaryTextColor = "#FFFFFF",
-                SecondaryColor = "#457B9D",
-                TitlesColor = "#1D3557",
-                TextColor = "#1D3557",
-                BrowserThemeColor = "#1D3557",
-                HeaderStyle = 1,
-                MenuLayout = 1,
-                ProductDisplay = 1,
-                ShowProductDetails = true,
-                ShowSearchButton = true,
-                ShowContactButton = true,
-                CreatedAt = seed
-            });
-
-            b.Entity<BranchLocale>().HasData(new BranchLocale
-            {
-                Id = 1,
-                BranchId = 1,
-                CountryCode = "CR",
-                PhoneCode = "+506",
-                Currency = "CRC",
-                CurrencyLocale = "es-CR",
-                Language = "es",
-                TimeZone = "America/Costa_Rica",
-                Decimals = 0,
-                CreatedAt = seed
-            });
-
-            b.Entity<BranchSeo>().HasData(new BranchSeo
-            {
-                Id = 1,
-                BranchId = 1,
-                MetaTitle = "DigiMenu Demo",
-                MetaDescription = "El mejor menú digital para tu restaurante",
-                GoogleAnalyticsId = null,
-                FacebookPixelId = null,
-                CreatedAt = seed
-            });
-
             // BranchReservationForm del seed — la empresa demo tiene el módulo activo
             b.Entity<BranchReservationForm>().HasData(new BranchReservationForm
             {
@@ -930,6 +317,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 CreatedAt = seed
             });
         }
+
         private static void SeedMasterTags(ModelBuilder b)
         {
             var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -997,83 +385,6 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 new FooterLink { Id = 1, BranchId = 1, Label = "Instagram", Url = "https://instagram.com/digimenu", StandardIconId = 2, DisplayOrder = 1, IsVisible = true, IsDeleted = false, CreatedAt = seed },
                 new FooterLink { Id = 2, BranchId = 1, Label = "WhatsApp",  Url = "https://wa.me/50612345678",      StandardIconId = 3, DisplayOrder = 2, IsVisible = true, IsDeleted = false, CreatedAt = seed }
             );
-        }
-
-        private static void SeedMasterCompanyModules(ModelBuilder b)
-        {
-            var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            b.Entity<CompanyModule>().HasData(
-                new CompanyModule { Id = 1, CompanyId = 1, PlatformModuleId = 1, IsActive = true, ActivatedAt = seed, ActivatedByUserId = 1 },
-                new CompanyModule { Id = 2, CompanyId = 1, PlatformModuleId = 2, IsActive = true, ActivatedAt = seed, ActivatedByUserId = 1 },
-                new CompanyModule { Id = 3, CompanyId = 1, PlatformModuleId = 3, IsActive = true, ActivatedAt = seed, ActivatedByUserId = 1 },
-                new CompanyModule { Id = 4, CompanyId = 1, PlatformModuleId = 4, IsActive = true, ActivatedAt = seed, ActivatedByUserId = 1 }
-            );
-        }
-
-        // ── Auditoría Automática ──────────────────────────────────────
-
-        public override int SaveChanges()
-        {
-            ApplyAuditInfo();
-            return base.SaveChanges();
-        }
-
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            ApplyAuditInfo();
-            return await base.SaveChangesAsync(cancellationToken);
-        }
-
-        private void ApplyAuditInfo()
-        {
-            // Leer userId del JWT una sola vez para todas las entidades del batch
-            var userId = ResolveCurrentUserId();
-            var now = DateTime.UtcNow;
-
-            foreach (var entry in ChangeTracker.Entries<BaseEntity>())
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    entry.Entity.CreatedAt = now;
-                    entry.Entity.CreatedUserId = userId;
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    entry.Entity.ModifiedAt = now;
-                    entry.Entity.ModifiedUserId = userId;
-
-                    // Proteger campos de creación — nunca se sobreescriben
-                    entry.Property(x => x.CreatedAt).IsModified = false;
-                    entry.Property(x => x.CreatedUserId).IsModified = false;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Extrae el UserId del JWT del HttpContext actual.
-        /// Devuelve null en:
-        ///   - Contextos sin request HTTP (migraciones, seed, background jobs)
-        ///   - Endpoints públicos sin JWT (menú público, reservas anónimas)
-        ///   - JWT sin claim "userId"
-        /// </summary>
-        private int? ResolveCurrentUserId()
-        {
-            var user = _httpContextAccessor.HttpContext?.User;
-
-            if (user is null || user.Identity?.IsAuthenticated != true)
-                return null;
-
-            var claim = user.FindFirstValue("userId");
-
-            if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
-                return null;
-
-            return userId;
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using DigiMenuAPI.Application.Common;
+using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.SQL;

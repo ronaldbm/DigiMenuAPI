@@ -1,4 +1,4 @@
-﻿using DigiMenuAPI.Application.Common;
+﻿using AppCore.Application.Common;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.OutputCaching;
 

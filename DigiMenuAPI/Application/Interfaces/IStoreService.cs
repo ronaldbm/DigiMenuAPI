@@ -1,4 +1,4 @@
-﻿using DigiMenuAPI.Application.Common;
+﻿using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Read;
 
 namespace DigiMenuAPI.Application.Interfaces
