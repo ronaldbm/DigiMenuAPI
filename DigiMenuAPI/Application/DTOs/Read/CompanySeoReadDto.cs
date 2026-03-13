@@ -1,8 +1,8 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Read
+namespace DigiMenuAPI.Application.DTOs.Read
 {
-    public record BranchSeoReadDto(
+    public record CompanySeoReadDto(
         int Id,
-        int BranchId,
+        int CompanyId,
         string? MetaTitle,
         string? MetaDescription,
         string? GoogleAnalyticsId,

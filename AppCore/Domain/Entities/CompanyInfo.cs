@@ -3,19 +3,19 @@ using System.ComponentModel.DataAnnotations;
 namespace AppCore.Domain.Entities
 {
     /// <summary>
-    /// Identidad visual del negocio para una Branch.
+    /// Identidad visual del negocio para una Company.
     /// Contiene el nombre comercial, slogan e imágenes de marca.
     ///
-    /// Separada de BranchTheme para permitir actualizar identidad
+    /// Separada de CompanyTheme para permitir actualizar identidad
     /// sin tocar colores ni layout, y viceversa.
     ///
-    /// Relación 1:1 con Branch.
+    /// Relación 1:1 con Company.
     /// </summary>
-    public class BranchInfo : BaseEntity
+    public class CompanyInfo : BaseEntity
     {
         // ── Multi-Tenant ─────────────────────────────────────────────
-        public int BranchId { get; set; }
-        public Branch Branch { get; set; } = null!;
+        public int CompanyId { get; set; }
+        public Company Company { get; set; } = null!;
 
         // ── Identidad del negocio ─────────────────────────────────────
         [Required, MaxLength(100)]

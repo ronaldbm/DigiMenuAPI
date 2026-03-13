@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace AppCore.Domain.Entities
 {
     /// <summary>
-    /// Configuración de SEO y analytics del menú público de una Branch.
+    /// Configuración de SEO y analytics del menú público de una Company.
     /// Incluye metadatos para motores de búsqueda y píxeles de seguimiento.
     ///
     /// Separada del resto para poder actualizarla sin afectar
@@ -11,13 +11,13 @@ namespace AppCore.Domain.Entities
     ///
     /// Todos los campos son opcionales — el menú funciona sin SEO configurado.
     ///
-    /// Relación 1:1 con Branch.
+    /// Relación 1:1 con Company.
     /// </summary>
-    public class BranchSeo : BaseEntity
+    public class CompanySeo : BaseEntity
     {
         // ── Multi-Tenant ─────────────────────────────────────────────
-        public int BranchId { get; set; }
-        public Branch Branch { get; set; } = null!;
+        public int CompanyId { get; set; }
+        public Company Company { get; set; } = null!;
 
         // ── SEO ───────────────────────────────────────────────────────
         /// <summary>Título para la pestaña del navegador y resultados de búsqueda.</summary>

@@ -1,8 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Read
+namespace DigiMenuAPI.Application.DTOs.Update
 {
-        public record BranchThemeReadDto(
-        int Id,
-        int BranchId,
+    public record CompanyThemeUpdateDto(
         bool IsDarkMode,
         string PageBackgroundColor,
         string HeaderBackgroundColor,

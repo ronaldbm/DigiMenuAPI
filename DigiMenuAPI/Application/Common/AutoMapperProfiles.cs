@@ -164,34 +164,34 @@ namespace DigiMenuAPI.Application.Common
             CreateMap<TagUpdateDto, Tag>().ReverseMap();
         }
 
-        // ── BranchSettings ────────────────────────────────────────────────────────
+        // ── Settings ──────────────────────────────────────────────────
         private void SettingMappings()
         {
-            // BranchInfo
-            CreateMap<BranchInfo, BranchInfoReadDto>();
-            CreateMap<BranchInfoUpdateDto, BranchInfo>()
+            // CompanyInfo
+            CreateMap<CompanyInfo, CompanyInfoReadDto>();
+            CreateMap<CompanyInfoUpdateDto, CompanyInfo>()
                 .ForMember(d => d.LogoUrl, o => o.Ignore())           // servicio sube imagen
                 .ForMember(d => d.FaviconUrl, o => o.Ignore())        // servicio sube imagen
                 .ForMember(d => d.BackgroundImageUrl, o => o.Ignore()); // servicio sube imagen
 
-            // BranchTheme
-            CreateMap<BranchTheme, BranchThemeReadDto>();
-            CreateMap<BranchThemeUpdateDto, BranchTheme>().ReverseMap();
+            // CompanyTheme
+            CreateMap<CompanyTheme, CompanyThemeReadDto>();
+            CreateMap<CompanyThemeUpdateDto, CompanyTheme>().ReverseMap();
+
+            // CompanySeo
+            CreateMap<CompanySeo, CompanySeoReadDto>();
+            CreateMap<CompanySeoUpdateDto, CompanySeo>().ReverseMap();
 
             // BranchLocale
             CreateMap<BranchLocale, BranchLocaleReadDto>();
             CreateMap<BranchLocaleUpdateDto, BranchLocale>().ReverseMap();
 
-            // BranchSeo
-            CreateMap<BranchSeo, BranchSeoReadDto>();
-            CreateMap<BranchSeoUpdateDto, BranchSeo>().ReverseMap();
-
             // BranchReservationForm
             CreateMap<BranchReservationForm, BranchReservationFormReadDto>();
             CreateMap<BranchReservationFormUpdateDto, BranchReservationForm>().ReverseMap();
 
-            // MenuBranchDto: se construye desde BranchInfo + BranchTheme + BranchLocale + BranchSeo
-            // La construcción se hace manualmente en StoreService — no hay un AutoMapper directo
+            // MenuBranchDto: se construye manualmente en StoreService desde CompanyInfo,
+            // CompanyTheme, CompanySeo y BranchLocale — no hay un AutoMapper directo
             // porque el origen es multi-entidad y el destino es un DTO plano compuesto.
         }
 

@@ -1,5 +1,7 @@
 ﻿using AppCore.Application.Interfaces;
 using AppCore.Application.Services;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using AppCore.Application.Services.Email;
 using AppCore.Application.Utils;
 using AppCore.Infrastructure.Email;
@@ -71,6 +73,22 @@ public partial class Program
         });
 
         builder.Services.AddAuthorization();
+
+        builder.Services.AddProblemDetails();
+
+        // ── RATE LIMITING ─────────────────────────────────────────────────────────
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            // Auth endpoints: max 10 peticiones por minuto por IP
+            options.AddFixedWindowLimiter("auth", opt =>
+            {
+                opt.PermitLimit = 10;
+                opt.Window = TimeSpan.FromMinutes(1);
+                opt.QueueLimit = 0;
+            });
+        });
 
         // ── EMAIL ─────────────────────────────────────────────────────────────────
         var emailProvider = builder.Configuration["Email:Provider"] ?? "SendGrid";
@@ -153,6 +171,26 @@ public partial class Program
         var app = builder.Build();
         // ════════════════════════════════════════════════════════════════════
 
+        app.UseExceptionHandler(exceptionHandlerApp =>
+        {
+            exceptionHandlerApp.Run(async context =>
+            {
+                var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+                if (feature?.Error is UnauthorizedAccessException uae)
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsJsonAsync(new
+                    {
+                        Success = false,
+                        ErrorCode = "Forbidden",
+                        ErrorKey = AppCore.Application.Common.ErrorKeys.Forbidden,
+                        Message = uae.Message
+                    });
+                }
+            });
+        });
+
         if (app.Environment.IsDevelopment())
         {
             // Expone el JSON del schema en: /openapi/v1.json
@@ -167,6 +205,7 @@ public partial class Program
         app.UseCors("Frontend");
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseRateLimiter();
         app.UseOutputCache();
         app.UseStaticFiles();
 

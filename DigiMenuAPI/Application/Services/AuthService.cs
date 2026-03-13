@@ -93,55 +93,46 @@ namespace DigiMenuAPI.Application.Services
             _context.Branches.Add(branch);
             await _context.SaveChangesAsync();
 
-            // 3. Crear BranchInfo
-            _context.BranchInfos.Add(new BranchInfo
+            // 3. Crear CompanyInfo
+            _context.CompanyInfos.Add(new CompanyInfo
             {
-                BranchId = branch.Id,
+                CompanyId = company.Id,
                 BusinessName = dto.Name.Trim()
             });
 
-            // 4. Crear BranchTheme — valores por defecto de la paleta DigiMenu
-            _context.BranchThemes.Add(new BranchTheme
+            // 4. Crear CompanyTheme — valores por defecto de la paleta DigiMenu
+            _context.CompanyThemes.Add(new CompanyTheme
             {
-                BranchId = branch.Id,
+                CompanyId = company.Id,
                 IsDarkMode = false,
-                PageBackgroundColor = "#F1FAEE",
-                HeaderBackgroundColor = "#FFFFFF",
-                HeaderTextColor = "#1D3557",
-                TabBackgroundColor = "#1D3557",
-                TabTextColor = "#FFFFFF",
-                PrimaryColor = "#E63946",
-                PrimaryTextColor = "#FFFFFF",
-                SecondaryColor = "#457B9D",
-                TitlesColor = "#1D3557",
-                TextColor = "#1D3557",
-                BrowserThemeColor = "#FFFFFF",
-                HeaderStyle = 1,
-                MenuLayout = 1,
-                ProductDisplay = 1,
-                ShowProductDetails = true,
-                ShowSearchButton = false,
-                ShowContactButton = false
+                PageBackgroundColor   = DefaultTheme.PageBackground,
+                HeaderBackgroundColor = DefaultTheme.HeaderBackground,
+                HeaderTextColor       = DefaultTheme.HeaderText,
+                TabBackgroundColor    = DefaultTheme.TabBackground,
+                TabTextColor          = DefaultTheme.TabText,
+                PrimaryColor          = DefaultTheme.Primary,
+                PrimaryTextColor      = DefaultTheme.PrimaryText,
+                SecondaryColor        = DefaultTheme.Secondary,
+                TitlesColor           = DefaultTheme.Titles,
+                TextColor             = DefaultTheme.Text,
+                BrowserThemeColor     = DefaultTheme.BrowserTheme,
+                HeaderStyle           = 1,
+                MenuLayout            = 1,
+                ProductDisplay        = 1,
+                ShowProductDetails    = true,
+                ShowSearchButton      = false,
+                ShowContactButton     = false
             });
 
-            // 5. Crear BranchLocale — valores derivados del país registrado
-            _context.BranchLocales.Add(new BranchLocale
+            // 5. Crear CompanySeo — vacío, el admin lo completa después
+            _context.CompanySeos.Add(new CompanySeo
             {
-                BranchId = branch.Id,
-                CountryCode = dto.CountryCode?.ToUpper() ?? "CR",
-                PhoneCode = LocaleHelper.ResolvePhoneCode(dto.CountryCode),
-                Currency = LocaleHelper.ResolveCurrency(dto.CountryCode),
-                CurrencyLocale = LocaleHelper.ResolveCurrencyLocale(dto.CountryCode),
-                Language = "es",
-                TimeZone = LocaleHelper.ResolveTimeZone(dto.CountryCode),
-                Decimals = 2
+                CompanyId = company.Id
             });
 
-            // 6. Crear BranchSeo — vacío, el admin lo completa después
-            _context.BranchSeos.Add(new BranchSeo
-            {
-                BranchId = branch.Id
-            });
+            // 6. Crear BranchLocale — valores derivados del país registrado
+            _context.BranchLocales.Add(
+                BranchLocaleInitializer.Create(branch.Id, dto.CountryCode));
 
             // 7. Inicializar horario semanal de la Branch con defaults
             //    El admin puede ajustar cada día desde el panel de configuración

@@ -3,6 +3,7 @@ using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DigiMenuAPI.Controllers
 {
@@ -37,12 +38,14 @@ namespace DigiMenuAPI.Controllers
         /// </summary>
         [HttpPost("register-company")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> RegisterCompany([FromBody] CompanyCreateDto dto)
             => HandleResult(await _authService.RegisterCompany(dto));
 
         /// <summary>Autentica un usuario. Devuelve JWT + MustChangePassword flag.</summary>
         [HttpPost("login")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> Login([FromBody] LoginRequestDto dto)
             => HandleResult(await _authService.Login(dto));
 
@@ -61,6 +64,7 @@ namespace DigiMenuAPI.Controllers
         /// </summary>
         [HttpPost("forgot-password")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
             => HandleResult(await _authService.ForgotPassword(dto));
 
@@ -75,6 +79,7 @@ namespace DigiMenuAPI.Controllers
         /// <summary>Aplica nueva contraseña usando el token recibido por email.</summary>
         [HttpPost("reset-password")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
             => HandleResult(await _authService.ResetPassword(dto));
     }

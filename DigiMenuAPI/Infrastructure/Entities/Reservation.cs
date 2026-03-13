@@ -1,3 +1,4 @@
+using AppCore.Application.Common;
 using AppCore.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -42,8 +43,7 @@ namespace DigiMenuAPI.Infrastructure.Entities
         [MaxLength(500)]
         public string? Comments { get; set; }
 
-        /// <summary>1: Pending | 2: Confirmed | 3: Cancelled | 4: Completed</summary>
-        public byte Status { get; set; } = 1;
+        public ReservationStatus Status { get; set; } = ReservationStatus.Pending;
 
         public bool IsDeleted { get; set; }
     }

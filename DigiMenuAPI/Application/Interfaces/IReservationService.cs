@@ -11,7 +11,7 @@ namespace DigiMenuAPI.Application.Interfaces
         /// BranchAdmin/Staff ven solo su propia Branch.
         /// CompanyAdmin ve todas las Branches de su empresa.
         /// </summary>
-        Task<OperationResult<List<ReservationReadDto>>> GetAll();
+        Task<OperationResult<PagedResult<ReservationReadDto>>> GetAll(int page = 1, int pageSize = 20);
 
         /// <summary>
         /// Público: el cliente crea una reserva.
@@ -19,7 +19,7 @@ namespace DigiMenuAPI.Application.Interfaces
         /// </summary>
         Task<OperationResult<int>> Create(ReservationCreateDto dto, int branchId, int companyId);
 
-        Task<OperationResult<bool>> UpdateStatus(int id, byte newStatus);
+        Task<OperationResult<bool>> UpdateStatus(int id, ReservationStatus newStatus);
         Task<OperationResult<bool>> Delete(int id);
     }
 }

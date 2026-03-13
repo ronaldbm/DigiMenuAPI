@@ -40,16 +40,18 @@ namespace DigiMenuAPI.Application.Services
                 if (branchId is null || companyId is null)
                     return OperationResult<MenuBranchDto>.Fail("Menú no encontrado.");
 
-                // 2. Leer las 4 entidades de configuración en paralelo.
-                //    BranchSeo es opcional — el menú funciona sin SEO configurado.
-                var infoTask = _context.BranchInfos.AsNoTracking()
-                    .FirstOrDefaultAsync(i => i.BranchId == branchId.Value);
-                var themeTask = _context.BranchThemes.AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.BranchId == branchId.Value);
+                // 2. Leer las entidades de configuración en paralelo.
+                //    CompanyInfo, CompanyTheme y CompanySeo son de nivel Company.
+                //    BranchLocale es de nivel Branch.
+                //    CompanySeo es opcional — el menú funciona sin SEO configurado.
+                var infoTask = _context.CompanyInfos.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.CompanyId == companyId.Value);
+                var themeTask = _context.CompanyThemes.AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.CompanyId == companyId.Value);
                 var localeTask = _context.BranchLocales.AsNoTracking()
                     .FirstOrDefaultAsync(l => l.BranchId == branchId.Value);
-                var seoTask = _context.BranchSeos.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.BranchId == branchId.Value);
+                var seoTask = _context.CompanySeos.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.CompanyId == companyId.Value);
 
                 await Task.WhenAll(infoTask, themeTask, localeTask, seoTask);
 

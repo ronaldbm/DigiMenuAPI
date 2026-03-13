@@ -67,6 +67,13 @@ namespace DigiMenuAPI.Application.Services
         {
             var companyId = _tenantService.GetCompanyId();
 
+            var exists = await _context.Tags
+                .AnyAsync(t => t.CompanyId == companyId && t.Name == dto.Name.Trim());
+            if (exists)
+                return OperationResult<TagReadDto>.Conflict(
+                    "Ya existe un tag con ese nombre en tu empresa.",
+                    ErrorKeys.TagNotOwned);
+
             var tag = _mapper.Map<Tag>(dto);
             tag.CompanyId = companyId; // ← siempre desde JWT, nunca del cliente
 

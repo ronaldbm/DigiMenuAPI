@@ -30,7 +30,7 @@ namespace DigiMenuAPI.Application.Services
             _moduleGuard = moduleGuard;
         }
 
-        public async Task<OperationResult<List<ReservationReadDto>>> GetAll()
+        public async Task<OperationResult<PagedResult<ReservationReadDto>>> GetAll(int page = 1, int pageSize = 20)
         {
             var companyId = _tenantService.GetCompanyId();
             var branchId = _tenantService.TryGetBranchId(); // null = CompanyAdmin (ve todas)
@@ -45,13 +45,19 @@ namespace DigiMenuAPI.Application.Services
             if (branchId.HasValue)
                 query = query.Where(r => r.BranchId == branchId.Value);
 
-            var list = await query
+            var orderedQuery = query
                 .OrderByDescending(r => r.ReservationDate)
-                .ThenByDescending(r => r.ReservationTime)
+                .ThenByDescending(r => r.ReservationTime);
+
+            var total = await query.CountAsync();
+            var data = await orderedQuery
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ProjectTo<ReservationReadDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return OperationResult<List<ReservationReadDto>>.Ok(list);
+            return OperationResult<PagedResult<ReservationReadDto>>.Ok(
+                PagedResult<ReservationReadDto>.Create(data, total, page, pageSize));
         }
 
         public async Task<OperationResult<int>> Create(ReservationCreateDto dto, int branchId, int companyId)
@@ -71,7 +77,7 @@ namespace DigiMenuAPI.Application.Services
 
             var reservation = _mapper.Map<Reservation>(dto);
             reservation.BranchId = branchId; // garantizado desde la resolución pública
-            reservation.Status = 1;         // Pending
+            reservation.Status = ReservationStatus.Pending;
 
             // NOTA: Reservation NO tiene CompanyId — la empresa se resuelve via Branch.CompanyId
 
@@ -81,7 +87,7 @@ namespace DigiMenuAPI.Application.Services
             return OperationResult<int>.Ok(reservation.Id);
         }
 
-        public async Task<OperationResult<bool>> UpdateStatus(int id, byte newStatus)
+        public async Task<OperationResult<bool>> UpdateStatus(int id, ReservationStatus newStatus)
         {
             var companyId = _tenantService.GetCompanyId();
             var branchId = _tenantService.TryGetBranchId();

@@ -1,43 +1,57 @@
-﻿using AppCore.Application.Common;
+using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 
 namespace DigiMenuAPI.Application.Interfaces
 {
     /// <summary>
-    /// Gestión de la configuración de una Branch, separada en 5 secciones independientes.
+    /// Gestión de la configuración, separada en dos niveles:
+    ///
+    /// Company-level: Info (identidad), Theme (visual), Seo.
+    ///   CompanyId se extrae del JWT via ITenantService.GetCompanyId().
+    ///
+    /// Branch-level: Locale, ReservationForm.
+    ///   BranchId se pasa como parámetro; ownership se valida en el servicio.
     ///
     /// Cada sección tiene su propio ciclo de vida y puede actualizarse
-    /// sin afectar las demás. El GET general agrega todo para el panel admin.
-    ///
-    /// Seguridad: todos los métodos validan que la Branch pertenece al tenant
-    /// autenticado via ITenantService.ValidateBranchOwnershipAsync.
+    /// sin afectar las demás. Los GET generales agregan todo para el panel admin.
     /// </summary>
     public interface ISettingService
     {
-        // ── LECTURA ───────────────────────────────────────────────────
+        // ── Company-level: LECTURA ────────────────────────────────────
 
         /// <summary>
-        /// Devuelve las 5 secciones de configuración en un objeto compuesto.
-        /// ReservationForm es null si el módulo RESERVATIONS no está activo.
-        /// Usar al cargar la página de configuración del panel admin.
+        /// Devuelve las 3 secciones de configuración de la Company en un objeto compuesto.
+        /// CompanyId se obtiene del JWT.
         /// </summary>
-        Task<OperationResult<BranchSettingsReadDto>> GetAll(int branchId);
+        Task<OperationResult<CompanySettingsReadDto>> GetCompanySettings();
 
-        Task<OperationResult<BranchInfoReadDto>> GetInfo(int branchId);
-        Task<OperationResult<BranchThemeReadDto>> GetTheme(int branchId);
-        Task<OperationResult<BranchLocaleReadDto>> GetLocale(int branchId);
-        Task<OperationResult<BranchSeoReadDto>> GetSeo(int branchId);
+        Task<OperationResult<CompanyInfoReadDto>> GetCompanyInfo();
+        Task<OperationResult<CompanyThemeReadDto>> GetCompanyTheme();
+        Task<OperationResult<CompanySeoReadDto>> GetCompanySeo();
+
+        // ── Company-level: ACTUALIZACIÓN ─────────────────────────────
+
+        Task<OperationResult<CompanyInfoReadDto>> UpdateCompanyInfo(CompanyInfoUpdateDto dto);
+        Task<OperationResult<CompanyThemeReadDto>> UpdateCompanyTheme(CompanyThemeUpdateDto dto);
+        Task<OperationResult<CompanySeoReadDto>> UpdateCompanySeo(CompanySeoUpdateDto dto);
+
+        // ── Branch-level: LECTURA ─────────────────────────────────────
+
+        /// <summary>
+        /// Devuelve Locale y ReservationForm (si módulo activo) de una Branch.
+        /// ReservationForm es null si el módulo RESERVATIONS no está activo.
+        /// </summary>
+        Task<OperationResult<BranchSettingsReadDto>> GetBranchSettings(int branchId);
+
+        Task<OperationResult<BranchLocaleReadDto>> GetBranchLocale(int branchId);
 
         /// <summary>Requiere módulo RESERVATIONS activo.</summary>
         Task<OperationResult<BranchReservationFormReadDto>> GetReservationForm(int branchId);
 
-        // ── ACTUALIZACIÓN ─────────────────────────────────────────────
+        // ── Branch-level: ACTUALIZACIÓN ───────────────────────────────
 
-        Task<OperationResult<BranchInfoReadDto>> UpdateInfo(BranchInfoUpdateDto dto);
-        Task<OperationResult<BranchThemeReadDto>> UpdateTheme(BranchThemeUpdateDto dto);
-        Task<OperationResult<BranchLocaleReadDto>> UpdateLocale(BranchLocaleUpdateDto dto);
-        Task<OperationResult<BranchSeoReadDto>> UpdateSeo(BranchSeoUpdateDto dto);
+        Task<OperationResult<BranchLocaleReadDto>> UpdateBranchLocale(BranchLocaleUpdateDto dto);
 
         /// <summary>Requiere módulo RESERVATIONS activo.</summary>
         Task<OperationResult<BranchReservationFormReadDto>> UpdateReservationForm(

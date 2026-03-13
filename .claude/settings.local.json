@@ -15,7 +15,17 @@
       "Bash(cd \"C:\\\\Users\\\\ronal\\\\source\\\\repos\\\\ronaldbm\\\\DigiMenuAPI\" && sed -i 's/using DigiMenuAPI\\\\.Application\\\\.Common;/using AppCore.Application.Common;/g' \\\\\n  DigiMenuAPI/Application/Interfaces/IAuthService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IBranchService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/ICategoryService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IFooterLinkService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IModuleService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IProductService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IReservationService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IScheduleService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/ISettingService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IStandardIconService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IStoreService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/ITagService.cs \\\\\n  DigiMenuAPI/Application/Interfaces/IUserService.cs \\\\\n  && echo \"updated interfaces\")",
       "Bash(git -C /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/.claude/worktrees/agent-a59300d3 status --short | wc -l && find /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/.claude/worktrees/agent-a59300d3 -name \"*.cs\" -not -path \"*/bin/*\" -not -path \"*/obj/*\" | grep -i \"appcore\" | head -20)",
       "Bash(git -C /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI status --short | wc -l)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(find /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI -name \"*.cs\" | xargs grep -l \"BranchInfo\\\\|BranchTheme\\\\|BranchSeo\" | grep -v \"bin\\\\|obj\" | sort)",
+      "Bash(echo \"=== AppCore Domain Entities ===\" && ls /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/AppCore/Domain/Entities/ && echo \"\" && echo \"=== New Company* entities ===\" && ls /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/AppCore/Domain/Entities/Company*.cs && echo \"\" && echo \"=== DigiMenuAPI DTOs Read ===\" && ls /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/DigiMenuAPI/Application/DTOs/Read/ && echo \"\" && echo \"=== SettingsController routes ===\" && grep \"HttpGet\\\\|HttpPatch\\\\|Route\" /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/DigiMenuAPI/Controllers/SettingsController.cs | grep -v \"//\")",
+      "Bash(find /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/DigiMenuAPI -name \"CacheService.cs\" | grep -v bin | grep -v obj | xargs cat)",
+      "Bash(cd \"C:\\\\Users\\\\ronal\\\\source\\\\repos\\\\ronaldbm\\\\DigiMenuAPI\" && dotnet --version && dotnet list DigiMenuAPI\\\\DigiMenuAPI.csproj package 2>&1 | head -30)",
+      "Bash(cd \"C:\\\\Users\\\\ronal\\\\source\\\\repos\\\\ronaldbm\\\\DigiMenuAPI\" && dotnet list \"DigiMenuAPI/DigiMenuAPI.csproj\" package 2>&1)",
+      "Bash(cd \"C:/Users/ronal/source/repos/ronaldbm/DigiMenuAPI\" && dotnet ef --version 2>&1)",
+      "Bash(cd \"C:/Users/ronal/source/repos/ronaldbm/DigiMenuAPI\" && dotnet ef migrations add InitialCreate --project DigiMenuAPI/DigiMenuAPI.csproj --startup-project DigiMenuAPI/DigiMenuAPI.csproj 2>&1)",
+      "Bash(cd \"C:/Users/ronal/source/repos/ronaldbm/DigiMenuAPI\" && dotnet ef database update --project DigiMenuAPI/DigiMenuAPI.csproj --startup-project DigiMenuAPI/DigiMenuAPI.csproj 2>&1)",
+      "Bash(cd \"C:/Users/ronal/source/repos/ronaldbm/DigiMenuAPI\" && dotnet ef database drop --project DigiMenuAPI/DigiMenuAPI.csproj --startup-project DigiMenuAPI/DigiMenuAPI.csproj --force 2>&1)",
+      "Bash(cd \"C:/Users/ronal/source/repos/ronaldbm/DigiMenuAPI\" && dotnet ef migrations list --project DigiMenuAPI/DigiMenuAPI.csproj --startup-project DigiMenuAPI/DigiMenuAPI.csproj 2>&1)"
     ]
   }
 }

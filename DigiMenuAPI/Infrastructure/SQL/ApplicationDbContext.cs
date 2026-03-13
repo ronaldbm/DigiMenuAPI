@@ -59,6 +59,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 e.Property(c => c.Name).IsRequired().HasMaxLength(100);
 
                 e.HasIndex(c => new { c.CompanyId, c.IsDeleted, c.DisplayOrder });
+                e.HasIndex(c => new { c.CompanyId, c.Name }).IsUnique();
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(c => c.Company)
@@ -80,6 +81,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
                 e.HasIndex(p => new { p.CompanyId, p.IsDeleted });
                 e.HasIndex(p => p.CategoryId);
+                e.HasIndex(p => new { p.CompanyId, p.Name }).IsUnique();
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(p => p.Company)
@@ -111,6 +113,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 e.Property(t => t.Color).HasMaxLength(7).HasDefaultValue("#ffffff").IsRequired();
 
                 e.HasIndex(t => new { t.CompanyId, t.IsDeleted });
+                e.HasIndex(t => new { t.CompanyId, t.Name }).IsUnique();
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(t => t.Company)
@@ -268,6 +271,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 e.Property(r => r.Allergies).HasMaxLength(500);
                 e.Property(r => r.Comments).HasMaxLength(500);
 
+                e.Property(r => r.Status).HasConversion<byte>();
                 e.HasIndex(r => new { r.BranchId, r.IsDeleted, r.ReservationDate });
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).

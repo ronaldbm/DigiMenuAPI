@@ -1,8 +1,8 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Read
+namespace DigiMenuAPI.Application.DTOs.Read
 {
-    public record BranchInfoReadDto(
+    public record CompanyInfoReadDto(
         int Id,
-        int BranchId,
+        int CompanyId,
         string BusinessName,
         string? Tagline,
         string? LogoUrl,

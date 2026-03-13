@@ -58,6 +58,7 @@ namespace DigiMenuAPI.Application.Services
 
             var branch = await _context.Branches
                 .AsNoTracking()
+                .Include(b => b.Locale)
                 .FirstOrDefaultAsync(b =>
                     b.Id == branchId &&
                     b.CompanyId == companyId &&
@@ -245,8 +246,9 @@ namespace DigiMenuAPI.Application.Services
         // ── HELPERS ───────────────────────────────────────────────────
 
         /// <summary>
-        /// Inicializa las 4 entidades de configuración de una branch nueva
-        /// con valores por defecto. Mismo patrón que AuthService.RegisterCompany.
+        /// Inicializa las entidades de configuración de nivel Branch para una branch nueva
+        /// con valores por defecto.
+        /// Info, Theme y Seo ahora son de nivel Company — solo se inicializa Locale aquí.
         /// </summary>
         private void InitializeBranchConfigAsync(
             int branchId, string branchName, Company company)
@@ -254,52 +256,8 @@ namespace DigiMenuAPI.Application.Services
             // Resolver CountryCode desde la empresa para aplicar defaults regionales
             var countryCode = company.CountryCode;
 
-            _context.BranchInfos.Add(new BranchInfo
-            {
-                BranchId = branchId,
-                BusinessName = branchName
-            });
-
-            _context.BranchThemes.Add(new BranchTheme
-            {
-                BranchId = branchId,
-                IsDarkMode = false,
-                PageBackgroundColor = "#F1FAEE",
-                HeaderBackgroundColor = "#FFFFFF",
-                HeaderTextColor = "#1D3557",
-                TabBackgroundColor = "#1D3557",
-                TabTextColor = "#FFFFFF",
-                PrimaryColor = "#E63946",
-                PrimaryTextColor = "#FFFFFF",
-                SecondaryColor = "#457B9D",
-                TitlesColor = "#1D3557",
-                TextColor = "#1D3557",
-                BrowserThemeColor = "#FFFFFF",
-                HeaderStyle = 1,
-                MenuLayout = 1,
-                ProductDisplay = 1,
-                ShowProductDetails = true,
-                ShowSearchButton = false,
-                ShowContactButton = false
-            });
-
-            _context.BranchLocales.Add(new BranchLocale
-            {
-                BranchId = branchId,
-                CountryCode = countryCode?.ToUpper() ?? "CR",
-                PhoneCode = LocaleHelper.ResolvePhoneCode(countryCode),
-                Currency = LocaleHelper.ResolveCurrency(countryCode),
-                CurrencyLocale = LocaleHelper.ResolveCurrencyLocale(countryCode),
-                Language = "es",
-                TimeZone = LocaleHelper.ResolveTimeZone(countryCode),
-                Decimals = 2
-            });
-
-            _context.BranchSeos.Add(new BranchSeo
-            {
-                BranchId = branchId
-            });
-
+            _context.BranchLocales.Add(
+                BranchLocaleInitializer.Create(branchId, countryCode));
         }
     }
 }

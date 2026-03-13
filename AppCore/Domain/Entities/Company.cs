@@ -54,6 +54,11 @@ namespace AppCore.Domain.Entities
         /// </summary>
         public int MaxUsers { get; set; } = 3;
 
+        // ── Configuración (1:1) ───────────────────────────────────────
+        public CompanyInfo? Info { get; set; }
+        public CompanyTheme? Theme { get; set; }
+        public CompanySeo? Seo { get; set; }
+
         // ── Navegación ───────────────────────────────────────────────
         public ICollection<Branch> Branches { get; set; } = new List<Branch>();
         public ICollection<AppUser> Users { get; set; } = new List<AppUser>();

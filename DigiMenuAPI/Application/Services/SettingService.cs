@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
@@ -35,68 +35,164 @@ namespace DigiMenuAPI.Application.Services
             _moduleGuard = moduleGuard;
         }
 
-        // ── LECTURA ───────────────────────────────────────────────────
+        // ── Company-level: LECTURA ────────────────────────────────────
 
-        public async Task<OperationResult<BranchSettingsReadDto>> GetAll(int branchId)
+        public async Task<OperationResult<CompanySettingsReadDto>> GetCompanySettings()
+        {
+            var companyId = _tenantService.GetCompanyId();
+
+            var info = await GetCompanyInfoInternal(companyId);
+            var theme = await GetCompanyThemeInternal(companyId);
+            var seo = await GetCompanySeoInternal(companyId);
+
+            if (info is null || theme is null || seo is null)
+                return OperationResult<CompanySettingsReadDto>.Fail(
+                    "Configuración de empresa incompleta. Contacta a soporte.");
+
+            return OperationResult<CompanySettingsReadDto>.Ok(
+                new CompanySettingsReadDto(info, theme, seo));
+        }
+
+        public async Task<OperationResult<CompanyInfoReadDto>> GetCompanyInfo()
+        {
+            var companyId = _tenantService.GetCompanyId();
+            var result = await GetCompanyInfoInternal(companyId);
+            return result is null
+                ? OperationResult<CompanyInfoReadDto>.Fail("Información no encontrada.")
+                : OperationResult<CompanyInfoReadDto>.Ok(result);
+        }
+
+        public async Task<OperationResult<CompanyThemeReadDto>> GetCompanyTheme()
+        {
+            var companyId = _tenantService.GetCompanyId();
+            var result = await GetCompanyThemeInternal(companyId);
+            return result is null
+                ? OperationResult<CompanyThemeReadDto>.Fail("Tema no encontrado.")
+                : OperationResult<CompanyThemeReadDto>.Ok(result);
+        }
+
+        public async Task<OperationResult<CompanySeoReadDto>> GetCompanySeo()
+        {
+            var companyId = _tenantService.GetCompanyId();
+            var result = await GetCompanySeoInternal(companyId);
+            return result is null
+                ? OperationResult<CompanySeoReadDto>.Fail("SEO no encontrado.")
+                : OperationResult<CompanySeoReadDto>.Ok(result);
+        }
+
+        // ── Company-level: ACTUALIZACIÓN ─────────────────────────────
+
+        public async Task<OperationResult<CompanyInfoReadDto>> UpdateCompanyInfo(
+            CompanyInfoUpdateDto dto)
+        {
+            var companyId = _tenantService.GetCompanyId();
+
+            var info = await _context.CompanyInfos
+                .FirstOrDefaultAsync(i => i.CompanyId == companyId);
+
+            if (info is null)
+                return OperationResult<CompanyInfoReadDto>.Fail("Información no encontrada.");
+
+            // Procesar imágenes — solo se reemplazan si se envía un archivo nuevo
+            if (dto.Logo is { Length: > 0 })
+            {
+                AssertImageExtension(dto.Logo.FileName);
+                _fileStorage.DeleteFile(info.LogoUrl ?? "", "company-info");
+                info.LogoUrl = await _fileStorage.SaveFile(dto.Logo, "company-info");
+            }
+
+            if (dto.Favicon is { Length: > 0 })
+            {
+                AssertImageExtension(dto.Favicon.FileName);
+                _fileStorage.DeleteFile(info.FaviconUrl ?? "", "company-info");
+                info.FaviconUrl = await _fileStorage.SaveFile(dto.Favicon, "company-info");
+            }
+
+            if (dto.BackgroundImage is { Length: > 0 })
+            {
+                AssertImageExtension(dto.BackgroundImage.FileName);
+                _fileStorage.DeleteFile(info.BackgroundImageUrl ?? "", "company-info");
+                info.BackgroundImageUrl = await _fileStorage.SaveFile(
+                    dto.BackgroundImage, "company-info");
+            }
+
+            info.BusinessName = dto.BusinessName.Trim();
+            info.Tagline = dto.Tagline?.Trim();
+
+            await _context.SaveChangesAsync();
+            await _cache.EvictMenuByCompanyAsync(companyId);
+
+            return OperationResult<CompanyInfoReadDto>.Ok(_mapper.Map<CompanyInfoReadDto>(info));
+        }
+
+        public async Task<OperationResult<CompanyThemeReadDto>> UpdateCompanyTheme(
+            CompanyThemeUpdateDto dto)
+        {
+            var companyId = _tenantService.GetCompanyId();
+
+            var theme = await _context.CompanyThemes
+                .FirstOrDefaultAsync(t => t.CompanyId == companyId);
+
+            if (theme is null)
+                return OperationResult<CompanyThemeReadDto>.Fail("Tema no encontrado.");
+
+            _mapper.Map(dto, theme);
+            await _context.SaveChangesAsync();
+            await _cache.EvictMenuByCompanyAsync(companyId);
+
+            return OperationResult<CompanyThemeReadDto>.Ok(
+                _mapper.Map<CompanyThemeReadDto>(theme));
+        }
+
+        public async Task<OperationResult<CompanySeoReadDto>> UpdateCompanySeo(
+            CompanySeoUpdateDto dto)
+        {
+            var companyId = _tenantService.GetCompanyId();
+
+            var seo = await _context.CompanySeos
+                .FirstOrDefaultAsync(s => s.CompanyId == companyId);
+
+            if (seo is null)
+                return OperationResult<CompanySeoReadDto>.Fail("SEO no encontrado.");
+
+            _mapper.Map(dto, seo);
+            await _context.SaveChangesAsync();
+            await _cache.EvictMenuByCompanyAsync(companyId);
+
+            return OperationResult<CompanySeoReadDto>.Ok(_mapper.Map<CompanySeoReadDto>(seo));
+        }
+
+        // ── Branch-level: LECTURA ─────────────────────────────────────
+
+        public async Task<OperationResult<BranchSettingsReadDto>> GetBranchSettings(int branchId)
         {
             await _tenantService.ValidateBranchOwnershipAsync(branchId);
 
-            // Verificar módulo RESERVATIONS para incluir o no el formulario
             var companyId = _tenantService.GetCompanyId();
             var hasReservations = await _moduleGuard.HasModuleAsync(
                 companyId, ModuleCodes.Reservations);
 
-            var info = await GetInfoInternal(branchId);
-            var theme = await GetThemeInternal(branchId);
             var locale = await GetLocaleInternal(branchId);
-            var seo = await GetSeoInternal(branchId);
 
             BranchReservationFormReadDto? reservationForm = null;
             if (hasReservations)
                 reservationForm = await GetReservationFormInternal(branchId);
 
-            if (info is null || theme is null || locale is null || seo is null)
+            if (locale is null)
                 return OperationResult<BranchSettingsReadDto>.Fail(
-                    "Configuración incompleta. Contacta a soporte.");
+                    "Configuración de sucursal incompleta. Contacta a soporte.");
 
             return OperationResult<BranchSettingsReadDto>.Ok(
-                new BranchSettingsReadDto(info, theme, locale, seo, reservationForm));
+                new BranchSettingsReadDto(locale, reservationForm));
         }
 
-        public async Task<OperationResult<BranchInfoReadDto>> GetInfo(int branchId)
-        {
-            await _tenantService.ValidateBranchOwnershipAsync(branchId);
-            var result = await GetInfoInternal(branchId);
-            return result is null
-                ? OperationResult<BranchInfoReadDto>.Fail("Información no encontrada.")
-                : OperationResult<BranchInfoReadDto>.Ok(result);
-        }
-
-        public async Task<OperationResult<BranchThemeReadDto>> GetTheme(int branchId)
-        {
-            await _tenantService.ValidateBranchOwnershipAsync(branchId);
-            var result = await GetThemeInternal(branchId);
-            return result is null
-                ? OperationResult<BranchThemeReadDto>.Fail("Tema no encontrado.")
-                : OperationResult<BranchThemeReadDto>.Ok(result);
-        }
-
-        public async Task<OperationResult<BranchLocaleReadDto>> GetLocale(int branchId)
+        public async Task<OperationResult<BranchLocaleReadDto>> GetBranchLocale(int branchId)
         {
             await _tenantService.ValidateBranchOwnershipAsync(branchId);
             var result = await GetLocaleInternal(branchId);
             return result is null
                 ? OperationResult<BranchLocaleReadDto>.Fail("Localización no encontrada.")
                 : OperationResult<BranchLocaleReadDto>.Ok(result);
-        }
-
-        public async Task<OperationResult<BranchSeoReadDto>> GetSeo(int branchId)
-        {
-            await _tenantService.ValidateBranchOwnershipAsync(branchId);
-            var result = await GetSeoInternal(branchId);
-            return result is null
-                ? OperationResult<BranchSeoReadDto>.Fail("SEO no encontrado.")
-                : OperationResult<BranchSeoReadDto>.Ok(result);
         }
 
         public async Task<OperationResult<BranchReservationFormReadDto>> GetReservationForm(
@@ -113,69 +209,9 @@ namespace DigiMenuAPI.Application.Services
                 : OperationResult<BranchReservationFormReadDto>.Ok(result);
         }
 
-        // ── ACTUALIZACIÓN ─────────────────────────────────────────────
+        // ── Branch-level: ACTUALIZACIÓN ───────────────────────────────
 
-        public async Task<OperationResult<BranchInfoReadDto>> UpdateInfo(BranchInfoUpdateDto dto)
-        {
-            await _tenantService.ValidateBranchOwnershipAsync(dto.BranchId);
-
-            var info = await _context.BranchInfos
-                .FirstOrDefaultAsync(i => i.BranchId == dto.BranchId);
-
-            if (info is null)
-                return OperationResult<BranchInfoReadDto>.Fail("Información no encontrada.");
-
-            // Procesar imágenes — solo se reemplazan si se envía un archivo nuevo
-            if (dto.Logo is { Length: > 0 })
-            {
-                AssertImageExtension(dto.Logo.FileName);
-                _fileStorage.DeleteFile(info.LogoUrl ?? "", "branch-info");
-                info.LogoUrl = await _fileStorage.SaveFile(dto.Logo, "branch-info");
-            }
-
-            if (dto.Favicon is { Length: > 0 })
-            {
-                AssertImageExtension(dto.Favicon.FileName);
-                _fileStorage.DeleteFile(info.FaviconUrl ?? "", "branch-info");
-                info.FaviconUrl = await _fileStorage.SaveFile(dto.Favicon, "branch-info");
-            }
-
-            if (dto.BackgroundImage is { Length: > 0 })
-            {
-                AssertImageExtension(dto.BackgroundImage.FileName);
-                _fileStorage.DeleteFile(info.BackgroundImageUrl ?? "", "branch-info");
-                info.BackgroundImageUrl = await _fileStorage.SaveFile(
-                    dto.BackgroundImage, "branch-info");
-            }
-
-            info.BusinessName = dto.BusinessName.Trim();
-            info.Tagline = dto.Tagline?.Trim();
-
-            await _context.SaveChangesAsync();
-            await _cache.EvictMenuByBranchAsync(dto.BranchId);
-
-            return OperationResult<BranchInfoReadDto>.Ok(_mapper.Map<BranchInfoReadDto>(info));
-        }
-
-        public async Task<OperationResult<BranchThemeReadDto>> UpdateTheme(
-            BranchThemeUpdateDto dto)
-        {
-            await _tenantService.ValidateBranchOwnershipAsync(dto.BranchId);
-
-            var theme = await _context.BranchThemes
-                .FirstOrDefaultAsync(t => t.BranchId == dto.BranchId);
-
-            if (theme is null)
-                return OperationResult<BranchThemeReadDto>.Fail("Tema no encontrado.");
-
-            _mapper.Map(dto, theme);
-            await _context.SaveChangesAsync();
-            await _cache.EvictMenuByBranchAsync(dto.BranchId);
-
-            return OperationResult<BranchThemeReadDto>.Ok(_mapper.Map<BranchThemeReadDto>(theme));
-        }
-
-        public async Task<OperationResult<BranchLocaleReadDto>> UpdateLocale(
+        public async Task<OperationResult<BranchLocaleReadDto>> UpdateBranchLocale(
             BranchLocaleUpdateDto dto)
         {
             await _tenantService.ValidateBranchOwnershipAsync(dto.BranchId);
@@ -193,23 +229,6 @@ namespace DigiMenuAPI.Application.Services
 
             return OperationResult<BranchLocaleReadDto>.Ok(
                 _mapper.Map<BranchLocaleReadDto>(locale));
-        }
-
-        public async Task<OperationResult<BranchSeoReadDto>> UpdateSeo(BranchSeoUpdateDto dto)
-        {
-            await _tenantService.ValidateBranchOwnershipAsync(dto.BranchId);
-
-            var seo = await _context.BranchSeos
-                .FirstOrDefaultAsync(s => s.BranchId == dto.BranchId);
-
-            if (seo is null)
-                return OperationResult<BranchSeoReadDto>.Fail("SEO no encontrado.");
-
-            _mapper.Map(dto, seo);
-            await _context.SaveChangesAsync();
-            await _cache.EvictMenuByBranchAsync(dto.BranchId);
-
-            return OperationResult<BranchSeoReadDto>.Ok(_mapper.Map<BranchSeoReadDto>(seo));
         }
 
         public async Task<OperationResult<BranchReservationFormReadDto>> UpdateReservationForm(
@@ -240,25 +259,25 @@ namespace DigiMenuAPI.Application.Services
 
         // ── Helpers privados ──────────────────────────────────────────
 
-        private async Task<BranchInfoReadDto?> GetInfoInternal(int branchId)
-            => _mapper.Map<BranchInfoReadDto?>(
-                await _context.BranchInfos.AsNoTracking()
-                    .FirstOrDefaultAsync(i => i.BranchId == branchId));
+        private async Task<CompanyInfoReadDto?> GetCompanyInfoInternal(int companyId)
+            => _mapper.Map<CompanyInfoReadDto?>(
+                await _context.CompanyInfos.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.CompanyId == companyId));
 
-        private async Task<BranchThemeReadDto?> GetThemeInternal(int branchId)
-            => _mapper.Map<BranchThemeReadDto?>(
-                await _context.BranchThemes.AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.BranchId == branchId));
+        private async Task<CompanyThemeReadDto?> GetCompanyThemeInternal(int companyId)
+            => _mapper.Map<CompanyThemeReadDto?>(
+                await _context.CompanyThemes.AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.CompanyId == companyId));
+
+        private async Task<CompanySeoReadDto?> GetCompanySeoInternal(int companyId)
+            => _mapper.Map<CompanySeoReadDto?>(
+                await _context.CompanySeos.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.CompanyId == companyId));
 
         private async Task<BranchLocaleReadDto?> GetLocaleInternal(int branchId)
             => _mapper.Map<BranchLocaleReadDto?>(
                 await _context.BranchLocales.AsNoTracking()
                     .FirstOrDefaultAsync(l => l.BranchId == branchId));
-
-        private async Task<BranchSeoReadDto?> GetSeoInternal(int branchId)
-            => _mapper.Map<BranchSeoReadDto?>(
-                await _context.BranchSeos.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.BranchId == branchId));
 
         private async Task<BranchReservationFormReadDto?> GetReservationFormInternal(int branchId)
             => _mapper.Map<BranchReservationFormReadDto?>(

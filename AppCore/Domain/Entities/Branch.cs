@@ -11,11 +11,8 @@ namespace AppCore.Domain.Entities
     /// La URL pública se forma con ambos slugs:
     ///   {companySlug}.digimenu.cr/{branchSlug}
     ///
-    /// Configuración separada en 5 entidades 1:1:
-    ///   BranchInfo     → Identidad del negocio
-    ///   BranchTheme    → Tema visual y layout
+    /// Configuración separada en entidades 1:1:
     ///   BranchLocale   → Configuración regional
-    ///   BranchSeo      → SEO y analytics
     ///   BranchReservationForm → Formulario de reservas (módulo RESERVATIONS)
     /// </summary>
     public class Branch : BaseEntity
@@ -49,10 +46,7 @@ namespace AppCore.Domain.Entities
         public bool IsDeleted { get; set; }
 
         // ── Configuración (1:1) ───────────────────────────────────────
-        public BranchInfo? Info { get; set; }
-        public BranchTheme? Theme { get; set; }
         public BranchLocale? Locale { get; set; }
-        public BranchSeo? Seo { get; set; }
 
         // ── Horarios ──────────────────────────────────────────────────
         public ICollection<BranchSchedule> Schedules { get; set; } = new List<BranchSchedule>();

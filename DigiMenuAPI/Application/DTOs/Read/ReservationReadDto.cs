@@ -1,4 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Read
+﻿using AppCore.Application.Common;
+
+namespace DigiMenuAPI.Application.DTOs.Read
 {
     public record ReservationReadDto(
          int Id,
@@ -11,7 +13,7 @@
          string? TableNumber,
          string? Allergies,
          string? Comments,
-        byte Status, // 1: Pendiente, 2: Confirmada, 3: Cancelada
+         ReservationStatus Status,
          DateTime CreatedAt
      );
 }

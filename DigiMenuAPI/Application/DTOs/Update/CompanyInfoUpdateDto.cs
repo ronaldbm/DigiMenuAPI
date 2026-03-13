@@ -1,7 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Update
+namespace DigiMenuAPI.Application.DTOs.Update
 {
-    public record BranchInfoUpdateDto(
-        int BranchId,
+    public record CompanyInfoUpdateDto(
         string BusinessName,
         string? Tagline,
         /// <summary>Archivo de imagen del logo. Null = no cambiar.</summary>

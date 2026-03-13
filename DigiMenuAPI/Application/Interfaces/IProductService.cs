@@ -8,7 +8,7 @@ namespace DigiMenuAPI.Application.Interfaces
     public interface IProductService
     {
         /// <summary>Catálogo global de la empresa autenticada. CompanyId desde JWT.</summary>
-        Task<OperationResult<List<ProductReadDto>>> GetAll();
+        Task<OperationResult<PagedResult<ProductReadDto>>> GetAll(int page = 1, int pageSize = 20);
         Task<OperationResult<ProductReadDto>> GetById(int id);
 
         /// <summary>Vista completa con traducciones para el formulario de edición.</summary>

@@ -3,19 +3,19 @@ using System.ComponentModel.DataAnnotations;
 namespace AppCore.Domain.Entities
 {
     /// <summary>
-    /// Configuración visual y de layout del menú público de una Branch.
+    /// Configuración visual y de layout del menú público de una Company.
     /// Incluye paleta de colores, modo oscuro y estructura de presentación.
     ///
     /// Se actualiza frecuentemente durante la personalización del menú.
-    /// Separada de BranchInfo para no mezclar identidad con apariencia.
+    /// Separada de CompanyInfo para no mezclar identidad con apariencia.
     ///
-    /// Relación 1:1 con Branch.
+    /// Relación 1:1 con Company.
     /// </summary>
-    public class BranchTheme : BaseEntity
+    public class CompanyTheme : BaseEntity
     {
         // ── Multi-Tenant ─────────────────────────────────────────────
-        public int BranchId { get; set; }
-        public Branch Branch { get; set; } = null!;
+        public int CompanyId { get; set; }
+        public Company Company { get; set; } = null!;
 
         // ── Modo ──────────────────────────────────────────────────────
         public bool IsDarkMode { get; set; }

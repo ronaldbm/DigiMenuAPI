@@ -1,4 +1,4 @@
-﻿using AppCore.Application.Common;
+using AppCore.Application.Common;
 using AppCore.Filters;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
@@ -8,22 +8,26 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiMenuAPI.Controllers
 {
     /// <summary>
-    /// Gestión de configuración de una Branch, separada en 5 secciones.
+    /// Gestión de configuración en dos niveles: Company y Branch.
     ///
     /// Todas las rutas requieren autenticación JWT.
-    /// La validación de ownership de Branch se realiza en el servicio.
+    /// La validación de ownership se realiza en el servicio.
     ///
-    /// GET  /api/settings/{branchId}                → Todo (compuesto)
-    /// GET  /api/settings/{branchId}/info           → Identidad
-    /// GET  /api/settings/{branchId}/theme          → Tema visual
-    /// GET  /api/settings/{branchId}/locale         → Localización
-    /// GET  /api/settings/{branchId}/seo            → SEO y analytics
-    /// GET  /api/settings/{branchId}/reservation-form → Formulario (módulo RESERVATIONS)
-    /// PATCH /api/settings/{branchId}/info          → Actualiza identidad
-    /// PATCH /api/settings/{branchId}/theme         → Actualiza tema
-    /// PATCH /api/settings/{branchId}/locale        → Actualiza localización
-    /// PATCH /api/settings/{branchId}/seo           → Actualiza SEO
-    /// PATCH /api/settings/{branchId}/reservation-form → Actualiza formulario
+    /// Company-level (companyId viene del JWT):
+    /// GET  /api/settings/company              → Todo (Info + Theme + Seo)
+    /// GET  /api/settings/company/info         → Identidad
+    /// GET  /api/settings/company/theme        → Tema visual
+    /// GET  /api/settings/company/seo          → SEO y analytics
+    /// PATCH /api/settings/company/info        → Actualiza identidad
+    /// PATCH /api/settings/company/theme       → Actualiza tema
+    /// PATCH /api/settings/company/seo         → Actualiza SEO
+    ///
+    /// Branch-level:
+    /// GET  /api/settings/branch/{branchId}              → Todo (Locale + ReservationForm)
+    /// GET  /api/settings/branch/{branchId}/locale       → Localización
+    /// GET  /api/settings/branch/{branchId}/reservation-form → Formulario (módulo RESERVATIONS)
+    /// PATCH /api/settings/branch/{branchId}/locale      → Actualiza localización
+    /// PATCH /api/settings/branch/{branchId}/reservation-form → Actualiza formulario
     /// </summary>
     [Route("api/settings")]
     [Authorize]
@@ -36,88 +40,78 @@ namespace DigiMenuAPI.Controllers
             _service = service;
         }
 
-        // ── GET ───────────────────────────────────────────────────────
+        // ── Company-level: GET ────────────────────────────────────────
 
-        /// <summary>Configuración completa de la Branch (5 secciones en un objeto).</summary>
-        [HttpGet("{branchId:int}")]
-        public async Task<ActionResult> GetAll(int branchId)
-            => HandleResult(await _service.GetAll(branchId));
+        /// <summary>Configuración completa de la Company (Info + Theme + Seo).</summary>
+        [HttpGet("company")]
+        public async Task<ActionResult> GetCompanySettings()
+            => HandleResult(await _service.GetCompanySettings());
 
         /// <summary>Solo identidad del negocio.</summary>
-        [HttpGet("{branchId:int}/info")]
-        public async Task<ActionResult> GetInfo(int branchId)
-            => HandleResult(await _service.GetInfo(branchId));
+        [HttpGet("company/info")]
+        public async Task<ActionResult> GetCompanyInfo()
+            => HandleResult(await _service.GetCompanyInfo());
 
         /// <summary>Solo tema visual y layout.</summary>
-        [HttpGet("{branchId:int}/theme")]
-        public async Task<ActionResult> GetTheme(int branchId)
-            => HandleResult(await _service.GetTheme(branchId));
-
-        /// <summary>Solo configuración regional.</summary>
-        [HttpGet("{branchId:int}/locale")]
-        public async Task<ActionResult> GetLocale(int branchId)
-            => HandleResult(await _service.GetLocale(branchId));
+        [HttpGet("company/theme")]
+        public async Task<ActionResult> GetCompanyTheme()
+            => HandleResult(await _service.GetCompanyTheme());
 
         /// <summary>Solo SEO y analytics.</summary>
-        [HttpGet("{branchId:int}/seo")]
-        public async Task<ActionResult> GetSeo(int branchId)
-            => HandleResult(await _service.GetSeo(branchId));
+        [HttpGet("company/seo")]
+        public async Task<ActionResult> GetCompanySeo()
+            => HandleResult(await _service.GetCompanySeo());
+
+        // ── Company-level: PATCH ──────────────────────────────────────
+
+        /// <summary>Actualiza identidad del negocio (incluye subida de imágenes).</summary>
+        [HttpPatch("company/info")]
+        public async Task<ActionResult> UpdateCompanyInfo([FromForm] CompanyInfoUpdateDto dto)
+            => HandleResult(await _service.UpdateCompanyInfo(dto));
+
+        /// <summary>Actualiza tema visual y layout.</summary>
+        [HttpPatch("company/theme")]
+        public async Task<ActionResult> UpdateCompanyTheme([FromBody] CompanyThemeUpdateDto dto)
+            => HandleResult(await _service.UpdateCompanyTheme(dto));
+
+        /// <summary>Actualiza SEO y analytics.</summary>
+        [HttpPatch("company/seo")]
+        public async Task<ActionResult> UpdateCompanySeo([FromBody] CompanySeoUpdateDto dto)
+            => HandleResult(await _service.UpdateCompanySeo(dto));
+
+        // ── Branch-level: GET ─────────────────────────────────────────
+
+        /// <summary>Configuración completa de la Branch (Locale + ReservationForm).</summary>
+        [HttpGet("branch/{branchId:int}")]
+        public async Task<ActionResult> GetBranchSettings(int branchId)
+            => HandleResult(await _service.GetBranchSettings(branchId));
+
+        /// <summary>Solo configuración regional.</summary>
+        [HttpGet("branch/{branchId:int}/locale")]
+        public async Task<ActionResult> GetBranchLocale(int branchId)
+            => HandleResult(await _service.GetBranchLocale(branchId));
 
         /// <summary>Formulario de reservas. Requiere módulo RESERVATIONS activo.</summary>
-        [HttpGet("{branchId:int}/reservation-form")]
+        [HttpGet("branch/{branchId:int}/reservation-form")]
         [RequireModule(ModuleCodes.Reservations)]
         public async Task<ActionResult> GetReservationForm(int branchId)
             => HandleResult(await _service.GetReservationForm(branchId));
 
-        // ── PATCH ─────────────────────────────────────────────────────
-
-        /// <summary>Actualiza identidad del negocio (incluye subida de imágenes).</summary>
-        [HttpPatch("{branchId:int}/info")]
-        public async Task<ActionResult> UpdateInfo(
-            int branchId, [FromForm] BranchInfoUpdateDto dto)
-        {
-            // Garantiza que el branchId de la ruta coincide con el del DTO
-            if (branchId != dto.BranchId)
-                return BadRequest(new { Success = false, Message = "BranchId inconsistente." });
-
-            return HandleResult(await _service.UpdateInfo(dto));
-        }
-
-        /// <summary>Actualiza tema visual y layout.</summary>
-        [HttpPatch("{branchId:int}/theme")]
-        public async Task<ActionResult> UpdateTheme(
-            int branchId, [FromBody] BranchThemeUpdateDto dto)
-        {
-            if (branchId != dto.BranchId)
-                return BadRequest(new { Success = false, Message = "BranchId inconsistente." });
-
-            return HandleResult(await _service.UpdateTheme(dto));
-        }
+        // ── Branch-level: PATCH ───────────────────────────────────────
 
         /// <summary>Actualiza configuración regional.</summary>
-        [HttpPatch("{branchId:int}/locale")]
-        public async Task<ActionResult> UpdateLocale(
+        [HttpPatch("branch/{branchId:int}/locale")]
+        public async Task<ActionResult> UpdateBranchLocale(
             int branchId, [FromBody] BranchLocaleUpdateDto dto)
         {
             if (branchId != dto.BranchId)
                 return BadRequest(new { Success = false, Message = "BranchId inconsistente." });
 
-            return HandleResult(await _service.UpdateLocale(dto));
-        }
-
-        /// <summary>Actualiza SEO y analytics.</summary>
-        [HttpPatch("{branchId:int}/seo")]
-        public async Task<ActionResult> UpdateSeo(
-            int branchId, [FromBody] BranchSeoUpdateDto dto)
-        {
-            if (branchId != dto.BranchId)
-                return BadRequest(new { Success = false, Message = "BranchId inconsistente." });
-
-            return HandleResult(await _service.UpdateSeo(dto));
+            return HandleResult(await _service.UpdateBranchLocale(dto));
         }
 
         /// <summary>Actualiza formulario de reservas. Requiere módulo RESERVATIONS activo.</summary>
-        [HttpPatch("{branchId:int}/reservation-form")]
+        [HttpPatch("branch/{branchId:int}/reservation-form")]
         [RequireModule(ModuleCodes.Reservations)]
         public async Task<ActionResult> UpdateReservationForm(
             int branchId, [FromBody] BranchReservationFormUpdateDto dto)

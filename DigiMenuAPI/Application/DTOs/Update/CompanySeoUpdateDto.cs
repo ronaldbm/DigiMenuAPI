@@ -1,7 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Update
+namespace DigiMenuAPI.Application.DTOs.Update
 {
-    public record BranchSeoUpdateDto(
-        int BranchId,
+    public record CompanySeoUpdateDto(
         string? MetaTitle,
         string? MetaDescription,
         string? GoogleAnalyticsId,

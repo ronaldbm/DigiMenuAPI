@@ -26,8 +26,10 @@ namespace DigiMenuAPI.Controllers
         [HttpGet]
         [Authorize]
         [RequireModule(ModuleCodes.Reservations)]
-        public async Task<ActionResult> GetAll()
-            => HandleResult(await _service.GetAll());
+        public async Task<ActionResult> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+            => HandleResult(await _service.GetAll(page, pageSize));
 
         /// <summary>
         /// Público: el cliente hace una reserva en la Branch identificada por companySlug + branchSlug.
@@ -54,7 +56,7 @@ namespace DigiMenuAPI.Controllers
         [HttpPatch("{id:int}/status")]
         [Authorize]
         [RequireModule(ModuleCodes.Reservations)]
-        public async Task<ActionResult> UpdateStatus(int id, [FromBody] byte status)
+        public async Task<ActionResult> UpdateStatus(int id, [FromBody] ReservationStatus status)
             => HandleResult(await _service.UpdateStatus(id, status));
 
         /// <summary>Admin: eliminar reserva (soft delete).</summary>

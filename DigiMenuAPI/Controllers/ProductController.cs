@@ -16,7 +16,10 @@ namespace DigiMenuAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetAll() => HandleResult(await _service.GetAll());
+        public async Task<ActionResult> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+            => HandleResult(await _service.GetAll(page, pageSize));
 
         [HttpGet("{id}")]
         public async Task<ActionResult> GetById(int id) => HandleResult(await _service.GetById(id));

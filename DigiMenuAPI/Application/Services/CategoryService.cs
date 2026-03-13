@@ -69,6 +69,13 @@ namespace DigiMenuAPI.Application.Services
         {
             var companyId = _tenantService.GetCompanyId();
 
+            var exists = await _context.Categories
+                .AnyAsync(c => c.CompanyId == companyId && c.Name == dto.Name.Trim());
+            if (exists)
+                return OperationResult<CategoryReadDto>.Conflict(
+                    "Ya existe una categoría con ese nombre en tu empresa.",
+                    ErrorKeys.CategoryAlreadyExists);
+
             var category = _mapper.Map<Category>(dto);
             category.CompanyId = companyId; // ← siempre desde JWT, nunca del cliente
 

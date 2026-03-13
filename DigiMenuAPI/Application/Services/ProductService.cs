@@ -36,19 +36,25 @@ namespace DigiMenuAPI.Application.Services
             _cacheStore = cacheStore;
         }
 
-        public async Task<OperationResult<List<ProductReadDto>>> GetAll()
+        public async Task<OperationResult<PagedResult<ProductReadDto>>> GetAll(int page = 1, int pageSize = 20)
         {
-            var branchId = _tenantService.GetBranchId();
+            var companyId = _tenantService.GetCompanyId();
 
             // QueryFilter global ya aplica !IsDeleted — solo falta filtrar por tenant
-            var products = await _context.BranchProducts
+            var query = _context.Products
                 .AsNoTracking()
-                .Where(p => p.BranchId == branchId)
-                .OrderBy(p => p.DisplayOrder)
+                .Where(p => p.CompanyId == companyId)
+                .OrderBy(p => p.CategoryId).ThenBy(p => p.Name);
+
+            var total = await query.CountAsync();
+            var data = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ProjectTo<ProductReadDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return OperationResult<List<ProductReadDto>>.Ok(products);
+            return OperationResult<PagedResult<ProductReadDto>>.Ok(
+                PagedResult<ProductReadDto>.Create(data, total, page, pageSize));
         }
 
         public async Task<OperationResult<ProductReadDto>> GetById(int id)
@@ -97,6 +103,13 @@ namespace DigiMenuAPI.Application.Services
 
             if (!categoryBelongs)
                 return OperationResult<ProductReadDto>.Fail("La categoría no se ha encontrado.");
+
+            var exists = await _context.Products
+                .AnyAsync(p => p.CompanyId == companyId && p.Name == dto.Name.Trim());
+            if (exists)
+                return OperationResult<ProductReadDto>.Conflict(
+                    "Ya existe un producto con ese nombre en tu empresa.",
+                    ErrorKeys.ProductAlreadyExists);
 
             var product = _mapper.Map<Product>(dto);
             product.CompanyId = companyId; // ← siempre desde JWT, nunca del cliente

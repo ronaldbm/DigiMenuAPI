@@ -31,11 +31,13 @@ namespace AppCore.Infrastructure.SQL
         public DbSet<Branch> Branches { get; set; }
         public DbSet<AppUser> Users { get; set; }
 
+        // Company config
+        public DbSet<CompanyInfo> CompanyInfos { get; set; }
+        public DbSet<CompanyTheme> CompanyThemes { get; set; }
+        public DbSet<CompanySeo> CompanySeos { get; set; }
+
         // Branch config
-        public DbSet<BranchInfo> BranchInfos { get; set; }
-        public DbSet<BranchTheme> BranchThemes { get; set; }
         public DbSet<BranchLocale> BranchLocales { get; set; }
-        public DbSet<BranchSeo> BranchSeos { get; set; }
         public DbSet<BranchSchedule> BranchSchedules { get; set; }
         public DbSet<BranchSpecialDay> BranchSpecialDays { get; set; }
 
@@ -56,10 +58,10 @@ namespace AppCore.Infrastructure.SQL
             ConfigureCompanyModule(modelBuilder);
             ConfigureOutboxEmail(modelBuilder);
             ConfigurePasswordResetRequest(modelBuilder);
-            ConfigureBranchInfo(modelBuilder);
-            ConfigureBranchTheme(modelBuilder);
+            ConfigureCompanyInfo(modelBuilder);
+            ConfigureCompanyTheme(modelBuilder);
+            ConfigureCompanySeo(modelBuilder);
             ConfigureBranchLocale(modelBuilder);
-            ConfigureBranchSeo(modelBuilder);
             ConfigureBranchSchedule(modelBuilder);
             ConfigureBranchSpecialDay(modelBuilder);
 
@@ -130,25 +132,10 @@ namespace AppCore.Infrastructure.SQL
                  .HasForeignKey(br => br.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
 
-                // Relaciones 1:1 con las entidades de configuración core.
-                e.HasOne(br => br.Info)
-                 .WithOne(i => i.Branch)
-                 .HasForeignKey<BranchInfo>(i => i.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                e.HasOne(br => br.Theme)
-                 .WithOne(t => t.Branch)
-                 .HasForeignKey<BranchTheme>(t => t.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
+                // Relación 1:1 con BranchLocale (configuración regional por sucursal).
                 e.HasOne(br => br.Locale)
                  .WithOne(l => l.Branch)
                  .HasForeignKey<BranchLocale>(l => l.BranchId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                e.HasOne(br => br.Seo)
-                 .WithOne(s => s.Branch)
-                 .HasForeignKey<BranchSeo>(s => s.BranchId)
                  .OnDelete(DeleteBehavior.Restrict);
 
                 // Filtro global: excluye branches eliminadas de todas las consultas
@@ -293,26 +280,26 @@ namespace AppCore.Infrastructure.SQL
             });
         }
 
-        private static void ConfigureBranchInfo(ModelBuilder b)
+        private static void ConfigureCompanyInfo(ModelBuilder b)
         {
-            b.Entity<BranchInfo>(e =>
+            b.Entity<CompanyInfo>(e =>
             {
                 e.HasKey(i => i.Id);
                 e.Property(i => i.BusinessName).IsRequired().HasMaxLength(100);
                 e.Property(i => i.Tagline).HasMaxLength(200);
 
-                // 1:1 con Branch
-                e.HasIndex(i => i.BranchId).IsUnique();
-                e.HasOne(i => i.Branch)
-                 .WithOne(br => br.Info)
-                 .HasForeignKey<BranchInfo>(i => i.BranchId)
+                // 1:1 con Company
+                e.HasIndex(i => i.CompanyId).IsUnique();
+                e.HasOne(i => i.Company)
+                 .WithOne(c => c.Info)
+                 .HasForeignKey<CompanyInfo>(i => i.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
         }
 
-        private static void ConfigureBranchTheme(ModelBuilder b)
+        private static void ConfigureCompanyTheme(ModelBuilder b)
         {
-            b.Entity<BranchTheme>(e =>
+            b.Entity<CompanyTheme>(e =>
             {
                 e.HasKey(t => t.Id);
 
@@ -332,11 +319,11 @@ namespace AppCore.Infrastructure.SQL
                 e.Property(t => t.MenuLayout).HasColumnType("tinyint").HasDefaultValue((byte)1);
                 e.Property(t => t.ProductDisplay).HasColumnType("tinyint").HasDefaultValue((byte)1);
 
-                // 1:1 con Branch
-                e.HasIndex(t => t.BranchId).IsUnique();
-                e.HasOne(t => t.Branch)
-                 .WithOne(br => br.Theme)
-                 .HasForeignKey<BranchTheme>(t => t.BranchId)
+                // 1:1 con Company
+                e.HasIndex(t => t.CompanyId).IsUnique();
+                e.HasOne(t => t.Company)
+                 .WithOne(c => c.Theme)
+                 .HasForeignKey<CompanyTheme>(t => t.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
         }
@@ -362,9 +349,9 @@ namespace AppCore.Infrastructure.SQL
             });
         }
 
-        private static void ConfigureBranchSeo(ModelBuilder b)
+        private static void ConfigureCompanySeo(ModelBuilder b)
         {
-            b.Entity<BranchSeo>(e =>
+            b.Entity<CompanySeo>(e =>
             {
                 e.HasKey(s => s.Id);
                 e.Property(s => s.MetaTitle).HasMaxLength(100);
@@ -372,11 +359,11 @@ namespace AppCore.Infrastructure.SQL
                 e.Property(s => s.GoogleAnalyticsId).HasMaxLength(50);
                 e.Property(s => s.FacebookPixelId).HasMaxLength(50);
 
-                // 1:1 con Branch
-                e.HasIndex(s => s.BranchId).IsUnique();
-                e.HasOne(s => s.Branch)
-                 .WithOne(br => br.Seo)
-                 .HasForeignKey<BranchSeo>(s => s.BranchId)
+                // 1:1 con Company
+                e.HasIndex(s => s.CompanyId).IsUnique();
+                e.HasOne(s => s.Company)
+                 .WithOne(c => c.Seo)
+                 .HasForeignKey<CompanySeo>(s => s.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
         }
@@ -434,7 +421,7 @@ namespace AppCore.Infrastructure.SQL
             SeedMasterCompany(b);
             SeedMasterBranch(b);
             SeedMasterUser(b);
-            SeedMasterBranchConfig(b);
+            SeedMasterCompanyConfig(b);
             SeedMasterCompanyModules(b);
         }
 
@@ -531,6 +518,7 @@ namespace AppCore.Infrastructure.SQL
             {
                 Id          = 1,
                 Name        = "DigiMenu Platform",
+                Slug        = "digimenu-platform",
                 Email       = "admin@digimenu.app",
                 Phone       = "+50600000000",
                 CountryCode = "CR",
@@ -578,14 +566,14 @@ namespace AppCore.Infrastructure.SQL
             });
         }
 
-        private static void SeedMasterBranchConfig(ModelBuilder b)
+        private static void SeedMasterCompanyConfig(ModelBuilder b)
         {
             var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            b.Entity<BranchInfo>().HasData(new BranchInfo
+            b.Entity<CompanyInfo>().HasData(new CompanyInfo
             {
                 Id = 1,
-                BranchId = 1,
+                CompanyId = 1,
                 BusinessName = "DigiMenu Demo",
                 Tagline = "El mejor menú digital para tu restaurante",
                 LogoUrl = null,
@@ -594,22 +582,22 @@ namespace AppCore.Infrastructure.SQL
                 CreatedAt = seed
             });
 
-            b.Entity<BranchTheme>().HasData(new BranchTheme
+            b.Entity<CompanyTheme>().HasData(new CompanyTheme
             {
                 Id = 1,
-                BranchId = 1,
+                CompanyId = 1,
                 IsDarkMode = false,
-                PageBackgroundColor = "#F1FAEE",
-                HeaderBackgroundColor = "#1D3557",
-                HeaderTextColor = "#FFFFFF",
-                TabBackgroundColor = "#457B9D",
-                TabTextColor = "#FFFFFF",
-                PrimaryColor = "#E63946",
-                PrimaryTextColor = "#FFFFFF",
-                SecondaryColor = "#457B9D",
-                TitlesColor = "#1D3557",
-                TextColor = "#1D3557",
-                BrowserThemeColor = "#1D3557",
+                PageBackgroundColor   = DefaultTheme.PageBackground,
+                HeaderBackgroundColor = DefaultTheme.HeaderBackground,
+                HeaderTextColor       = DefaultTheme.HeaderText,
+                TabBackgroundColor    = DefaultTheme.TabBackground,
+                TabTextColor          = DefaultTheme.TabText,
+                PrimaryColor          = DefaultTheme.Primary,
+                PrimaryTextColor      = DefaultTheme.PrimaryText,
+                SecondaryColor        = DefaultTheme.Secondary,
+                TitlesColor           = DefaultTheme.Titles,
+                TextColor             = DefaultTheme.Text,
+                BrowserThemeColor     = DefaultTheme.BrowserTheme,
                 HeaderStyle = 1,
                 MenuLayout = 1,
                 ProductDisplay = 1,
@@ -633,10 +621,10 @@ namespace AppCore.Infrastructure.SQL
                 CreatedAt = seed
             });
 
-            b.Entity<BranchSeo>().HasData(new BranchSeo
+            b.Entity<CompanySeo>().HasData(new CompanySeo
             {
                 Id = 1,
-                BranchId = 1,
+                CompanyId = 1,
                 MetaTitle = "DigiMenu Demo",
                 MetaDescription = "El mejor menú digital para tu restaurante",
                 GoogleAnalyticsId = null,
