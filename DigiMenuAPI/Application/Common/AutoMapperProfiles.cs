@@ -101,6 +101,9 @@ namespace DigiMenuAPI.Application.Common
         // ── Product ───────────────────────────────────────────────────
         private void ProductMappings()
         {
+            CreateMap<Product, ProductSummaryDto>()
+                .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name));
+
             CreateMap<Product, ProductReadDto>()
                 .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name))
                 .ForMember(d => d.Tags, o => o.MapFrom(s => s.Tags))

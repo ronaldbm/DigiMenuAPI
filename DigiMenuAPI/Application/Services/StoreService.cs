@@ -44,21 +44,17 @@ namespace DigiMenuAPI.Application.Services
                 //    CompanyInfo, CompanyTheme y CompanySeo son de nivel Company.
                 //    BranchLocale es de nivel Branch.
                 //    CompanySeo es opcional — el menú funciona sin SEO configurado.
-                var infoTask = _context.CompanyInfos.AsNoTracking()
+                var info = await _context.CompanyInfos.AsNoTracking()
                     .FirstOrDefaultAsync(i => i.CompanyId == companyId.Value);
-                var themeTask = _context.CompanyThemes.AsNoTracking()
+
+                var theme = await _context.CompanyThemes.AsNoTracking()
                     .FirstOrDefaultAsync(t => t.CompanyId == companyId.Value);
-                var localeTask = _context.BranchLocales.AsNoTracking()
+
+                var locale = await _context.BranchLocales.AsNoTracking()
                     .FirstOrDefaultAsync(l => l.BranchId == branchId.Value);
-                var seoTask = _context.CompanySeos.AsNoTracking()
+
+                var seo = await _context.CompanySeos.AsNoTracking()
                     .FirstOrDefaultAsync(s => s.CompanyId == companyId.Value);
-
-                await Task.WhenAll(infoTask, themeTask, localeTask, seoTask);
-
-                var info = await infoTask;
-                var theme = await themeTask;
-                var locale = await localeTask;
-                var seo = await seoTask;
 
                 // Info, Theme y Locale son obligatorios — se crean al registrar la empresa
                 if (info is null || theme is null || locale is null)

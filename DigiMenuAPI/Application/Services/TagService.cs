@@ -120,5 +120,6 @@ namespace DigiMenuAPI.Application.Services
 
             return OperationResult<bool>.Ok(true);
         }
+
     }
 }

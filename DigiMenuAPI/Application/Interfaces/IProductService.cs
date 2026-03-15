@@ -9,6 +9,13 @@ namespace DigiMenuAPI.Application.Interfaces
     {
         /// <summary>Catálogo global de la empresa autenticada. CompanyId desde JWT.</summary>
         Task<OperationResult<PagedResult<ProductReadDto>>> GetAll(int page = 1, int pageSize = 20);
+
+        /// <summary>
+        /// Lista compacta de todos los productos sin paginación.
+        /// Usada en modales de selección para crear BranchProducts.
+        /// </summary>
+        Task<OperationResult<List<ProductSummaryDto>>> GetAllSimple();
+
         Task<OperationResult<ProductReadDto>> GetById(int id);
 
         /// <summary>Vista completa con traducciones para el formulario de edición.</summary>

@@ -107,6 +107,7 @@ public partial class Program
         builder.Services.AddScoped<IModuleService, ModuleService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddScoped<IBranchProductService, BranchProductService>();
         builder.Services.AddScoped<ITagService, TagService>();
         builder.Services.AddScoped<IFooterLinkService, FooterLinkService>();
         builder.Services.AddScoped<IStandardIconService, StandardIconService>();

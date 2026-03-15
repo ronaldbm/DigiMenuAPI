@@ -1,5 +1,19 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Read
 {
+    /// <summary>
+    /// Visibilidad de una categoría dentro de una Branch específica.
+    /// Se calcula a partir de los BranchProducts activos de esa categoría en esa sucursal.
+    /// AnyVisible = true si al menos un producto está visible.
+    /// </summary>
+    public record BranchCategoryVisibilityDto(
+        int CategoryId,
+        string CategoryName,
+        int DisplayOrder,
+        bool AnyVisible,
+        int TotalProducts,
+        int VisibleProducts
+    );
+
     /// <summary>Categoría para el panel admin (incluye traducciones).</summary>
     public record CategoryReadDto(
         int Id,

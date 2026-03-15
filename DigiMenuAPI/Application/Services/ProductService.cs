@@ -57,6 +57,20 @@ namespace DigiMenuAPI.Application.Services
                 PagedResult<ProductReadDto>.Create(data, total, page, pageSize));
         }
 
+        public async Task<OperationResult<List<ProductSummaryDto>>> GetAllSimple()
+        {
+            var companyId = _tenantService.GetCompanyId();
+
+            var data = await _context.Products
+                .AsNoTracking()
+                .Where(p => p.CompanyId == companyId)
+                .OrderBy(p => p.CategoryId).ThenBy(p => p.Name)
+                .ProjectTo<ProductSummaryDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return OperationResult<List<ProductSummaryDto>>.Ok(data);
+        }
+
         public async Task<OperationResult<ProductReadDto>> GetById(int id)
         {
             var companyId = _tenantService.GetCompanyId();
@@ -192,5 +206,6 @@ namespace DigiMenuAPI.Application.Services
 
             return OperationResult<bool>.Ok(true);
         }
+
     }
 }

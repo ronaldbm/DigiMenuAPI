@@ -21,6 +21,14 @@ namespace DigiMenuAPI.Controllers
             [FromQuery] int pageSize = 20)
             => HandleResult(await _service.GetAll(page, pageSize));
 
+        /// <summary>
+        /// Lista compacta de todos los productos sin paginación.
+        /// Útil para modales de selección al crear BranchProducts.
+        /// </summary>
+        [HttpGet("all")]
+        public async Task<ActionResult> GetAllSimple()
+            => HandleResult(await _service.GetAllSimple());
+
         [HttpGet("{id}")]
         public async Task<ActionResult> GetById(int id) => HandleResult(await _service.GetById(id));
 

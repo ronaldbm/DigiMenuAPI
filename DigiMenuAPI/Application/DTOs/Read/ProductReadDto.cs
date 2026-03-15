@@ -1,6 +1,18 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Read
 {
     /// <summary>
+    /// Producto del catálogo global — versión compacta para modales de selección.
+    /// Permite al admin elegir qué productos activar en una Branch (BranchProduct).
+    /// </summary>
+    public record ProductSummaryDto(
+        int Id,
+        int CategoryId,
+        string CategoryName,
+        string Name,
+        string? MainImageUrl
+    );
+
+    /// <summary>
     /// Producto del catálogo global para listados del panel admin.
     /// Sin precio (el precio vive en BranchProduct por sucursal).
     /// </summary>
@@ -58,18 +70,19 @@
     /// BranchProduct para el panel admin de la Branch.
     /// Permite ver y editar la configuración de cada producto activado en esa sucursal.
     /// </summary>
-    public record BranchProductReadDto(
-        int Id,
-        int BranchId,
-        int ProductId,
-        string ProductName,
-        int CategoryId,
-        string CategoryName,
-        decimal Price,
-        decimal? OfferPrice,
-        string? ImageOverrideUrl,
-        string? BaseImageUrl,
-        int DisplayOrder,
-        bool IsVisible
-    );
+    public class BranchProductReadDto
+    {
+        public int Id { get; init; }
+        public int BranchId { get; init; }
+        public int ProductId { get; init; }
+        public string ProductName { get; init; } = string.Empty;
+        public int CategoryId { get; init; }
+        public string CategoryName { get; init; } = string.Empty;
+        public decimal Price { get; init; }
+        public decimal? OfferPrice { get; init; }
+        public string? ImageOverrideUrl { get; init; }
+        public string? BaseImageUrl { get; init; }
+        public int DisplayOrder { get; init; }
+        public bool IsVisible { get; init; }
+    }
 }

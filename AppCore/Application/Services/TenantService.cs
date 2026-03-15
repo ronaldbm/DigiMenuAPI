@@ -70,7 +70,7 @@ namespace AppCore.Application.Services
 
         public byte GetUserRole()
         {
-            var claim = GetClaim("role");
+            var claim = GetClaim(ClaimTypes.Role);
             if (string.IsNullOrEmpty(claim) || !byte.TryParse(claim, out var role))
                 return 0;
             return role;

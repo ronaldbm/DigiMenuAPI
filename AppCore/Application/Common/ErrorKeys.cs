@@ -85,6 +85,10 @@ namespace AppCore.Application.Common
         public const string ProductNotFound = "PRODUCT_NOT_FOUND";
         public const string ProductAlreadyExists = "PRODUCT_ALREADY_EXISTS";
 
+        // ── BranchProduct ─────────────────────────────────────────────
+        public const string BranchProductNotFound = "BRANCH_PRODUCT_NOT_FOUND";
+        public const string BranchProductAlreadyExists = "BRANCH_PRODUCT_ALREADY_EXISTS";
+
         // ── Tag ───────────────────────────────────────────────────────
         public const string TagNotFound = "TAG_NOT_FOUND";
         public const string TagNotOwned = "TAG_NOT_OWNED";

@@ -6,7 +6,7 @@ namespace AppCore.Application.Common
     /// </summary>
     public class PagedResult<T>
     {
-        public List<T> Data { get; init; } = new();
+        public List<T> Items { get; init; } = new();
         public int Total { get; init; }
         public int Page { get; init; }
         public int PageSize { get; init; }
@@ -15,6 +15,6 @@ namespace AppCore.Application.Common
         public bool HasPrev => Page > 1;
 
         public static PagedResult<T> Create(List<T> data, int total, int page, int pageSize)
-            => new() { Data = data, Total = total, Page = page, PageSize = pageSize };
+            => new() { Items = data, Total = total, Page = page, PageSize = pageSize };
     }
 }
