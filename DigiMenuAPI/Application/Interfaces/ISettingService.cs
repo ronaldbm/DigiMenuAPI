@@ -56,5 +56,25 @@ namespace DigiMenuAPI.Application.Interfaces
         /// <summary>Requiere módulo RESERVATIONS activo.</summary>
         Task<OperationResult<BranchReservationFormReadDto>> UpdateReservationForm(
             BranchReservationFormUpdateDto dto);
+
+        // ── Contact: LECTURA ──────────────────────────────────────────
+
+        /// <summary>
+        /// Devuelve los datos de contacto de la Company.
+        /// Solo accesible a CompanyAdmin y roles superiores. Staff y BranchAdmin reciben error.
+        /// </summary>
+        Task<OperationResult<CompanyContactReadDto>> GetCompanyContact();
+
+        /// <summary>
+        /// Devuelve los datos de contacto de una Branch.
+        /// Staff recibe error. BranchAdmin solo puede ver su propia Branch.
+        /// </summary>
+        Task<OperationResult<BranchContactReadDto>> GetBranchContact(int branchId);
+
+        // ── Contact: ACTUALIZACIÓN ────────────────────────────────────
+
+        Task<OperationResult<CompanyContactReadDto>> UpdateCompanyContact(CompanyContactUpdateDto dto);
+
+        Task<OperationResult<BranchContactReadDto>> UpdateBranchContact(int branchId, BranchContactUpdateDto dto);
     }
 }

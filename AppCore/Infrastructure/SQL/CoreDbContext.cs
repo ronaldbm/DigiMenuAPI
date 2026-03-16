@@ -423,6 +423,7 @@ namespace AppCore.Infrastructure.SQL
             SeedMasterUser(b);
             SeedMasterCompanyConfig(b);
             SeedMasterCompanyModules(b);
+            SeedMasterBranchSchedule(b);
         }
 
         private static void SeedPlans(ModelBuilder b)
@@ -641,6 +642,26 @@ namespace AppCore.Infrastructure.SQL
                 new CompanyModule { Id = 2, CompanyId = 1, PlatformModuleId = 2, IsActive = true, ActivatedAt = seed, ActivatedByUserId = 1 },
                 new CompanyModule { Id = 3, CompanyId = 1, PlatformModuleId = 3, IsActive = true, ActivatedAt = seed, ActivatedByUserId = 1 },
                 new CompanyModule { Id = 4, CompanyId = 1, PlatformModuleId = 4, IsActive = true, ActivatedAt = seed, ActivatedByUserId = 1 }
+            );
+        }
+
+        private static void SeedMasterBranchSchedule(ModelBuilder b)
+        {
+            // Horario semanal de la Branch demo (BranchId = 1).
+            // Convención .NET DayOfWeek: 0=Domingo, 1=Lunes … 6=Sábado
+            // Lun-Sáb → abierto 09:00–22:00 | Dom → cerrado
+            var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var open  = new TimeSpan(9,  0, 0);
+            var close = new TimeSpan(22, 0, 0);
+
+            b.Entity<BranchSchedule>().HasData(
+                new BranchSchedule { Id = 1, BranchId = 1, DayOfWeek = 0, IsOpen = false, OpenTime = null,  CloseTime = null,  CreatedAt = seed }, // Domingo
+                new BranchSchedule { Id = 2, BranchId = 1, DayOfWeek = 1, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }, // Lunes
+                new BranchSchedule { Id = 3, BranchId = 1, DayOfWeek = 2, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }, // Martes
+                new BranchSchedule { Id = 4, BranchId = 1, DayOfWeek = 3, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }, // Miércoles
+                new BranchSchedule { Id = 5, BranchId = 1, DayOfWeek = 4, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }, // Jueves
+                new BranchSchedule { Id = 6, BranchId = 1, DayOfWeek = 5, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }, // Viernes
+                new BranchSchedule { Id = 7, BranchId = 1, DayOfWeek = 6, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }  // Sábado
             );
         }
 

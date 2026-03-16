@@ -121,5 +121,28 @@ namespace DigiMenuAPI.Controllers
 
             return HandleResult(await _service.UpdateReservationForm(dto));
         }
+
+        // ── Contact: GET / PATCH ──────────────────────────────────────
+
+        /// <summary>Datos de contacto de la empresa. Solo CompanyAdmin o superior.</summary>
+        [HttpGet("company/contact")]
+        public async Task<ActionResult> GetCompanyContact()
+            => HandleResult(await _service.GetCompanyContact());
+
+        /// <summary>Actualiza datos de contacto de la empresa. Solo CompanyAdmin o superior.</summary>
+        [HttpPatch("company/contact")]
+        public async Task<ActionResult> UpdateCompanyContact([FromBody] CompanyContactUpdateDto dto)
+            => HandleResult(await _service.UpdateCompanyContact(dto));
+
+        /// <summary>Datos de contacto de una sucursal. Staff no permitido.</summary>
+        [HttpGet("branch/{branchId:int}/contact")]
+        public async Task<ActionResult> GetBranchContact(int branchId)
+            => HandleResult(await _service.GetBranchContact(branchId));
+
+        /// <summary>Actualiza datos de contacto de una sucursal. Staff no permitido.</summary>
+        [HttpPatch("branch/{branchId:int}/contact")]
+        public async Task<ActionResult> UpdateBranchContact(
+            int branchId, [FromBody] BranchContactUpdateDto dto)
+            => HandleResult(await _service.UpdateBranchContact(branchId, dto));
     }
 }

@@ -237,5 +237,28 @@ namespace DigiMenuAPI.Application.Services
 
             return OperationResult<bool>.Ok(true);
         }
+
+        public async Task<OperationResult<bool>> Reorder(int branchId, List<ReorderItemDto> items)
+        {
+            await _tenantService.ValidateBranchOwnershipAsync(branchId);
+
+            var ids = items.Select(i => i.Id).ToList();
+
+            var branchProducts = await _context.BranchProducts
+                .Where(bp => bp.BranchId == branchId && ids.Contains(bp.Id))
+                .ToListAsync();
+
+            foreach (var item in items)
+            {
+                var bp = branchProducts.FirstOrDefault(b => b.Id == item.Id);
+                if (bp is not null)
+                    bp.DisplayOrder = item.DisplayOrder;
+            }
+
+            await _context.SaveChangesAsync();
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
+
+            return OperationResult<bool>.Ok(true);
+        }
     }
 }

@@ -307,6 +307,106 @@ namespace DigiMenuAPI.Application.Services
             return null;
         }
 
+        // ── Contact: LECTURA ──────────────────────────────────────────
+
+        public async Task<OperationResult<CompanyContactReadDto>> GetCompanyContact()
+        {
+            var role = _tenantService.GetUserRole();
+            if (UserRoles.NeedsBranch(role))
+                return OperationResult<CompanyContactReadDto>.Fail(
+                    "No tienes permiso para ver los datos de contacto de la empresa.");
+
+            var companyId = _tenantService.GetCompanyId();
+            var company = await _context.Companies.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == companyId);
+
+            if (company is null)
+                return OperationResult<CompanyContactReadDto>.Fail("Empresa no encontrada.");
+
+            return OperationResult<CompanyContactReadDto>.Ok(
+                new CompanyContactReadDto(company.Id, company.Name, company.Email,
+                    company.Phone, company.CountryCode));
+        }
+
+        public async Task<OperationResult<BranchContactReadDto>> GetBranchContact(int branchId)
+        {
+            var role = _tenantService.GetUserRole();
+            if (role == UserRoles.Staff)
+                return OperationResult<BranchContactReadDto>.Fail(
+                    "No tienes permiso para ver los datos de contacto de la sucursal.");
+
+            await _tenantService.ValidateBranchOwnershipAsync(branchId);
+
+            var branch = await _context.Branches.AsNoTracking()
+                .FirstOrDefaultAsync(b => b.Id == branchId);
+
+            if (branch is null)
+                return OperationResult<BranchContactReadDto>.Fail("Sucursal no encontrada.");
+
+            return OperationResult<BranchContactReadDto>.Ok(
+                new BranchContactReadDto(branch.Id, branch.Name, branch.Address,
+                    branch.Phone, branch.Email));
+        }
+
+        // ── Contact: ACTUALIZACIÓN ────────────────────────────────────
+
+        public async Task<OperationResult<CompanyContactReadDto>> UpdateCompanyContact(
+            CompanyContactUpdateDto dto)
+        {
+            var role = _tenantService.GetUserRole();
+            if (UserRoles.NeedsBranch(role))
+                return OperationResult<CompanyContactReadDto>.Fail(
+                    "No tienes permiso para modificar los datos de contacto de la empresa.");
+
+            var companyId = _tenantService.GetCompanyId();
+            var company = await _context.Companies
+                .FirstOrDefaultAsync(c => c.Id == companyId);
+
+            if (company is null)
+                return OperationResult<CompanyContactReadDto>.Fail("Empresa no encontrada.");
+
+            company.Name        = dto.Name.Trim();
+            company.Email       = dto.Email?.Trim() ?? company.Email;
+            company.Phone       = dto.Phone?.Trim();
+            company.CountryCode = dto.CountryCode?.Trim();
+
+            await _context.SaveChangesAsync();
+            await _cache.EvictMenuByCompanyAsync(companyId);
+
+            return OperationResult<CompanyContactReadDto>.Ok(
+                new CompanyContactReadDto(company.Id, company.Name, company.Email,
+                    company.Phone, company.CountryCode));
+        }
+
+        public async Task<OperationResult<BranchContactReadDto>> UpdateBranchContact(
+            int branchId, BranchContactUpdateDto dto)
+        {
+            var role = _tenantService.GetUserRole();
+            if (role == UserRoles.Staff)
+                return OperationResult<BranchContactReadDto>.Fail(
+                    "No tienes permiso para modificar los datos de contacto de la sucursal.");
+
+            await _tenantService.ValidateBranchOwnershipAsync(branchId);
+
+            var branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.Id == branchId);
+
+            if (branch is null)
+                return OperationResult<BranchContactReadDto>.Fail("Sucursal no encontrada.");
+
+            branch.Name    = dto.Name.Trim();
+            branch.Address = dto.Address?.Trim();
+            branch.Phone   = dto.Phone?.Trim();
+            branch.Email   = dto.Email?.Trim();
+
+            await _context.SaveChangesAsync();
+            await _cache.EvictMenuByBranchAsync(branchId);
+
+            return OperationResult<BranchContactReadDto>.Ok(
+                new BranchContactReadDto(branch.Id, branch.Name, branch.Address,
+                    branch.Phone, branch.Email));
+        }
+
         /// <summary>Valida extensión de imagen. Lanza si no es permitida.</summary>
         private static void AssertImageExtension(string fileName)
         {

@@ -73,7 +73,8 @@ namespace DigiMenuAPI.Application.Common
                 .ForMember(d => d.BranchName, o => o.MapFrom(s => s.Branch != null ? s.Branch.Name : null));
 
             CreateMap<AppUser, AppUserSummaryDto>()
-                .ForMember(d => d.BranchName, o => o.MapFrom(s => s.Branch != null ? s.Branch.Name : null));
+                .ForMember(d => d.BranchName, o => o.MapFrom(s => s.Branch != null ? s.Branch.Name : null))
+                .ForMember(d => d.BranchId, o => o.MapFrom(s => s.BranchId));
 
             CreateMap<AppUserCreateDto, AppUser>()
                 .ForMember(d => d.PasswordHash, o => o.Ignore()); // servicio aplica BCrypt

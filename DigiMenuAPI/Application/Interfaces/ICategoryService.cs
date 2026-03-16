@@ -15,5 +15,8 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<CategoryReadDto>> Create(CategoryCreateDto dto);
         Task<OperationResult<bool>> Update(CategoryUpdateDto dto);
         Task<OperationResult<bool>> Delete(int id);
+
+        /// <summary>Reordena varias categorías en una sola operación.</summary>
+        Task<OperationResult<bool>> Reorder(List<ReorderItemDto> items);
     }
 }

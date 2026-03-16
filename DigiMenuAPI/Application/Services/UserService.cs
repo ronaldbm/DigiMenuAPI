@@ -61,6 +61,7 @@ namespace DigiMenuAPI.Application.Services
                     u.Email,
                     u.Role,
                     u.IsActive,
+                    u.BranchId,
                     u.Branch != null ? u.Branch.Name : null))
                 .ToListAsync();
 

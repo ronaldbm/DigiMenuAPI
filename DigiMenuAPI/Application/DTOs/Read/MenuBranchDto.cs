@@ -44,6 +44,9 @@
         string? MetaDescription,
         string? GoogleAnalyticsId,
         string? FacebookPixelId,
+        // ── Contacto — Branch ─────────────────────────────────────────
+        string? BranchPhone,
+        string? BranchEmail,
         // ── Contenido dinámico ────────────────────────────────────────
         List<CategoryMenuDto> Categories,
         List<FooterLinkReadDto> FooterLinks,

@@ -24,6 +24,7 @@
         string Email,
         byte Role,
         bool IsActive,
+        int? BranchId,
         string? BranchName
     );
 }

@@ -58,5 +58,8 @@ namespace DigiMenuAPI.Application.Interfaces
 
         /// <summary>Desactiva un BranchProduct (soft delete). No afecta el catálogo global.</summary>
         Task<OperationResult<bool>> Delete(int id);
+
+        /// <summary>Reordena varios BranchProducts de una sucursal en una sola operación.</summary>
+        Task<OperationResult<bool>> Reorder(int branchId, List<ReorderItemDto> items);
     }
 }

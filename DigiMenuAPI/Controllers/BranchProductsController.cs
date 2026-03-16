@@ -88,5 +88,10 @@ namespace DigiMenuAPI.Controllers
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
             => HandleResult(await _service.Delete(id));
+
+        /// <summary>Reordena varios BranchProducts de una sucursal en una sola llamada.</summary>
+        [HttpPatch("{branchId:int}/reorder")]
+        public async Task<ActionResult> Reorder(int branchId, [FromBody] List<ReorderItemDto> items)
+            => HandleResult(await _service.Reorder(branchId, items));
     }
 }

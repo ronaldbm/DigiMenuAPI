@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DigiMenuAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260313000653_InitialCreate")]
+    [Migration("20260316030241_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -303,6 +303,76 @@ namespace DigiMenuAPI.Migrations
                         .IsUnique();
 
                     b.ToTable("BranchSchedules");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            BranchId = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = (byte)0,
+                            IsOpen = false
+                        },
+                        new
+                        {
+                            Id = 2,
+                            BranchId = 1,
+                            CloseTime = new TimeSpan(0, 22, 0, 0, 0),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = (byte)1,
+                            IsOpen = true,
+                            OpenTime = new TimeSpan(0, 9, 0, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            BranchId = 1,
+                            CloseTime = new TimeSpan(0, 22, 0, 0, 0),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = (byte)2,
+                            IsOpen = true,
+                            OpenTime = new TimeSpan(0, 9, 0, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 4,
+                            BranchId = 1,
+                            CloseTime = new TimeSpan(0, 22, 0, 0, 0),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = (byte)3,
+                            IsOpen = true,
+                            OpenTime = new TimeSpan(0, 9, 0, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 5,
+                            BranchId = 1,
+                            CloseTime = new TimeSpan(0, 22, 0, 0, 0),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = (byte)4,
+                            IsOpen = true,
+                            OpenTime = new TimeSpan(0, 9, 0, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 6,
+                            BranchId = 1,
+                            CloseTime = new TimeSpan(0, 22, 0, 0, 0),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = (byte)5,
+                            IsOpen = true,
+                            OpenTime = new TimeSpan(0, 9, 0, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 7,
+                            BranchId = 1,
+                            CloseTime = new TimeSpan(0, 22, 0, 0, 0),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DayOfWeek = (byte)6,
+                            IsOpen = true,
+                            OpenTime = new TimeSpan(0, 9, 0, 0, 0)
+                        });
                 });
 
             modelBuilder.Entity("AppCore.Domain.Entities.BranchSpecialDay", b =>

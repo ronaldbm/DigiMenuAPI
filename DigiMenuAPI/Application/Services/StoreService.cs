@@ -44,6 +44,11 @@ namespace DigiMenuAPI.Application.Services
                 //    CompanyInfo, CompanyTheme y CompanySeo son de nivel Company.
                 //    BranchLocale es de nivel Branch.
                 //    CompanySeo es opcional — el menú funciona sin SEO configurado.
+                var branch = await _context.Branches.AsNoTracking()
+                    .IgnoreQueryFilters()
+                    .Select(br => new { br.Id, br.Phone, br.Email })
+                    .FirstOrDefaultAsync(br => br.Id == branchId.Value);
+
                 var info = await _context.CompanyInfos.AsNoTracking()
                     .FirstOrDefaultAsync(i => i.CompanyId == companyId.Value);
 
@@ -236,6 +241,9 @@ namespace DigiMenuAPI.Application.Services
                     seo?.MetaDescription,
                     seo?.GoogleAnalyticsId,
                     seo?.FacebookPixelId,
+                    // Contacto
+                    branch?.Phone,
+                    branch?.Email,
                     // Contenido dinámico
                     categoryDtos,
                     footerLinks,

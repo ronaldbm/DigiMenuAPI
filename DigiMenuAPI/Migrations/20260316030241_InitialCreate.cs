@@ -907,6 +907,20 @@ namespace DigiMenuAPI.Migrations
                 values: new object[] { 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, false, false, true, true, true, false, false, false, true, true, true, true, false, 0, 0, 0, null, null });
 
             migrationBuilder.InsertData(
+                table: "BranchSchedules",
+                columns: new[] { "Id", "BranchId", "CloseTime", "CreatedAt", "CreatedUserId", "DayOfWeek", "IsOpen", "ModifiedAt", "ModifiedUserId", "OpenTime" },
+                values: new object[,]
+                {
+                    { 1, 1, null, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, (byte)0, false, null, null, null },
+                    { 2, 1, new TimeSpan(0, 22, 0, 0, 0), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, (byte)1, true, null, null, new TimeSpan(0, 9, 0, 0, 0) },
+                    { 3, 1, new TimeSpan(0, 22, 0, 0, 0), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, (byte)2, true, null, null, new TimeSpan(0, 9, 0, 0, 0) },
+                    { 4, 1, new TimeSpan(0, 22, 0, 0, 0), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, (byte)3, true, null, null, new TimeSpan(0, 9, 0, 0, 0) },
+                    { 5, 1, new TimeSpan(0, 22, 0, 0, 0), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, (byte)4, true, null, null, new TimeSpan(0, 9, 0, 0, 0) },
+                    { 6, 1, new TimeSpan(0, 22, 0, 0, 0), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, (byte)5, true, null, null, new TimeSpan(0, 9, 0, 0, 0) },
+                    { 7, 1, new TimeSpan(0, 22, 0, 0, 0), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, (byte)6, true, null, null, new TimeSpan(0, 9, 0, 0, 0) }
+                });
+
+            migrationBuilder.InsertData(
                 table: "FooterLinks",
                 columns: new[] { "Id", "BranchId", "CreatedAt", "CreatedUserId", "CustomSvgContent", "DisplayOrder", "IsDeleted", "IsVisible", "Label", "ModifiedAt", "ModifiedUserId", "StandardIconId", "Url" },
                 values: new object[,]

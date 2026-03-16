@@ -35,5 +35,10 @@ namespace DigiMenuAPI.Controllers
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id) => HandleResult(await _service.Delete(id));
+
+        /// <summary>Reordena varias categorías en una sola llamada.</summary>
+        [HttpPatch("reorder")]
+        public async Task<ActionResult> Reorder([FromBody] List<ReorderItemDto> items)
+            => HandleResult(await _service.Reorder(items));
     }
 }
