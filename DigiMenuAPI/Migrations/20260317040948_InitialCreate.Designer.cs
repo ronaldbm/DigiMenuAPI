@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DigiMenuAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260317010011_InitialCreate")]
+    [Migration("20260317040948_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -181,6 +181,66 @@ namespace DigiMenuAPI.Migrations
                             Phone = "+50600000000",
                             Slug = "Principal"
                         });
+                });
+
+            modelBuilder.Entity("AppCore.Domain.Entities.BranchEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<TimeSpan?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime>("EventDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FlyerImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("ShowPromotionalModal")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeSpan?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "EventDate");
+
+                    b.HasIndex("BranchId", "ShowPromotionalModal", "IsActive");
+
+                    b.ToTable("BranchEvents");
                 });
 
             modelBuilder.Entity("AppCore.Domain.Entities.BranchLocale", b =>
@@ -1088,7 +1148,7 @@ namespace DigiMenuAPI.Migrations
                         {
                             Id = 3,
                             Name = "WhatsApp",
-                            SvgContent = "< svg xmlns = 'http://www.w3.org/2000/svg' width = '24' height = '24' viewBox = '0 0 24 24' fill = 'none' stroke = 'currentColor' stroke - width = '2' stroke - linecap = 'round' stroke - linejoin = 'round' >< path d = 'M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.2 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.2-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z' ></ path ></ svg >"
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.2 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.2-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'/></svg>"
                         },
                         new
                         {
@@ -2217,6 +2277,17 @@ namespace DigiMenuAPI.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("AppCore.Domain.Entities.BranchEvent", b =>
+                {
+                    b.HasOne("AppCore.Domain.Entities.Branch", "Branch")
+                        .WithMany("Events")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("AppCore.Domain.Entities.BranchLocale", b =>
                 {
                     b.HasOne("AppCore.Domain.Entities.Branch", "Branch")
@@ -2519,6 +2590,8 @@ namespace DigiMenuAPI.Migrations
 
             modelBuilder.Entity("AppCore.Domain.Entities.Branch", b =>
                 {
+                    b.Navigation("Events");
+
                     b.Navigation("Locale");
 
                     b.Navigation("Schedules");

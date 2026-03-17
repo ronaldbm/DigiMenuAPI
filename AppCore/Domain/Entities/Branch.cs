@@ -57,5 +57,8 @@ namespace AppCore.Domain.Entities
         /// El CompanyAdmin no pertenece a ninguna Branch (BranchId = null en AppUser).
         /// </summary>
         public ICollection<AppUser> Users { get; set; } = new List<AppUser>();
+
+        // ── Eventos ──────────────────────────────────────────────────
+        public ICollection<BranchEvent> Events { get; set; } = new List<BranchEvent>();
     }
 }

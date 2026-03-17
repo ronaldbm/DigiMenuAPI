@@ -118,6 +118,7 @@ public partial class Program
         builder.Services.AddScoped<IBranchService, BranchService>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IScheduleService, ScheduleService>();
+        builder.Services.AddScoped<IBranchEventService, BranchEventService>();
         builder.Services.AddScoped<IDashboardService, DashboardService>();
         builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
 

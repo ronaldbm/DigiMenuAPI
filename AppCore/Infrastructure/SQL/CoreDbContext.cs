@@ -40,6 +40,7 @@ namespace AppCore.Infrastructure.SQL
         public DbSet<BranchLocale> BranchLocales { get; set; }
         public DbSet<BranchSchedule> BranchSchedules { get; set; }
         public DbSet<BranchSpecialDay> BranchSpecialDays { get; set; }
+        public DbSet<BranchEvent> BranchEvents { get; set; }
 
         // Emails
         public DbSet<PasswordResetRequest> PasswordResetRequests { get; set; }
@@ -64,6 +65,7 @@ namespace AppCore.Infrastructure.SQL
             ConfigureBranchLocale(modelBuilder);
             ConfigureBranchSchedule(modelBuilder);
             ConfigureBranchSpecialDay(modelBuilder);
+            ConfigureBranchEvent(modelBuilder);
 
             SeedCoreData(modelBuilder);
         }
@@ -407,6 +409,31 @@ namespace AppCore.Infrastructure.SQL
                 // Cascade: los días especiales se eliminan físicamente con la Branch
                 e.HasOne(x => x.Branch)
                  .WithMany(br => br.SpecialDays)
+                 .HasForeignKey(x => x.BranchId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+
+        private static void ConfigureBranchEvent(ModelBuilder b)
+        {
+            b.Entity<BranchEvent>(e =>
+            {
+                e.HasKey(x => x.Id);
+
+                // Índice para listar eventos por fecha en una Branch
+                e.HasIndex(x => new { x.BranchId, x.EventDate });
+
+                // Índice para el modal promocional: solo eventos activos con modal
+                e.HasIndex(x => new { x.BranchId, x.ShowPromotionalModal, x.IsActive });
+
+                e.Property(x => x.EventDate).HasColumnType("date");
+                e.Property(x => x.Title).IsRequired().HasMaxLength(200);
+                e.Property(x => x.Description).HasMaxLength(1000);
+                e.Property(x => x.FlyerImageUrl).HasMaxLength(500);
+
+                // Cascade: los eventos se eliminan físicamente si se elimina la Branch
+                e.HasOne(x => x.Branch)
+                 .WithMany(br => br.Events)
                  .HasForeignKey(x => x.BranchId)
                  .OnDelete(DeleteBehavior.Cascade);
             });

@@ -122,5 +122,11 @@ namespace AppCore.Application.Common
         // ── Menu público ──────────────────────────────────────────────
         public const string MenuNotFound = "MENU_NOT_FOUND";
         public const string MenuUnavailable = "MENU_UNAVAILABLE";
+
+        // ── BranchEvent ────────────────────────────────────────────────
+        public const string EventNotFound = "EVENT_NOT_FOUND";
+        public const string EventPastDate = "EVENT_PAST_DATE";
+        public const string EventEndBeforeStart = "EVENT_END_BEFORE_START";
+        public const string EventStartRequiredWithEnd = "EVENT_START_REQUIRED_WITH_END";
     }
 }

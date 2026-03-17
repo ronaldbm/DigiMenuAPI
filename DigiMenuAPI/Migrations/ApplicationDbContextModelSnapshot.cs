@@ -180,6 +180,66 @@ namespace DigiMenuAPI.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AppCore.Domain.Entities.BranchEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<TimeSpan?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime>("EventDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FlyerImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("ShowPromotionalModal")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeSpan?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "EventDate");
+
+                    b.HasIndex("BranchId", "ShowPromotionalModal", "IsActive");
+
+                    b.ToTable("BranchEvents");
+                });
+
             modelBuilder.Entity("AppCore.Domain.Entities.BranchLocale", b =>
                 {
                     b.Property<int>("Id")
@@ -2214,6 +2274,17 @@ namespace DigiMenuAPI.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("AppCore.Domain.Entities.BranchEvent", b =>
+                {
+                    b.HasOne("AppCore.Domain.Entities.Branch", "Branch")
+                        .WithMany("Events")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("AppCore.Domain.Entities.BranchLocale", b =>
                 {
                     b.HasOne("AppCore.Domain.Entities.Branch", "Branch")
@@ -2516,6 +2587,8 @@ namespace DigiMenuAPI.Migrations
 
             modelBuilder.Entity("AppCore.Domain.Entities.Branch", b =>
                 {
+                    b.Navigation("Events");
+
                     b.Navigation("Locale");
 
                     b.Navigation("Schedules");

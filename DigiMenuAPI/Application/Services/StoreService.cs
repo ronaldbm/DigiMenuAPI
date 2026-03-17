@@ -40,7 +40,9 @@ namespace DigiMenuAPI.Application.Services
                 if (branchId is null || companyId is null)
                     return OperationResult<MenuBranchDto>.Fail("Menú no encontrado.");
 
-                // 2. Leer las entidades de configuración en paralelo.
+                // 2. Leer las entidades de configuración secuencialmente.
+                //    DbContext no es thread-safe — Task.WhenAll sobre el mismo contexto
+                //    lanzaría "A second operation was started on this context instance".
                 //    CompanyInfo, CompanyTheme y CompanySeo son de nivel Company.
                 //    BranchLocale es de nivel Branch.
                 //    CompanySeo es opcional — el menú funciona sin SEO configurado.
