@@ -5,7 +5,7 @@
     /// </summary>
     public record BranchSpecialDayReadDto(
         int Id,
-        DateTime Date,
+        DateOnly Date,
         bool IsClosed,
         TimeSpan? OpenTime,
         TimeSpan? CloseTime,

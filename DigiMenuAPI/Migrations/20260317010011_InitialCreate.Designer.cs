@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DigiMenuAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260316030241_InitialCreate")]
+    [Migration("20260317010011_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -102,7 +102,7 @@ namespace DigiMenuAPI.Migrations
                             IsActive = true,
                             IsDeleted = false,
                             MustChangePassword = false,
-                            PasswordHash = "$2a$12$REEMPLAZAR_CON_HASH_REAL",
+                            PasswordHash = "$2y$12$tJGKbEhmd00CrIaQU8yf0eKU.doWOliVml/J48.NCwhXlF./.ZZgS",
                             Role = (byte)255
                         });
                 });
@@ -179,7 +179,7 @@ namespace DigiMenuAPI.Migrations
                             IsDeleted = false,
                             Name = "Sucursal Principal",
                             Phone = "+50600000000",
-                            Slug = "digimenu-platform"
+                            Slug = "Principal"
                         });
                 });
 
@@ -723,6 +723,11 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int?>("CreatedUserId")
                         .HasColumnType("int");
 
+                    b.Property<byte>("FilterMode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
                     b.Property<string>("HeaderBackgroundColor")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -792,10 +797,10 @@ namespace DigiMenuAPI.Migrations
                     b.Property<bool>("ShowContactButton")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("ShowProductDetails")
+                    b.Property<bool>("ShowModalProductInfo")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("ShowSearchButton")
+                    b.Property<bool>("ShowProductDetails")
                         .HasColumnType("bit");
 
                     b.Property<string>("TabBackgroundColor")
@@ -840,6 +845,7 @@ namespace DigiMenuAPI.Migrations
                             BrowserThemeColor = "#FFFFFF",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FilterMode = (byte)0,
                             HeaderBackgroundColor = "#FFFFFF",
                             HeaderStyle = (byte)1,
                             HeaderTextColor = "#1D3557",
@@ -851,8 +857,8 @@ namespace DigiMenuAPI.Migrations
                             ProductDisplay = (byte)1,
                             SecondaryColor = "#457B9D",
                             ShowContactButton = true,
+                            ShowModalProductInfo = false,
                             ShowProductDetails = true,
-                            ShowSearchButton = true,
                             TabBackgroundColor = "#1D3557",
                             TabTextColor = "#FFFFFF",
                             TextColor = "#1D3557",
@@ -1082,7 +1088,7 @@ namespace DigiMenuAPI.Migrations
                         {
                             Id = 3,
                             Name = "WhatsApp",
-                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-14h.1c4.3 0 7.9 3.5 8.4 7.7z'></path><path d='M17 16l-4-4 4-4'></path></svg>"
+                            SvgContent = "< svg xmlns = 'http://www.w3.org/2000/svg' width = '24' height = '24' viewBox = '0 0 24 24' fill = 'none' stroke = 'currentColor' stroke - width = '2' stroke - linecap = 'round' stroke - linejoin = 'round' >< path d = 'M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.2 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.2-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z' ></ path ></ svg >"
                         },
                         new
                         {

@@ -59,6 +59,7 @@
         int ProductId,
         string Name,
         string? ShortDescription,
+        string? LongDescription,
         string? ImageUrl,
         decimal Price,
         decimal? OfferPrice,

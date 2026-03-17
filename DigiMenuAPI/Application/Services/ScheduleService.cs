@@ -206,7 +206,7 @@ namespace DigiMenuAPI.Application.Services
             new(s.Id, s.DayOfWeek, DayNames[s.DayOfWeek], s.IsOpen, s.OpenTime, s.CloseTime);
 
         private static BranchSpecialDayReadDto MapSpecialDayToDto(BranchSpecialDay d) =>
-            new(d.Id, d.Date, d.IsClosed, d.OpenTime, d.CloseTime, d.Reason, d.CreatedAt);
+            new(d.Id, DateOnly.FromDateTime(d.Date), d.IsClosed, d.OpenTime, d.CloseTime, d.Reason, d.CreatedAt);
 
         /// <summary>
         /// Valida coherencia de horarios según IsClosed.

@@ -128,6 +128,10 @@ namespace DigiMenuAPI.Application.Services
                                 .FirstOrDefault(t => t.LanguageCode == lang)?.ShortDescription
                                 ?? bp.Product.ShortDescription;
 
+                            var prodLongDesc = bp.Product.Translations
+                                .FirstOrDefault(t => t.LanguageCode == lang)?.LongDescription
+                                ?? bp.Product.LongDescription;
+
                             var tags = bp.Product.Tags
                                 .Select(t => new TagMenuDto(
                                     t.Id,
@@ -142,6 +146,7 @@ namespace DigiMenuAPI.Application.Services
                                 bp.ProductId,
                                 prodName,
                                 prodShortDesc,
+                                prodLongDesc,
                                 bp.ImageOverrideUrl ?? bp.Product.MainImageUrl,
                                 bp.Price,
                                 bp.OfferPrice,
@@ -185,22 +190,26 @@ namespace DigiMenuAPI.Application.Services
 
                 // 9. Días especiales próximos — desde hoy, máximo 30 días
                 var today = DateTime.UtcNow.Date;
-                var upcomingSpecialDays = await _context.BranchSpecialDays
+                var upcomingSpecialDaysRaw = await _context.BranchSpecialDays
                     .AsNoTracking()
                     .Where(d =>
                         d.BranchId == branchId.Value &&
                         d.Date >= today &&
                         d.Date <= today.AddDays(30))
                     .OrderBy(d => d.Date)
+                    .ToListAsync();
+
+                // DateOnly.FromDateTime no se puede traducir a SQL, se convierte en memoria
+                var upcomingSpecialDays = upcomingSpecialDaysRaw
                     .Select(d => new BranchSpecialDayReadDto(
                         d.Id,
-                        d.Date,
+                        DateOnly.FromDateTime(d.Date),
                         d.IsClosed,
                         d.OpenTime,
                         d.CloseTime,
                         d.Reason,
                         d.CreatedAt))
-                    .ToListAsync();
+                    .ToList();
 
                 // 10. Construir MenuBranchDto manualmente desde las 4 entidades.
                 //    No se usa AutoMapper porque el origen es multi-entidad
@@ -229,8 +238,9 @@ namespace DigiMenuAPI.Application.Services
                     theme.MenuLayout,
                     theme.ProductDisplay,
                     theme.ShowProductDetails,
-                    theme.ShowSearchButton,
+                    theme.FilterMode,
                     theme.ShowContactButton,
+                    theme.ShowModalProductInfo,
                     // Localización — BranchLocale
                     locale.Language,
                     locale.Currency,

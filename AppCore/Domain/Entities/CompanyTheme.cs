@@ -66,7 +66,9 @@ namespace AppCore.Domain.Entities
 
         // ── Comportamiento ────────────────────────────────────────────
         public bool ShowProductDetails { get; set; } = true;
-        public bool ShowSearchButton { get; set; }
+        /// <summary>Modo de filtro del menú. 0: Sin filtro, 1: Por etiquetas, 2: Por categorías.</summary>
+        public byte FilterMode { get; set; } = 0;
         public bool ShowContactButton { get; set; }
+        public bool ShowModalProductInfo { get; set; }
     }
 }

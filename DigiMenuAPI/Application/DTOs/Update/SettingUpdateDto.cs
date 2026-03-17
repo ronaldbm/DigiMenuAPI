@@ -27,8 +27,9 @@
         byte MenuLayout,
         byte ProductDisplay,
         bool ShowProductDetails,
-        bool ShowSearchButton,
+        byte FilterMode,
         bool ShowContactButton,
+        bool ShowModalProductInfo,
         // Localización
         string CountryCode,
         string PhoneCode,

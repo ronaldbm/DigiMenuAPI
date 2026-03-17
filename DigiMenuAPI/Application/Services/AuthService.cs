@@ -120,7 +120,7 @@ namespace DigiMenuAPI.Application.Services
                 MenuLayout            = 1,
                 ProductDisplay        = 1,
                 ShowProductDetails    = true,
-                ShowSearchButton      = false,
+                FilterMode           = 0,
                 ShowContactButton     = false
             });
 

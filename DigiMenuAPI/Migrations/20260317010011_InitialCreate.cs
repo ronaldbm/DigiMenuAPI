@@ -263,8 +263,9 @@ namespace DigiMenuAPI.Migrations
                     MenuLayout = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)1),
                     ProductDisplay = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)1),
                     ShowProductDetails = table.Column<bool>(type: "bit", nullable: false),
-                    ShowSearchButton = table.Column<bool>(type: "bit", nullable: false),
+                    FilterMode = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)0),
                     ShowContactButton = table.Column<bool>(type: "bit", nullable: false),
+                    ShowModalProductInfo = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedUserId = table.Column<int>(type: "int", nullable: true),
@@ -823,7 +824,7 @@ namespace DigiMenuAPI.Migrations
                 {
                     { 1, "Facebook", "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'></path></svg>" },
                     { 2, "Instagram", "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='2' width='20' height='20' rx='5' ry='5'></rect><path d='M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z'></path><line x1='17.5' y1='6.5' x2='17.51' y2='6.5'></line></svg>" },
-                    { 3, "WhatsApp", "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-14h.1c4.3 0 7.9 3.5 8.4 7.7z'></path><path d='M17 16l-4-4 4-4'></path></svg>" },
+                    { 3, "WhatsApp", "< svg xmlns = 'http://www.w3.org/2000/svg' width = '24' height = '24' viewBox = '0 0 24 24' fill = 'none' stroke = 'currentColor' stroke - width = '2' stroke - linecap = 'round' stroke - linejoin = 'round' >< path d = 'M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.2 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.2-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z' ></ path ></ svg >" },
                     { 4, "TikTok", "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5'></path></svg>" },
                     { 5, "YouTube", "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z'></path><polygon points='9.75 15.02 15.5 12 9.75 8.98 9.75 15.02'></polygon></svg>" },
                     { 6, "X", "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4l16 16M4 20L20 4'/></svg>" },
@@ -838,7 +839,7 @@ namespace DigiMenuAPI.Migrations
             migrationBuilder.InsertData(
                 table: "Branches",
                 columns: new[] { "Id", "Address", "CompanyId", "CreatedAt", "CreatedUserId", "Email", "IsActive", "IsDeleted", "ModifiedAt", "ModifiedUserId", "Name", "Phone", "Slug" },
-                values: new object[] { 1, "San José, Costa Rica", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", true, false, null, null, "Sucursal Principal", "+50600000000", "digimenu-platform" });
+                values: new object[] { 1, "San José, Costa Rica", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", true, false, null, null, "Sucursal Principal", "+50600000000", "Principal" });
 
             migrationBuilder.InsertData(
                 table: "Categories",
@@ -875,8 +876,8 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "CompanyThemes",
-                columns: new[] { "Id", "BrowserThemeColor", "CompanyId", "CreatedAt", "CreatedUserId", "HeaderBackgroundColor", "HeaderStyle", "HeaderTextColor", "IsDarkMode", "MenuLayout", "ModifiedAt", "ModifiedUserId", "PageBackgroundColor", "PrimaryColor", "PrimaryTextColor", "ProductDisplay", "SecondaryColor", "ShowContactButton", "ShowProductDetails", "ShowSearchButton", "TabBackgroundColor", "TabTextColor", "TextColor", "TitlesColor" },
-                values: new object[] { 1, "#FFFFFF", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "#FFFFFF", (byte)1, "#1D3557", false, (byte)1, null, null, "#F1FAEE", "#E63946", "#FFFFFF", (byte)1, "#457B9D", true, true, true, "#1D3557", "#FFFFFF", "#1D3557", "#1D3557" });
+                columns: new[] { "Id", "BrowserThemeColor", "CompanyId", "CreatedAt", "CreatedUserId", "HeaderBackgroundColor", "HeaderStyle", "HeaderTextColor", "IsDarkMode", "MenuLayout", "ModifiedAt", "ModifiedUserId", "PageBackgroundColor", "PrimaryColor", "PrimaryTextColor", "ProductDisplay", "SecondaryColor", "ShowContactButton", "ShowModalProductInfo", "ShowProductDetails", "TabBackgroundColor", "TabTextColor", "TextColor", "TitlesColor" },
+                values: new object[] { 1, "#FFFFFF", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "#FFFFFF", (byte)1, "#1D3557", false, (byte)1, null, null, "#F1FAEE", "#E63946", "#FFFFFF", (byte)1, "#457B9D", true, false, true, "#1D3557", "#FFFFFF", "#1D3557", "#1D3557" });
 
             migrationBuilder.InsertData(
                 table: "Tags",
@@ -894,7 +895,7 @@ namespace DigiMenuAPI.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "BranchId", "CompanyId", "CreatedAt", "CreatedUserId", "Email", "FullName", "IsActive", "IsDeleted", "LastLoginAt", "ModifiedAt", "ModifiedUserId", "MustChangePassword", "PasswordHash", "Role" },
-                values: new object[] { 1, null, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", "Super Admin", true, false, null, null, null, false, "$2a$12$REEMPLAZAR_CON_HASH_REAL", (byte)255 });
+                values: new object[] { 1, null, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", "Super Admin", true, false, null, null, null, false, "$2y$12$tJGKbEhmd00CrIaQU8yf0eKU.doWOliVml/J48.NCwhXlF./.ZZgS", (byte)255 });
 
             migrationBuilder.InsertData(
                 table: "BranchLocales",

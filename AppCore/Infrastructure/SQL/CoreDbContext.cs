@@ -318,6 +318,7 @@ namespace AppCore.Infrastructure.SQL
                 e.Property(t => t.HeaderStyle).HasColumnType("tinyint").HasDefaultValue((byte)1);
                 e.Property(t => t.MenuLayout).HasColumnType("tinyint").HasDefaultValue((byte)1);
                 e.Property(t => t.ProductDisplay).HasColumnType("tinyint").HasDefaultValue((byte)1);
+                e.Property(t => t.FilterMode).HasColumnType("tinyint").HasDefaultValue((byte)0);
 
                 // 1:1 con Company
                 e.HasIndex(t => t.CompanyId).IsUnique();
@@ -493,7 +494,7 @@ namespace AppCore.Infrastructure.SQL
             b.Entity<StandardIcon>().HasData(
                 new StandardIcon { Id = 1, Name = "Facebook",  SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'></path></svg>" },
                 new StandardIcon { Id = 2, Name = "Instagram", SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='2' y='2' width='20' height='20' rx='5' ry='5'></rect><path d='M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z'></path><line x1='17.5' y1='6.5' x2='17.51' y2='6.5'></line></svg>" },
-                new StandardIcon { Id = 3, Name = "WhatsApp",  SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-14h.1c4.3 0 7.9 3.5 8.4 7.7z'></path><path d='M17 16l-4-4 4-4'></path></svg>" },
+                new StandardIcon { Id = 3, Name = "WhatsApp",  SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.2 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.2-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'/></svg>" },
                 new StandardIcon { Id = 4, Name = "TikTok",    SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5'></path></svg>" },
                 new StandardIcon { Id = 5, Name = "YouTube",   SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z'></path><polygon points='9.75 15.02 15.5 12 9.75 8.98 9.75 15.02'></polygon></svg>" },
                 new StandardIcon { Id = 6, Name = "X",         SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4l16 16M4 20L20 4'/></svg>" },
@@ -538,7 +539,7 @@ namespace AppCore.Infrastructure.SQL
                 Id        = 1,
                 CompanyId = 1,
                 Name      = "Sucursal Principal",
-                Slug      = "digimenu-platform",
+                Slug      = "Principal",
                 Address   = "San José, Costa Rica",
                 Phone     = "+50600000000",
                 Email     = "admin@digimenu.app",
@@ -559,7 +560,7 @@ namespace AppCore.Infrastructure.SQL
                 BranchId     = null,   // SuperAdmin no pertenece a una Branch específica
                 FullName     = "Super Admin",
                 Email        = "admin@digimenu.app",
-                PasswordHash = "$2a$12$REEMPLAZAR_CON_HASH_REAL",
+                PasswordHash = "$2y$12$tJGKbEhmd00CrIaQU8yf0eKU.doWOliVml/J48.NCwhXlF./.ZZgS",
                 Role         = UserRoles.SuperAdmin,
                 IsActive     = true,
                 IsDeleted    = false,
@@ -603,8 +604,9 @@ namespace AppCore.Infrastructure.SQL
                 MenuLayout = 1,
                 ProductDisplay = 1,
                 ShowProductDetails = true,
-                ShowSearchButton = true,
+                FilterMode = 0,
                 ShowContactButton = true,
+                ShowModalProductInfo = false,
                 CreatedAt = seed
             });
 
