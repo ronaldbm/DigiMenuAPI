@@ -1,6 +1,7 @@
 ﻿using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DigiMenuAPI.Controllers
@@ -49,5 +50,20 @@ namespace DigiMenuAPI.Controllers
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id) => HandleResult(await _service.Delete(id));
+
+        // ── Traducciones ──────────────────────────────────────────────
+
+        /// <summary>Crea o actualiza la traducción de un producto para el idioma {code}.</summary>
+        [HttpPut("{id}/translations/{code}")]
+        [Authorize]
+        public async Task<ActionResult> UpsertTranslation(
+            int id, string code, [FromBody] ProductTranslationUpsertDto dto)
+            => HandleResult(await _service.UpsertTranslation(id, code, dto));
+
+        /// <summary>Elimina la traducción de un producto para el idioma {code}.</summary>
+        [HttpDelete("{id}/translations/{code}")]
+        [Authorize]
+        public async Task<ActionResult> DeleteTranslation(int id, string code)
+            => HandleResult(await _service.DeleteTranslation(id, code));
     }
 }

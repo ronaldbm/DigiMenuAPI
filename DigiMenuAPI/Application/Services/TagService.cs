@@ -121,5 +121,70 @@ namespace DigiMenuAPI.Application.Services
             return OperationResult<bool>.Ok(true);
         }
 
+        // ── Traducciones ──────────────────────────────────────────────
+
+        public async Task<OperationResult<TranslationReadDto>> UpsertTranslation(
+            int tagId, string code, NameTranslationUpsertDto dto)
+        {
+            var companyId = _tenantService.GetCompanyId();
+            code = code.Trim().ToLowerInvariant();
+
+            var tagExists = await _context.Tags
+                .AnyAsync(t => t.Id == tagId && t.CompanyId == companyId);
+
+            if (!tagExists)
+                return OperationResult<TranslationReadDto>.NotFound(
+                    "Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
+
+            var translation = await _context.TagTranslations
+                .FirstOrDefaultAsync(t => t.TagId == tagId && t.LanguageCode == code);
+
+            if (translation is null)
+            {
+                translation = new TagTranslation
+                {
+                    TagId        = tagId,
+                    LanguageCode = code,
+                    Name         = dto.Name.Trim(),
+                };
+                _context.TagTranslations.Add(translation);
+            }
+            else
+            {
+                translation.Name = dto.Name.Trim();
+            }
+
+            await _context.SaveChangesAsync();
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
+
+            return OperationResult<TranslationReadDto>.Ok(
+                _mapper.Map<TranslationReadDto>(translation));
+        }
+
+        public async Task<OperationResult<bool>> DeleteTranslation(int tagId, string code)
+        {
+            var companyId = _tenantService.GetCompanyId();
+            code = code.Trim().ToLowerInvariant();
+
+            var tagExists = await _context.Tags
+                .AnyAsync(t => t.Id == tagId && t.CompanyId == companyId);
+
+            if (!tagExists)
+                return OperationResult<bool>.NotFound(
+                    "Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
+
+            var translation = await _context.TagTranslations
+                .FirstOrDefaultAsync(t => t.TagId == tagId && t.LanguageCode == code);
+
+            if (translation is not null)
+            {
+                _context.TagTranslations.Remove(translation);
+                await _context.SaveChangesAsync();
+                await _cacheStore.EvictByTagAsync(CacheTag, default);
+            }
+
+            return OperationResult<bool>.Ok(true);
+        }
+
     }
 }

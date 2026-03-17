@@ -63,6 +63,13 @@
         /// Días especiales desde hoy hasta 30 días adelante.
         /// Null si no hay días especiales próximos.
         /// </summary>
-        List<BranchSpecialDayReadDto>? UpcomingSpecialDays
+        List<BranchSpecialDayReadDto>? UpcomingSpecialDays,
+
+        /// <summary>
+        /// Códigos ISO 639-1 de los idiomas habilitados para esta Company (ej: ["es","en"]).
+        /// El primero con IsDefault=true es el idioma de fallback.
+        /// El frontend lo usa para mostrar el selector de idioma en el menú público.
+        /// </summary>
+        List<CompanyLanguageReadDto> AvailableLanguages
     );
 }

@@ -67,6 +67,21 @@ namespace DigiMenuAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SupportedLanguages",
+                columns: table => new
+                {
+                    Code = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Flag = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SupportedLanguages", x => x.Code);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Companies",
                 columns: table => new
                 {
@@ -179,6 +194,37 @@ namespace DigiMenuAPI.Migrations
                         column: x => x.CompanyId,
                         principalTable: "Companies",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CompanyLanguages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CompanyId = table.Column<int>(type: "int", nullable: false),
+                    LanguageCode = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
+                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedUserId = table.Column<int>(type: "int", nullable: true),
+                    ModifiedUserId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CompanyLanguages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CompanyLanguages_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CompanyLanguages_SupportedLanguages_LanguageCode",
+                        column: x => x.LanguageCode,
+                        principalTable: "SupportedLanguages",
+                        principalColumn: "Code",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -863,6 +909,17 @@ namespace DigiMenuAPI.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "SupportedLanguages",
+                columns: new[] { "Code", "DisplayOrder", "Flag", "IsActive", "Name" },
+                values: new object[,]
+                {
+                    { "en", 2, "🇺🇸", true, "English" },
+                    { "es", 1, "🇪🇸", true, "Español" },
+                    { "fr", 4, "🇫🇷", true, "Français" },
+                    { "pt", 3, "🇧🇷", true, "Português" }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Companies",
                 columns: new[] { "Id", "CountryCode", "CreatedAt", "CreatedUserId", "Email", "IsActive", "MaxBranches", "MaxUsers", "ModifiedAt", "ModifiedUserId", "Name", "Phone", "PlanId", "Slug" },
                 values: new object[] { 1, "CR", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", true, -1, -1, null, null, "DigiMenu Platform", "+50600000000", 4, "digimenu-platform" });
@@ -888,6 +945,11 @@ namespace DigiMenuAPI.Migrations
                 table: "CompanyInfos",
                 columns: new[] { "Id", "BackgroundImageUrl", "BusinessName", "CompanyId", "CreatedAt", "CreatedUserId", "FaviconUrl", "LogoUrl", "ModifiedAt", "ModifiedUserId", "Tagline" },
                 values: new object[] { 1, null, "DigiMenu Demo", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, null, null, "El mejor menú digital para tu restaurante" });
+
+            migrationBuilder.InsertData(
+                table: "CompanyLanguages",
+                columns: new[] { "Id", "CompanyId", "CreatedAt", "CreatedUserId", "IsDefault", "LanguageCode", "ModifiedAt", "ModifiedUserId" },
+                values: new object[] { 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, true, "es", null, null });
 
             migrationBuilder.InsertData(
                 table: "CompanyModules",
@@ -1098,6 +1160,17 @@ namespace DigiMenuAPI.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_CompanyLanguages_CompanyId_LanguageCode",
+                table: "CompanyLanguages",
+                columns: new[] { "CompanyId", "LanguageCode" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CompanyLanguages_LanguageCode",
+                table: "CompanyLanguages",
+                column: "LanguageCode");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CompanyModules_CompanyId_IsActive",
                 table: "CompanyModules",
                 columns: new[] { "CompanyId", "IsActive" });
@@ -1273,6 +1346,9 @@ namespace DigiMenuAPI.Migrations
                 name: "CompanyInfos");
 
             migrationBuilder.DropTable(
+                name: "CompanyLanguages");
+
+            migrationBuilder.DropTable(
                 name: "CompanyModules");
 
             migrationBuilder.DropTable(
@@ -1301,6 +1377,9 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.DropTable(
                 name: "TagTranslations");
+
+            migrationBuilder.DropTable(
+                name: "SupportedLanguages");
 
             migrationBuilder.DropTable(
                 name: "PlatformModules");

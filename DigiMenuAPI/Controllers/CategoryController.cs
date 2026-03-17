@@ -1,6 +1,7 @@
-﻿using DigiMenuAPI.Application.DTOs.Create; 
+﻿using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DigiMenuAPI.Controllers
@@ -40,5 +41,18 @@ namespace DigiMenuAPI.Controllers
         [HttpPatch("reorder")]
         public async Task<ActionResult> Reorder([FromBody] List<ReorderItemDto> items)
             => HandleResult(await _service.Reorder(items));
+
+        // ── Traducciones ──────────────────────────────────────────────
+
+        [HttpPut("{id}/translations/{code}")]
+        [Authorize]
+        public async Task<ActionResult> UpsertTranslation(
+            int id, string code, [FromBody] NameTranslationUpsertDto dto)
+            => HandleResult(await _service.UpsertTranslation(id, code, dto));
+
+        [HttpDelete("{id}/translations/{code}")]
+        [Authorize]
+        public async Task<ActionResult> DeleteTranslation(int id, string code)
+            => HandleResult(await _service.DeleteTranslation(id, code));
     }
 }

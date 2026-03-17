@@ -15,5 +15,10 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<TagReadDto>> Create(TagCreateDto dto);
         Task<OperationResult<bool>> Update(TagUpdateDto dto);
         Task<OperationResult<bool>> Delete(int id);
+
+        // ── Traducciones ──────────────────────────────────────────────
+        Task<OperationResult<TranslationReadDto>> UpsertTranslation(
+            int tagId, string code, NameTranslationUpsertDto dto);
+        Task<OperationResult<bool>> DeleteTranslation(int tagId, string code);
     }
 }

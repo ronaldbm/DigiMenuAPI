@@ -66,5 +66,8 @@ namespace AppCore.Domain.Entities
         // Catálogo global: categorías, productos y tags son de la Company,
         // no de una Branch específica. Las Branches los "activan" via BranchProduct.
         public ICollection<CompanyModule> CompanyModules { get; set; } = new List<CompanyModule>();
+
+        /// <summary>Idiomas habilitados para el menú público de esta empresa.</summary>
+        public ICollection<CompanyLanguage> Languages { get; set; } = new List<CompanyLanguage>();
     }
 }

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DigiMenuAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260317040948_InitialCreate")]
+    [Migration("20260317055714_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -623,6 +623,57 @@ namespace DigiMenuAPI.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AppCore.Domain.Entities.CompanyLanguage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageCode");
+
+                    b.HasIndex("CompanyId", "LanguageCode")
+                        .IsUnique();
+
+                    b.ToTable("CompanyLanguages");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CompanyId = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsDefault = true,
+                            LanguageCode = "es"
+                        });
+                });
+
             modelBuilder.Entity("AppCore.Domain.Entities.CompanyModule", b =>
                 {
                     b.Property<int>("Id")
@@ -1173,6 +1224,67 @@ namespace DigiMenuAPI.Migrations
                             Id = 7,
                             Name = "Web",
                             SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>"
+                        });
+                });
+
+            modelBuilder.Entity("AppCore.Domain.Entities.SupportedLanguage", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Flag")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("SupportedLanguages");
+
+                    b.HasData(
+                        new
+                        {
+                            Code = "es",
+                            DisplayOrder = 1,
+                            Flag = "🇪🇸",
+                            IsActive = true,
+                            Name = "Español"
+                        },
+                        new
+                        {
+                            Code = "en",
+                            DisplayOrder = 2,
+                            Flag = "🇺🇸",
+                            IsActive = true,
+                            Name = "English"
+                        },
+                        new
+                        {
+                            Code = "pt",
+                            DisplayOrder = 3,
+                            Flag = "🇧🇷",
+                            IsActive = true,
+                            Name = "Português"
+                        },
+                        new
+                        {
+                            Code = "fr",
+                            DisplayOrder = 4,
+                            Flag = "🇫🇷",
+                            IsActive = true,
+                            Name = "Français"
                         });
                 });
 
@@ -2343,6 +2455,25 @@ namespace DigiMenuAPI.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("AppCore.Domain.Entities.CompanyLanguage", b =>
+                {
+                    b.HasOne("AppCore.Domain.Entities.Company", "Company")
+                        .WithMany("Languages")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AppCore.Domain.Entities.SupportedLanguage", "Language")
+                        .WithMany("CompanyLanguages")
+                        .HasForeignKey("LanguageCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Language");
+                });
+
             modelBuilder.Entity("AppCore.Domain.Entities.CompanyModule", b =>
                 {
                     b.HasOne("AppCore.Domain.Entities.Company", "Company")
@@ -2609,6 +2740,8 @@ namespace DigiMenuAPI.Migrations
 
                     b.Navigation("Info");
 
+                    b.Navigation("Languages");
+
                     b.Navigation("Seo");
 
                     b.Navigation("Theme");
@@ -2619,6 +2752,11 @@ namespace DigiMenuAPI.Migrations
             modelBuilder.Entity("AppCore.Domain.Entities.Plan", b =>
                 {
                     b.Navigation("Companies");
+                });
+
+            modelBuilder.Entity("AppCore.Domain.Entities.SupportedLanguage", b =>
+                {
+                    b.Navigation("CompanyLanguages");
                 });
 
             modelBuilder.Entity("AppCore.Infrastructure.Entities.OutboxEmail", b =>

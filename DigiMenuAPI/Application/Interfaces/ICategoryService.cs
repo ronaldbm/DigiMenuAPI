@@ -18,5 +18,10 @@ namespace DigiMenuAPI.Application.Interfaces
 
         /// <summary>Reordena varias categorías en una sola operación.</summary>
         Task<OperationResult<bool>> Reorder(List<ReorderItemDto> items);
+
+        // ── Traducciones ──────────────────────────────────────────────
+        Task<OperationResult<TranslationReadDto>> UpsertTranslation(
+            int categoryId, string code, NameTranslationUpsertDto dto);
+        Task<OperationResult<bool>> DeleteTranslation(int categoryId, string code);
     }
 }

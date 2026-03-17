@@ -25,5 +25,20 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<ProductReadDto>> Create(ProductCreateDto dto);
         Task<OperationResult<bool>> Update(ProductUpdateDto dto);
         Task<OperationResult<bool>> Delete(int id);
+
+        // ── Traducciones ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Crea o actualiza la traducción de un producto para el idioma indicado.
+        /// Si ya existe una traducción para ese código, la actualiza; si no, la crea.
+        /// </summary>
+        Task<OperationResult<ProductTranslationReadDto>> UpsertTranslation(
+            int productId, string code, ProductTranslationUpsertDto dto);
+
+        /// <summary>
+        /// Elimina la traducción de un producto para el idioma indicado.
+        /// No falla si no existía (idempotente).
+        /// </summary>
+        Task<OperationResult<bool>> DeleteTranslation(int productId, string code);
     }
 }

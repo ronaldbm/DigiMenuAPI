@@ -120,6 +120,7 @@ public partial class Program
         builder.Services.AddScoped<IScheduleService, ScheduleService>();
         builder.Services.AddScoped<IBranchEventService, BranchEventService>();
         builder.Services.AddScoped<IDashboardService, DashboardService>();
+        builder.Services.AddScoped<ICompanyLanguageService, CompanyLanguageService>();
         builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
 
         // ── AUTOMAPPER + OUTPUTCACHE + CONTROLLERS ────────────────────────────

@@ -31,10 +31,14 @@ namespace AppCore.Infrastructure.SQL
         public DbSet<Branch> Branches { get; set; }
         public DbSet<AppUser> Users { get; set; }
 
+        // Catálogo de idiomas soportados por la plataforma (gestionado por SuperAdmin)
+        public DbSet<SupportedLanguage> SupportedLanguages { get; set; }
+
         // Company config
         public DbSet<CompanyInfo> CompanyInfos { get; set; }
         public DbSet<CompanyTheme> CompanyThemes { get; set; }
         public DbSet<CompanySeo> CompanySeos { get; set; }
+        public DbSet<CompanyLanguage> CompanyLanguages { get; set; }
 
         // Branch config
         public DbSet<BranchLocale> BranchLocales { get; set; }
@@ -66,6 +70,8 @@ namespace AppCore.Infrastructure.SQL
             ConfigureBranchSchedule(modelBuilder);
             ConfigureBranchSpecialDay(modelBuilder);
             ConfigureBranchEvent(modelBuilder);
+            ConfigureSupportedLanguage(modelBuilder);
+            ConfigureCompanyLanguage(modelBuilder);
 
             SeedCoreData(modelBuilder);
         }
@@ -414,6 +420,41 @@ namespace AppCore.Infrastructure.SQL
             });
         }
 
+        private static void ConfigureSupportedLanguage(ModelBuilder b)
+        {
+            b.Entity<SupportedLanguage>(e =>
+            {
+                e.HasKey(l => l.Code);
+                e.Property(l => l.Code).HasMaxLength(5);
+                e.Property(l => l.Name).IsRequired().HasMaxLength(50);
+                e.Property(l => l.Flag).IsRequired().HasMaxLength(10);
+            });
+        }
+
+        private static void ConfigureCompanyLanguage(ModelBuilder b)
+        {
+            b.Entity<CompanyLanguage>(e =>
+            {
+                e.HasKey(cl => cl.Id);
+
+                // Una empresa no puede tener el mismo idioma dos veces
+                e.HasIndex(cl => new { cl.CompanyId, cl.LanguageCode }).IsUnique();
+
+                // Solo un idioma puede ser default por empresa
+                // (se valida en servicio, no en BD para evitar complicaciones de constraint)
+
+                e.HasOne(cl => cl.Company)
+                 .WithMany(c => c.Languages)
+                 .HasForeignKey(cl => cl.CompanyId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(cl => cl.Language)
+                 .WithMany(l => l.CompanyLanguages)
+                 .HasForeignKey(cl => cl.LanguageCode)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
         private static void ConfigureBranchEvent(ModelBuilder b)
         {
             b.Entity<BranchEvent>(e =>
@@ -446,12 +487,41 @@ namespace AppCore.Infrastructure.SQL
             SeedPlans(b);
             SeedStandardIcons(b);
             SeedPlatformModules(b);
+            SeedSupportedLanguages(b);
             SeedMasterCompany(b);
             SeedMasterBranch(b);
             SeedMasterUser(b);
             SeedMasterCompanyConfig(b);
             SeedMasterCompanyModules(b);
             SeedMasterBranchSchedule(b);
+            SeedMasterCompanyLanguages(b);
+        }
+
+        private static void SeedSupportedLanguages(ModelBuilder b)
+        {
+            // Idiomas soportados por la plataforma.
+            // Para agregar un nuevo idioma en el futuro: insertar un registro aquí
+            // y crear una nueva migración. No requiere cambios en código.
+            b.Entity<SupportedLanguage>().HasData(
+                new SupportedLanguage { Code = "es", Name = "Español",   Flag = "🇪🇸", DisplayOrder = 1, IsActive = true },
+                new SupportedLanguage { Code = "en", Name = "English",   Flag = "🇺🇸", DisplayOrder = 2, IsActive = true },
+                new SupportedLanguage { Code = "pt", Name = "Português", Flag = "🇧🇷", DisplayOrder = 3, IsActive = true },
+                new SupportedLanguage { Code = "fr", Name = "Français",  Flag = "🇫🇷", DisplayOrder = 4, IsActive = true }
+            );
+        }
+
+        private static void SeedMasterCompanyLanguages(ModelBuilder b)
+        {
+            var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            // La empresa demo trabaja con Español por defecto
+            b.Entity<CompanyLanguage>().HasData(new CompanyLanguage
+            {
+                Id           = 1,
+                CompanyId    = 1,
+                LanguageCode = "es",
+                IsDefault    = true,
+                CreatedAt    = seed
+            });
         }
 
         private static void SeedPlans(ModelBuilder b)

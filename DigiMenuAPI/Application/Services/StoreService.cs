@@ -190,7 +190,20 @@ namespace DigiMenuAPI.Application.Services
                         s.CloseTime))
                     .ToListAsync();
 
-                // 9. Días especiales próximos — desde hoy, máximo 30 días
+                // 9. Idiomas habilitados para la Company
+                var availableLanguages = await _context.CompanyLanguages
+                    .AsNoTracking()
+                    .Where(cl => cl.CompanyId == companyId.Value)
+                    .Include(cl => cl.Language)
+                    .OrderBy(cl => cl.Language.DisplayOrder)
+                    .Select(cl => new CompanyLanguageReadDto(
+                        cl.LanguageCode,
+                        cl.Language.Name,
+                        cl.Language.Flag,
+                        cl.IsDefault))
+                    .ToListAsync();
+
+                // 11. Días especiales próximos — desde hoy, máximo 30 días
                 var today = DateTime.UtcNow.Date;
                 var upcomingSpecialDaysRaw = await _context.BranchSpecialDays
                     .AsNoTracking()
@@ -213,7 +226,7 @@ namespace DigiMenuAPI.Application.Services
                         d.CreatedAt))
                     .ToList();
 
-                // 10. Construir MenuBranchDto manualmente desde las 4 entidades.
+                // 12. Construir MenuBranchDto manualmente desde las 4 entidades.
                 //    No se usa AutoMapper porque el origen es multi-entidad
                 //    y el destino es un DTO plano compuesto.
                 var menuDto = new MenuBranchDto(
@@ -261,7 +274,8 @@ namespace DigiMenuAPI.Application.Services
                     footerLinks,
                     //Horarios
                     WeeklySchedule: weeklySchedule.Any() ? weeklySchedule : null,
-                    UpcomingSpecialDays: upcomingSpecialDays.Any() ? upcomingSpecialDays : null
+                    UpcomingSpecialDays: upcomingSpecialDays.Any() ? upcomingSpecialDays : null,
+                    AvailableLanguages: availableLanguages
                 );
 
                 return OperationResult<MenuBranchDto>.Ok(menuDto);

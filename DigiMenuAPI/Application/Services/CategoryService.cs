@@ -52,9 +52,11 @@ namespace DigiMenuAPI.Application.Services
         {
             var companyId = _tenantService.GetCompanyId();
 
-            // CompanyId valida ownership — QueryFilter cubre !IsDeleted
+            // Include explicito garantiza que las traducciones estén disponibles
+            // para el formulario de edición
             var category = await _context.Categories
                 .AsNoTracking()
+                .Include(c => c.Translations)
                 .Where(c => c.Id == id && c.CompanyId == companyId)
                 .ProjectTo<CategoryReadDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
@@ -142,6 +144,71 @@ namespace DigiMenuAPI.Application.Services
 
             await _context.SaveChangesAsync();
             await _cacheStore.EvictByTagAsync(CacheTag, default);
+
+            return OperationResult<bool>.Ok(true);
+        }
+
+        // ── Traducciones ──────────────────────────────────────────────
+
+        public async Task<OperationResult<TranslationReadDto>> UpsertTranslation(
+            int categoryId, string code, NameTranslationUpsertDto dto)
+        {
+            var companyId = _tenantService.GetCompanyId();
+            code = code.Trim().ToLowerInvariant();
+
+            var categoryExists = await _context.Categories
+                .AnyAsync(c => c.Id == categoryId && c.CompanyId == companyId);
+
+            if (!categoryExists)
+                return OperationResult<TranslationReadDto>.NotFound(
+                    "Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
+
+            var translation = await _context.CategoryTranslations
+                .FirstOrDefaultAsync(t => t.CategoryId == categoryId && t.LanguageCode == code);
+
+            if (translation is null)
+            {
+                translation = new CategoryTranslation
+                {
+                    CategoryId   = categoryId,
+                    LanguageCode = code,
+                    Name         = dto.Name.Trim(),
+                };
+                _context.CategoryTranslations.Add(translation);
+            }
+            else
+            {
+                translation.Name = dto.Name.Trim();
+            }
+
+            await _context.SaveChangesAsync();
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
+
+            return OperationResult<TranslationReadDto>.Ok(
+                _mapper.Map<TranslationReadDto>(translation));
+        }
+
+        public async Task<OperationResult<bool>> DeleteTranslation(int categoryId, string code)
+        {
+            var companyId = _tenantService.GetCompanyId();
+            code = code.Trim().ToLowerInvariant();
+
+            var categoryExists = await _context.Categories
+                .AnyAsync(c => c.Id == categoryId && c.CompanyId == companyId);
+
+            if (!categoryExists)
+                return OperationResult<bool>.NotFound(
+                    "Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
+
+            var translation = await _context.CategoryTranslations
+                .FirstOrDefaultAsync(t => t.CategoryId == categoryId && t.LanguageCode == code);
+
+            if (translation is not null)
+            {
+                _context.CategoryTranslations.Remove(translation);
+                await _context.SaveChangesAsync();
+                await _cacheStore.EvictByTagAsync(CacheTag, default);
+            }
 
             return OperationResult<bool>.Ok(true);
         }

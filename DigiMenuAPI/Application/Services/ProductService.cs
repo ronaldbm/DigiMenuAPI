@@ -207,5 +207,75 @@ namespace DigiMenuAPI.Application.Services
             return OperationResult<bool>.Ok(true);
         }
 
+        // ── Traducciones ──────────────────────────────────────────────
+
+        public async Task<OperationResult<ProductTranslationReadDto>> UpsertTranslation(
+            int productId, string code, ProductTranslationUpsertDto dto)
+        {
+            var companyId = _tenantService.GetCompanyId();
+            code = code.Trim().ToLowerInvariant();
+
+            // Verificar ownership del producto
+            var productExists = await _context.Products
+                .AnyAsync(p => p.Id == productId && p.CompanyId == companyId);
+
+            if (!productExists)
+                return OperationResult<ProductTranslationReadDto>.NotFound(
+                    "Producto no encontrado.", errorKey: ErrorKeys.ProductNotFound);
+
+            var translation = await _context.ProductTranslations
+                .FirstOrDefaultAsync(t => t.ProductId == productId && t.LanguageCode == code);
+
+            if (translation is null)
+            {
+                translation = new ProductTranslation
+                {
+                    ProductId       = productId,
+                    LanguageCode    = code,
+                    Name            = dto.Name.Trim(),
+                    ShortDescription = dto.ShortDescription?.Trim(),
+                    LongDescription  = dto.LongDescription?.Trim(),
+                };
+                _context.ProductTranslations.Add(translation);
+            }
+            else
+            {
+                translation.Name             = dto.Name.Trim();
+                translation.ShortDescription = dto.ShortDescription?.Trim();
+                translation.LongDescription  = dto.LongDescription?.Trim();
+            }
+
+            await _context.SaveChangesAsync();
+            await _cacheStore.EvictByTagAsync(CacheTag, default);
+
+            return OperationResult<ProductTranslationReadDto>.Ok(
+                _mapper.Map<ProductTranslationReadDto>(translation));
+        }
+
+        public async Task<OperationResult<bool>> DeleteTranslation(int productId, string code)
+        {
+            var companyId = _tenantService.GetCompanyId();
+            code = code.Trim().ToLowerInvariant();
+
+            var productExists = await _context.Products
+                .AnyAsync(p => p.Id == productId && p.CompanyId == companyId);
+
+            if (!productExists)
+                return OperationResult<bool>.NotFound(
+                    "Producto no encontrado.", errorKey: ErrorKeys.ProductNotFound);
+
+            var translation = await _context.ProductTranslations
+                .FirstOrDefaultAsync(t => t.ProductId == productId && t.LanguageCode == code);
+
+            if (translation is not null)
+            {
+                _context.ProductTranslations.Remove(translation);
+                await _context.SaveChangesAsync();
+                await _cacheStore.EvictByTagAsync(CacheTag, default);
+            }
+
+            return OperationResult<bool>.Ok(true);
+        }
+
     }
 }
