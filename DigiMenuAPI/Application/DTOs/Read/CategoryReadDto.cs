@@ -15,14 +15,27 @@
     );
 
     /// <summary>Categoría para el panel admin (incluye traducciones).</summary>
-    public record CategoryReadDto(
-        int Id,
-        int CompanyId,
-        string Name,
-        int DisplayOrder,
-        bool IsVisible,
-        List<TranslationReadDto> Translations
-    );
+    public class CategoryReadDto
+    {
+        public int Id { get; init; }
+        public int CompanyId { get; init; }
+        public int DisplayOrder { get; init; }
+        public bool IsVisible { get; init; }
+        public List<TranslationReadDto> Translations { get; init; } = [];
+    }
+
+    /// <summary>
+    /// Categoría para listados del panel admin.
+    /// El nombre ya viene resuelto al idioma solicitado (con fallback).
+    /// </summary>
+    public class CategoryListItemDto
+    {
+        public int Id { get; init; }
+        public int CompanyId { get; init; }
+        public int DisplayOrder { get; init; }
+        public bool IsVisible { get; init; }
+        public string Name { get; init; } = string.Empty;
+    }
 
     /// <summary>
     /// Categoría para el menú público de una Branch.

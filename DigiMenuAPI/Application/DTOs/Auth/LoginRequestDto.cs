@@ -1,7 +1,9 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Auth
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DigiMenuAPI.Application.DTOs.Auth
 {
     public record LoginRequestDto(
-        string Email,
-        string Password
+        [Required, MaxLength(150), EmailAddress] string Email,
+        [Required, MaxLength(100)] string Password
     );
 }

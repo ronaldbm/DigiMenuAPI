@@ -367,6 +367,7 @@ namespace DigiMenuAPI.Application.Services
             AppUser user, Company company, string token) =>
             new(
                 Token: token,
+                UserId: user.Id,
                 FullName: user.FullName,
                 Email: user.Email,
                 CompanyId: company.Id,
@@ -376,7 +377,8 @@ namespace DigiMenuAPI.Application.Services
                 BranchName: user.BranchId.HasValue ? user.Branch?.Name : null,
                 Role: user.Role,
                 ExpiresAt: DateTime.UtcNow.AddHours(8),
-                MustChangePassword: user.MustChangePassword
+                MustChangePassword: user.MustChangePassword,
+                AdminLang: user.AdminLang
             );
     }
 }

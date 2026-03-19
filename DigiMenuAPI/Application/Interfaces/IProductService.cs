@@ -1,4 +1,4 @@
-﻿using AppCore.Application.Common;
+using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
@@ -7,8 +7,11 @@ namespace DigiMenuAPI.Application.Interfaces
 {
     public interface IProductService
     {
-        /// <summary>Catálogo global de la empresa autenticada. CompanyId desde JWT.</summary>
-        Task<OperationResult<PagedResult<ProductReadDto>>> GetAll(int page = 1, int pageSize = 20);
+        /// <summary>
+        /// Listado paginado del catálogo de la empresa autenticada.
+        /// Si se pasa lang, resuelve el nombre en ese idioma (con fallback a la primera traducción disponible).
+        /// </summary>
+        Task<OperationResult<PagedResult<ProductListItemDto>>> GetAll(int page = 1, int pageSize = 20, string? lang = null);
 
         /// <summary>
         /// Lista compacta de todos los productos sin paginación.
@@ -26,19 +29,10 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<bool>> Update(ProductUpdateDto dto);
         Task<OperationResult<bool>> Delete(int id);
 
-        // ── Traducciones ──────────────────────────────────────────────
-
         /// <summary>
-        /// Crea o actualiza la traducción de un producto para el idioma indicado.
-        /// Si ya existe una traducción para ese código, la actualiza; si no, la crea.
+        /// Devuelve los nombres de las etiquetas de un producto resueltos al idioma solicitado.
+        /// Llamado bajo demanda desde el frontend (tooltip lazy).
         /// </summary>
-        Task<OperationResult<ProductTranslationReadDto>> UpsertTranslation(
-            int productId, string code, ProductTranslationUpsertDto dto);
-
-        /// <summary>
-        /// Elimina la traducción de un producto para el idioma indicado.
-        /// No falla si no existía (idempotente).
-        /// </summary>
-        Task<OperationResult<bool>> DeleteTranslation(int productId, string code);
+        Task<OperationResult<List<TagTooltipDto>>> GetTagNames(int productId, string? lang);
     }
 }

@@ -1,10 +1,12 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Update
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DigiMenuAPI.Application.DTOs.Update
 {
     public record BranchProductUpdateDto(
         int Id,
-        int CategoryId,
-        decimal Price,
-        decimal? OfferPrice,
+        [Range(1, int.MaxValue)] int CategoryId,
+        [Range(0, 9999999.99)] decimal Price,
+        [Range(0, 9999999.99)] decimal? OfferPrice,
         IFormFile? ImageOverride,
         int DisplayOrder,
         bool IsVisible

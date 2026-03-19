@@ -1,18 +1,20 @@
 ﻿namespace DigiMenuAPI.Application.DTOs.Read
 {
     /// <summary>Traducción de nombre simple (Category, Tag).</summary>
-    public record TranslationReadDto(
-        int Id,
-        string LanguageCode,
-        string Name
-    );
+    public class TranslationReadDto
+    {
+        public int Id { get; init; }
+        public string LanguageCode { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+    }
 
     /// <summary>Traducción completa de un producto (nombre + descripciones).</summary>
-    public record ProductTranslationReadDto(
-        int Id,
-        string LanguageCode,
-        string Name,
-        string? ShortDescription,
-        string? LongDescription
-    );
+    public class ProductTranslationReadDto
+    {
+        public int Id { get; init; }
+        public string LanguageCode { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        public string? ShortDescription { get; init; }
+        public string? LongDescription { get; init; }
+    }
 }

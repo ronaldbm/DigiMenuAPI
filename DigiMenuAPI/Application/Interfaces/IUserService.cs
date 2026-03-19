@@ -61,5 +61,13 @@ namespace DigiMenuAPI.Application.Interfaces
         /// y envía email al usuario con la nueva contraseña.
         /// </summary>
         Task<OperationResult<bool>> ResetPassword(int userId);
+
+        /// <summary>
+        /// Actualiza el idioma de la interfaz de administración de un usuario.
+        /// Cualquier usuario puede actualizar el suyo propio.
+        /// BranchAdmin+ puede actualizar el de usuarios que gestione.
+        /// lang = null → resetear al idioma por defecto de la empresa.
+        /// </summary>
+        Task<OperationResult<bool>> UpdateLanguage(int userId, string? lang);
     }
 }

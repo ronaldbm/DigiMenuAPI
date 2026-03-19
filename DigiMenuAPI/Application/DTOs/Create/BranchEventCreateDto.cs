@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
 namespace DigiMenuAPI.Application.DTOs.Create
@@ -8,11 +9,17 @@ namespace DigiMenuAPI.Application.DTOs.Create
     /// </summary>
     public class BranchEventCreateDto
     {
+        [Range(1, int.MaxValue)]
         public int BranchId { get; set; }
+
+        [Required, MaxLength(200)]
         public string Title { get; set; } = null!;
+
+        [MaxLength(1000)]
         public string? Description { get; set; }
 
         /// <summary>Fecha del evento en formato ISO (YYYY-MM-DD).</summary>
+        [Required]
         public DateOnly EventDate { get; set; }
 
         /// <summary>Hora de inicio. Null = todo el día.</summary>

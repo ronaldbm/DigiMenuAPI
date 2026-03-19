@@ -1,5 +1,4 @@
 using AppCore.Domain.Entities;
-using System.ComponentModel.DataAnnotations;
 
 namespace DigiMenuAPI.Infrastructure.Entities
 {
@@ -8,15 +7,13 @@ namespace DigiMenuAPI.Infrastructure.Entities
     /// El CompanyAdmin las crea y son compartidas entre todas sus Branches.
     /// Cada BranchProduct referencia la categoría en la que aparece dentro de su Branch,
     /// permitiendo que el mismo producto esté en categorías diferentes por sucursal.
+    /// El nombre vive exclusivamente en CategoryTranslation.
     /// </summary>
     public class Category : BaseEntity
     {
         // ── Multi-Tenant ─────────────────────────────────────────────
         public int CompanyId { get; set; }
         public Company Company { get; set; } = null!;
-
-        [Required, MaxLength(100)]
-        public string Name { get; set; } = null!;
 
         public int DisplayOrder { get; set; }
         public bool IsVisible { get; set; }

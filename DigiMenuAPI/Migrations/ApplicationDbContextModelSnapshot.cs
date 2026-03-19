@@ -30,6 +30,10 @@ namespace DigiMenuAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AdminLang")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
                     b.Property<int?>("BranchId")
                         .HasColumnType("int");
 
@@ -1761,15 +1765,7 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int?>("ModifiedUserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("CompanyId", "Name")
-                        .IsUnique();
 
                     b.HasIndex("CompanyId", "IsDeleted", "DisplayOrder");
 
@@ -1783,8 +1779,7 @@ namespace DigiMenuAPI.Migrations
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 1,
                             IsDeleted = false,
-                            IsVisible = true,
-                            Name = "Entradas"
+                            IsVisible = true
                         },
                         new
                         {
@@ -1793,8 +1788,7 @@ namespace DigiMenuAPI.Migrations
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 2,
                             IsDeleted = false,
-                            IsVisible = true,
-                            Name = "Platos Fuertes"
+                            IsVisible = true
                         },
                         new
                         {
@@ -1803,8 +1797,7 @@ namespace DigiMenuAPI.Migrations
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 3,
                             IsDeleted = false,
-                            IsVisible = true,
-                            Name = "Postres"
+                            IsVisible = true
                         },
                         new
                         {
@@ -1813,8 +1806,7 @@ namespace DigiMenuAPI.Migrations
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 4,
                             IsDeleted = false,
-                            IsVisible = true,
-                            Name = "Bebidas"
+                            IsVisible = true
                         },
                         new
                         {
@@ -1823,8 +1815,7 @@ namespace DigiMenuAPI.Migrations
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 5,
                             IsDeleted = false,
-                            IsVisible = true,
-                            Name = "Bebidas Alcohólicas"
+                            IsVisible = true
                         });
                 });
 
@@ -1855,6 +1846,43 @@ namespace DigiMenuAPI.Migrations
                         .IsUnique();
 
                     b.ToTable("CategoryTranslations");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1001,
+                            CategoryId = 1,
+                            LanguageCode = "es",
+                            Name = "Entradas"
+                        },
+                        new
+                        {
+                            Id = 1002,
+                            CategoryId = 2,
+                            LanguageCode = "es",
+                            Name = "Platos Fuertes"
+                        },
+                        new
+                        {
+                            Id = 1003,
+                            CategoryId = 3,
+                            LanguageCode = "es",
+                            Name = "Postres"
+                        },
+                        new
+                        {
+                            Id = 1004,
+                            CategoryId = 4,
+                            LanguageCode = "es",
+                            Name = "Bebidas"
+                        },
+                        new
+                        {
+                            Id = 1005,
+                            CategoryId = 5,
+                            LanguageCode = "es",
+                            Name = "Bebidas Alcohólicas"
+                        });
                 });
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.FooterLink", b =>
@@ -1963,9 +1991,6 @@ namespace DigiMenuAPI.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("LongDescription")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("MainImageUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -1975,22 +2000,11 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int?>("ModifiedUserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("ShortDescription")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("CompanyId", "IsDeleted");
-
-                    b.HasIndex("CompanyId", "Name")
-                        .IsUnique();
 
                     b.ToTable("Products");
 
@@ -2001,9 +2015,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 1,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Ceviche Clásico",
-                            ShortDescription = "Fresco ceviche de corvina con limón y culantro."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2011,9 +2023,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 1,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Patacones con Guacamole",
-                            ShortDescription = "Patacones crocantes con guacamole casero."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2021,9 +2031,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Casado Tradicional",
-                            ShortDescription = "Arroz, frijoles, ensalada, maduro y carne a elegir."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2031,9 +2039,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Lomo al Chimichurri",
-                            ShortDescription = "Lomo de res al punto con salsa chimichurri."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2041,9 +2047,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Bowl Vegano",
-                            ShortDescription = "Quinoa, vegetales asados, hummus y tahini."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2051,9 +2055,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 3,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Tres Leches",
-                            ShortDescription = "Bizcocho esponjoso bañado en tres tipos de leche."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2061,9 +2063,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 3,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Brownies con Helado",
-                            ShortDescription = "Brownie de chocolate caliente con helado de vainilla."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2071,9 +2071,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 4,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Café Americano",
-                            ShortDescription = "Café negro de tueste medio."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2081,9 +2079,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 4,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Refresco Natural",
-                            ShortDescription = "Cas, tamarindo o guanábana. A elegir."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2091,9 +2087,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 5,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Imperial",
-                            ShortDescription = "Cerveza nacional 355ml bien fría."
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2101,9 +2095,7 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 5,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Guaro Sour",
-                            ShortDescription = "Guaro Cacique, limón, azúcar y hielo."
+                            IsDeleted = false
                         });
                 });
 
@@ -2140,6 +2132,96 @@ namespace DigiMenuAPI.Migrations
                         .IsUnique();
 
                     b.ToTable("ProductTranslations");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1001,
+                            LanguageCode = "es",
+                            Name = "Ceviche Clásico",
+                            ProductId = 1,
+                            ShortDescription = "Fresco ceviche de corvina con limón y culantro."
+                        },
+                        new
+                        {
+                            Id = 1002,
+                            LanguageCode = "es",
+                            Name = "Patacones con Guacamole",
+                            ProductId = 2,
+                            ShortDescription = "Patacones crocantes con guacamole casero."
+                        },
+                        new
+                        {
+                            Id = 1003,
+                            LanguageCode = "es",
+                            Name = "Casado Tradicional",
+                            ProductId = 3,
+                            ShortDescription = "Arroz, frijoles, ensalada, maduro y carne a elegir."
+                        },
+                        new
+                        {
+                            Id = 1004,
+                            LanguageCode = "es",
+                            Name = "Lomo al Chimichurri",
+                            ProductId = 4,
+                            ShortDescription = "Lomo de res al punto con salsa chimichurri."
+                        },
+                        new
+                        {
+                            Id = 1005,
+                            LanguageCode = "es",
+                            Name = "Bowl Vegano",
+                            ProductId = 5,
+                            ShortDescription = "Quinoa, vegetales asados, hummus y tahini."
+                        },
+                        new
+                        {
+                            Id = 1006,
+                            LanguageCode = "es",
+                            Name = "Tres Leches",
+                            ProductId = 6,
+                            ShortDescription = "Bizcocho esponjoso bañado en tres tipos de leche."
+                        },
+                        new
+                        {
+                            Id = 1007,
+                            LanguageCode = "es",
+                            Name = "Brownies con Helado",
+                            ProductId = 7,
+                            ShortDescription = "Brownie de chocolate caliente con helado de vainilla."
+                        },
+                        new
+                        {
+                            Id = 1008,
+                            LanguageCode = "es",
+                            Name = "Café Americano",
+                            ProductId = 8,
+                            ShortDescription = "Café negro de tueste medio."
+                        },
+                        new
+                        {
+                            Id = 1009,
+                            LanguageCode = "es",
+                            Name = "Refresco Natural",
+                            ProductId = 9,
+                            ShortDescription = "Cas, tamarindo o guanábana. A elegir."
+                        },
+                        new
+                        {
+                            Id = 1010,
+                            LanguageCode = "es",
+                            Name = "Imperial",
+                            ProductId = 10,
+                            ShortDescription = "Cerveza nacional 355ml bien fría."
+                        },
+                        new
+                        {
+                            Id = 1011,
+                            LanguageCode = "es",
+                            Name = "Guaro Sour",
+                            ProductId = 11,
+                            ShortDescription = "Guaro Cacique, limón, azúcar y hielo."
+                        });
                 });
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Reservation", b =>
@@ -2242,17 +2324,9 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int?>("ModifiedUserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "IsDeleted");
-
-                    b.HasIndex("CompanyId", "Name")
-                        .IsUnique();
 
                     b.ToTable("Tags");
 
@@ -2263,8 +2337,7 @@ namespace DigiMenuAPI.Migrations
                             Color = "#4CAF50",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Vegano"
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2272,8 +2345,7 @@ namespace DigiMenuAPI.Migrations
                             Color = "#F44336",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Picante"
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2281,8 +2353,7 @@ namespace DigiMenuAPI.Migrations
                             Color = "#9C27B0",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Alcohólico"
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2290,8 +2361,7 @@ namespace DigiMenuAPI.Migrations
                             Color = "#FF9800",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Sin Gluten"
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2299,8 +2369,7 @@ namespace DigiMenuAPI.Migrations
                             Color = "#F50057",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Popular"
+                            IsDeleted = false
                         },
                         new
                         {
@@ -2308,8 +2377,7 @@ namespace DigiMenuAPI.Migrations
                             Color = "#2196F3",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            Name = "Nuevo"
+                            IsDeleted = false
                         });
                 });
 
@@ -2340,6 +2408,50 @@ namespace DigiMenuAPI.Migrations
                         .IsUnique();
 
                     b.ToTable("TagTranslations");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1001,
+                            LanguageCode = "es",
+                            Name = "Vegano",
+                            TagId = 1
+                        },
+                        new
+                        {
+                            Id = 1002,
+                            LanguageCode = "es",
+                            Name = "Picante",
+                            TagId = 2
+                        },
+                        new
+                        {
+                            Id = 1003,
+                            LanguageCode = "es",
+                            Name = "Alcohólico",
+                            TagId = 3
+                        },
+                        new
+                        {
+                            Id = 1004,
+                            LanguageCode = "es",
+                            Name = "Sin Gluten",
+                            TagId = 4
+                        },
+                        new
+                        {
+                            Id = 1005,
+                            LanguageCode = "es",
+                            Name = "Popular",
+                            TagId = 5
+                        },
+                        new
+                        {
+                            Id = 1006,
+                            LanguageCode = "es",
+                            Name = "Nuevo",
+                            TagId = 6
+                        });
                 });
 
             modelBuilder.Entity("ProductTag", b =>

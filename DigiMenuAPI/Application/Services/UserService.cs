@@ -53,7 +53,6 @@ namespace DigiMenuAPI.Application.Services
                 query = query.Where(u => u.BranchId == callerBranchId.Value);
 
             var users = await query
-                .Include(u => u.Branch)
                 .OrderBy(u => u.FullName)
                 .Select(u => new AppUserSummaryDto(
                     u.Id,
@@ -148,6 +147,20 @@ namespace DigiMenuAPI.Application.Services
             // Generar contraseña temporal
             var temporaryPassword = PasswordValidator.GenerateTemporary();
 
+            // Resolver AdminLang: validar si viene en el DTO, si no usar el idioma por defecto
+            string? adminLang = null;
+            if (!string.IsNullOrWhiteSpace(dto.AdminLang))
+            {
+                var langCode = dto.AdminLang.Trim().ToLowerInvariant();
+                var langValid = await _context.CompanyLanguages
+                    .AnyAsync(cl => cl.CompanyId == companyId && cl.LanguageCode == langCode);
+                adminLang = langValid ? langCode : null;
+            }
+            adminLang ??= await _context.CompanyLanguages
+                .Where(cl => cl.CompanyId == companyId && cl.IsDefault)
+                .Select(cl => cl.LanguageCode)
+                .FirstOrDefaultAsync();
+
             var user = new AppUser
             {
                 FullName = dto.FullName.Trim(),
@@ -157,7 +170,8 @@ namespace DigiMenuAPI.Application.Services
                 CompanyId = companyId,
                 BranchId = dto.BranchId,
                 IsActive = true,
-                MustChangePassword = true
+                MustChangePassword = true,
+                AdminLang = adminLang
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -226,6 +240,27 @@ namespace DigiMenuAPI.Application.Services
             user.FullName = dto.FullName.Trim();
             user.Email = newEmail;
             user.BranchId = dto.BranchId;
+
+            // AdminLang: actualizar si se proporciona (cadena vacía = resetear al default)
+            if (dto.AdminLang != null)
+            {
+                if (dto.AdminLang.Trim().Length == 0)
+                {
+                    // Cadena vacía → resetear al idioma por defecto de la empresa
+                    user.AdminLang = await _context.CompanyLanguages
+                        .Where(cl => cl.CompanyId == companyId && cl.IsDefault)
+                        .Select(cl => cl.LanguageCode)
+                        .FirstOrDefaultAsync();
+                }
+                else
+                {
+                    var langCode = dto.AdminLang.Trim().ToLowerInvariant();
+                    var langValid = await _context.CompanyLanguages
+                        .AnyAsync(cl => cl.CompanyId == companyId && cl.LanguageCode == langCode);
+                    if (langValid) user.AdminLang = langCode;
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             // Recargar con relaciones
@@ -319,6 +354,54 @@ namespace DigiMenuAPI.Application.Services
                 LoginUrl: $"{AppUrl}/login"
             ), companyId);
 
+            return OperationResult<bool>.Ok(true);
+        }
+
+        // ── UPDATE LANGUAGE ───────────────────────────────────────────
+        public async Task<OperationResult<bool>> UpdateLanguage(int userId, string? lang)
+        {
+            var companyId = _tenantService.GetCompanyId();
+            var callerId  = _tenantService.GetUserId();
+            var callerRole = _tenantService.GetUserRole();
+
+            // Staff solo puede actualizar su propio idioma
+            bool isSelf    = callerId == userId;
+            bool isManager = callerRole != UserRoles.Staff;
+
+            if (!isSelf && !isManager)
+                return OperationResult<bool>.Forbidden(
+                    "No tienes permiso para cambiar el idioma de este usuario.",
+                    ErrorKeys.Forbidden);
+
+            var user = await ResolveUserForCallerAsync(userId);
+            if (user is null)
+                return OperationResult<bool>.NotFound(
+                    "Usuario no encontrado.",
+                    ErrorKeys.UserNotFound);
+
+            if (!string.IsNullOrWhiteSpace(lang))
+            {
+                var langCode = lang.Trim().ToLowerInvariant();
+                var langValid = await _context.CompanyLanguages
+                    .AnyAsync(cl => cl.CompanyId == companyId && cl.LanguageCode == langCode);
+
+                if (!langValid)
+                    return OperationResult<bool>.ValidationError(
+                        $"El idioma '{lang}' no está habilitado para esta empresa.",
+                        ErrorKeys.ValidationFailed);
+
+                user.AdminLang = langCode;
+            }
+            else
+            {
+                // null o vacío = resetear al idioma por defecto de la empresa
+                user.AdminLang = await _context.CompanyLanguages
+                    .Where(cl => cl.CompanyId == companyId && cl.IsDefault)
+                    .Select(cl => cl.LanguageCode)
+                    .FirstOrDefaultAsync();
+            }
+
+            await _context.SaveChangesAsync();
             return OperationResult<bool>.Ok(true);
         }
 

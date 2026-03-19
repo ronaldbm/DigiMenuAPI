@@ -149,7 +149,6 @@ namespace DigiMenuAPI.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CompanyId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
                     IsVisible = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -335,7 +334,6 @@ namespace DigiMenuAPI.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CompanyId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Color = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: false, defaultValue: "#ffffff"),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -633,6 +631,7 @@ namespace DigiMenuAPI.Migrations
                     LastLoginAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CompanyId = table.Column<int>(type: "int", nullable: false),
                     BranchId = table.Column<int>(type: "int", nullable: true),
+                    AdminLang = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedUserId = table.Column<int>(type: "int", nullable: true),
@@ -683,9 +682,6 @@ namespace DigiMenuAPI.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CompanyId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    ShortDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LongDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MainImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CategoryId = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -931,14 +927,14 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "Categories",
-                columns: new[] { "Id", "CompanyId", "CreatedAt", "CreatedUserId", "DisplayOrder", "IsDeleted", "IsVisible", "ModifiedAt", "ModifiedUserId", "Name" },
+                columns: new[] { "Id", "CompanyId", "CreatedAt", "CreatedUserId", "DisplayOrder", "IsDeleted", "IsVisible", "ModifiedAt", "ModifiedUserId" },
                 values: new object[,]
                 {
-                    { 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, false, true, null, null, "Entradas" },
-                    { 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, false, true, null, null, "Platos Fuertes" },
-                    { 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 3, false, true, null, null, "Postres" },
-                    { 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 4, false, true, null, null, "Bebidas" },
-                    { 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 5, false, true, null, null, "Bebidas Alcohólicas" }
+                    { 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, false, true, null, null },
+                    { 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, false, true, null, null },
+                    { 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 3, false, true, null, null },
+                    { 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 4, false, true, null, null },
+                    { 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 5, false, true, null, null }
                 });
 
             migrationBuilder.InsertData(
@@ -974,21 +970,21 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "Tags",
-                columns: new[] { "Id", "Color", "CompanyId", "CreatedAt", "CreatedUserId", "IsDeleted", "ModifiedAt", "ModifiedUserId", "Name" },
+                columns: new[] { "Id", "Color", "CompanyId", "CreatedAt", "CreatedUserId", "IsDeleted", "ModifiedAt", "ModifiedUserId" },
                 values: new object[,]
                 {
-                    { 1, "#4CAF50", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, "Vegano" },
-                    { 2, "#F44336", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, "Picante" },
-                    { 3, "#9C27B0", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, "Alcohólico" },
-                    { 4, "#FF9800", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, "Sin Gluten" },
-                    { 5, "#F50057", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, "Popular" },
-                    { 6, "#2196F3", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, "Nuevo" }
+                    { 1, "#4CAF50", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null },
+                    { 2, "#F44336", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null },
+                    { 3, "#9C27B0", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null },
+                    { 4, "#FF9800", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null },
+                    { 5, "#F50057", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null },
+                    { 6, "#2196F3", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null }
                 });
 
             migrationBuilder.InsertData(
                 table: "Users",
-                columns: new[] { "Id", "BranchId", "CompanyId", "CreatedAt", "CreatedUserId", "Email", "FullName", "IsActive", "IsDeleted", "LastLoginAt", "ModifiedAt", "ModifiedUserId", "MustChangePassword", "PasswordHash", "Role" },
-                values: new object[] { 1, null, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", "Super Admin", true, false, null, null, null, false, "$2y$12$tJGKbEhmd00CrIaQU8yf0eKU.doWOliVml/J48.NCwhXlF./.ZZgS", (byte)255 });
+                columns: new[] { "Id", "AdminLang", "BranchId", "CompanyId", "CreatedAt", "CreatedUserId", "Email", "FullName", "IsActive", "IsDeleted", "LastLoginAt", "ModifiedAt", "ModifiedUserId", "MustChangePassword", "PasswordHash", "Role" },
+                values: new object[] { 1, null, null, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", "Super Admin", true, false, null, null, null, false, "$2y$12$tJGKbEhmd00CrIaQU8yf0eKU.doWOliVml/J48.NCwhXlF./.ZZgS", (byte)255 });
 
             migrationBuilder.InsertData(
                 table: "BranchLocales",
@@ -1015,6 +1011,18 @@ namespace DigiMenuAPI.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "CategoryTranslations",
+                columns: new[] { "Id", "CategoryId", "LanguageCode", "Name" },
+                values: new object[,]
+                {
+                    { 1001, 1, "es", "Entradas" },
+                    { 1002, 2, "es", "Platos Fuertes" },
+                    { 1003, 3, "es", "Postres" },
+                    { 1004, 4, "es", "Bebidas" },
+                    { 1005, 5, "es", "Bebidas Alcohólicas" }
+                });
+
+            migrationBuilder.InsertData(
                 table: "FooterLinks",
                 columns: new[] { "Id", "BranchId", "CreatedAt", "CreatedUserId", "CustomSvgContent", "DisplayOrder", "IsDeleted", "IsVisible", "Label", "ModifiedAt", "ModifiedUserId", "StandardIconId", "Url" },
                 values: new object[,]
@@ -1025,20 +1033,33 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "Products",
-                columns: new[] { "Id", "CategoryId", "CompanyId", "CreatedAt", "CreatedUserId", "IsDeleted", "LongDescription", "MainImageUrl", "ModifiedAt", "ModifiedUserId", "Name", "ShortDescription" },
+                columns: new[] { "Id", "CategoryId", "CompanyId", "CreatedAt", "CreatedUserId", "IsDeleted", "MainImageUrl", "ModifiedAt", "ModifiedUserId" },
                 values: new object[,]
                 {
-                    { 1, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Ceviche Clásico", "Fresco ceviche de corvina con limón y culantro." },
-                    { 2, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Patacones con Guacamole", "Patacones crocantes con guacamole casero." },
-                    { 3, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Casado Tradicional", "Arroz, frijoles, ensalada, maduro y carne a elegir." },
-                    { 4, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Lomo al Chimichurri", "Lomo de res al punto con salsa chimichurri." },
-                    { 5, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Bowl Vegano", "Quinoa, vegetales asados, hummus y tahini." },
-                    { 6, 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Tres Leches", "Bizcocho esponjoso bañado en tres tipos de leche." },
-                    { 7, 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Brownies con Helado", "Brownie de chocolate caliente con helado de vainilla." },
-                    { 8, 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Café Americano", "Café negro de tueste medio." },
-                    { 9, 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Refresco Natural", "Cas, tamarindo o guanábana. A elegir." },
-                    { 10, 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Imperial", "Cerveza nacional 355ml bien fría." },
-                    { 11, 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null, null, "Guaro Sour", "Guaro Cacique, limón, azúcar y hielo." }
+                    { 1, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 2, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 3, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 4, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 5, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 6, 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 7, 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 8, 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 9, 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 10, 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
+                    { 11, 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null }
+                });
+
+            migrationBuilder.InsertData(
+                table: "TagTranslations",
+                columns: new[] { "Id", "LanguageCode", "Name", "TagId" },
+                values: new object[,]
+                {
+                    { 1001, "es", "Vegano", 1 },
+                    { 1002, "es", "Picante", 2 },
+                    { 1003, "es", "Alcohólico", 3 },
+                    { 1004, "es", "Sin Gluten", 4 },
+                    { 1005, "es", "Popular", 5 },
+                    { 1006, "es", "Nuevo", 6 }
                 });
 
             migrationBuilder.InsertData(
@@ -1057,6 +1078,24 @@ namespace DigiMenuAPI.Migrations
                     { 9, 1, 4, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, null, false, true, null, null, null, 1800m, 9 },
                     { 10, 1, 5, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, null, false, true, null, null, null, 2200m, 10 },
                     { 11, 1, 5, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, null, false, true, null, null, null, 3500m, 11 }
+                });
+
+            migrationBuilder.InsertData(
+                table: "ProductTranslations",
+                columns: new[] { "Id", "LanguageCode", "LongDescription", "Name", "ProductId", "ShortDescription" },
+                values: new object[,]
+                {
+                    { 1001, "es", null, "Ceviche Clásico", 1, "Fresco ceviche de corvina con limón y culantro." },
+                    { 1002, "es", null, "Patacones con Guacamole", 2, "Patacones crocantes con guacamole casero." },
+                    { 1003, "es", null, "Casado Tradicional", 3, "Arroz, frijoles, ensalada, maduro y carne a elegir." },
+                    { 1004, "es", null, "Lomo al Chimichurri", 4, "Lomo de res al punto con salsa chimichurri." },
+                    { 1005, "es", null, "Bowl Vegano", 5, "Quinoa, vegetales asados, hummus y tahini." },
+                    { 1006, "es", null, "Tres Leches", 6, "Bizcocho esponjoso bañado en tres tipos de leche." },
+                    { 1007, "es", null, "Brownies con Helado", 7, "Brownie de chocolate caliente con helado de vainilla." },
+                    { 1008, "es", null, "Café Americano", 8, "Café negro de tueste medio." },
+                    { 1009, "es", null, "Refresco Natural", 9, "Cas, tamarindo o guanábana. A elegir." },
+                    { 1010, "es", null, "Imperial", 10, "Cerveza nacional 355ml bien fría." },
+                    { 1011, "es", null, "Guaro Sour", 11, "Guaro Cacique, limón, azúcar y hielo." }
                 });
 
             migrationBuilder.CreateIndex(
@@ -1129,12 +1168,6 @@ namespace DigiMenuAPI.Migrations
                 name: "IX_Categories_CompanyId_IsDeleted_DisplayOrder",
                 table: "Categories",
                 columns: new[] { "CompanyId", "IsDeleted", "DisplayOrder" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Categories_CompanyId_Name",
-                table: "Categories",
-                columns: new[] { "CompanyId", "Name" },
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CategoryTranslations_CategoryId_LanguageCode",
@@ -1263,12 +1296,6 @@ namespace DigiMenuAPI.Migrations
                 columns: new[] { "CompanyId", "IsDeleted" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Products_CompanyId_Name",
-                table: "Products",
-                columns: new[] { "CompanyId", "Name" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ProductTags_TagsId",
                 table: "ProductTags",
                 column: "TagsId");
@@ -1288,12 +1315,6 @@ namespace DigiMenuAPI.Migrations
                 name: "IX_Tags_CompanyId_IsDeleted",
                 table: "Tags",
                 columns: new[] { "CompanyId", "IsDeleted" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Tags_CompanyId_Name",
-                table: "Tags",
-                columns: new[] { "CompanyId", "Name" },
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_TagTranslations_TagId_LanguageCode",

@@ -1,4 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Create
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DigiMenuAPI.Application.DTOs.Create
 {
     /// <summary>
     /// DTO para registro de nueva empresa con su primer CompanyAdmin.
@@ -11,15 +13,15 @@
     /// MaxBranches / MaxUsers: null = usar los valores del Plan seleccionado.
     /// </summary>
     public record CompanyCreateDto(
-        string Name,
-        string AdminFullName,  
-        string Email,
-        string Password,
-        string? Phone,
-        string? CountryCode,
+        [Required, MaxLength(100)] string Name,
+        [Required, MaxLength(100)] string AdminFullName,
+        [Required, MaxLength(150), EmailAddress] string Email,
+        [Required, MinLength(8), MaxLength(100)] string Password,
+        [MaxLength(20)] string? Phone,
+        [MaxLength(3)] string? CountryCode,
         int PlanId,
         int? MaxBranches,
         int? MaxUsers,
-        string Slug
+        [Required, MaxLength(60)] string Slug
     );
 }

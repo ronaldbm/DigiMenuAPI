@@ -28,7 +28,9 @@
       "Bash(cd \"C:/Users/ronal/source/repos/ronaldbm/DigiMenuAPI\" && dotnet ef migrations list --project DigiMenuAPI/DigiMenuAPI.csproj --startup-project DigiMenuAPI/DigiMenuAPI.csproj 2>&1)",
       "Bash(ls -la /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/ | grep -v \"^d\" | head -20 && echo \"---DIRECTORIES---\" && ls -d /c/Users/ronal/source/repos/ronaldbm/DigiMenuAPI/*/ 2>/dev/null)",
       "Bash(cd \"C:/Users/ronal/source/repos/ronaldbm/DigiMenuAPI\" && dotnet ef migrations add SeedBranchScheduleDemo --project DigiMenuAPI/DigiMenuAPI.csproj --startup-project DigiMenuAPI/DigiMenuAPI.csproj 2>&1 | tail -15)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(dotnet ef:*)",
+      "Bash(rm:*)"
     ]
   }
 }

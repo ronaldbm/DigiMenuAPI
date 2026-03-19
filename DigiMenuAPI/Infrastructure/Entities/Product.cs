@@ -1,11 +1,10 @@
 using AppCore.Domain.Entities;
-using System.ComponentModel.DataAnnotations;
 
 namespace DigiMenuAPI.Infrastructure.Entities
 {
     /// <summary>
     /// Producto del catálogo global de la Company.
-    /// El CompanyAdmin lo crea con nombre, descripción e imagen base.
+    /// El CompanyAdmin lo crea con imagen base; nombre y descripción viven en ProductTranslation.
     ///
     /// El producto NO tiene precio aquí porque cada sucursal puede
     /// tener un precio diferente. El precio, visibilidad y orden
@@ -21,12 +20,6 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public Company Company { get; set; } = null!;
 
         // ── Catálogo global ───────────────────────────────────────────
-        [Required, MaxLength(150)]
-        public string Name { get; set; } = null!;
-
-        public string? ShortDescription { get; set; }
-        public string? LongDescription { get; set; }
-
         /// <summary>Imagen base del producto. Cada Branch puede sobreescribirla en BranchProduct.</summary>
         public string? MainImageUrl { get; set; }
 

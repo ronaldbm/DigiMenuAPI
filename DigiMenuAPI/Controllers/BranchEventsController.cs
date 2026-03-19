@@ -3,6 +3,7 @@ using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DigiMenuAPI.Controllers
 {
@@ -65,11 +66,13 @@ namespace DigiMenuAPI.Controllers
 
         [HttpGet("public/{companySlug}/{branchSlug}")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> GetUpcoming(string companySlug, string branchSlug)
             => HandleResult(await _service.GetUpcomingEvents(companySlug, branchSlug));
 
         [HttpGet("public/{companySlug}/{branchSlug}/announcement")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> GetNextAnnouncement(string companySlug, string branchSlug)
             => HandleResult(await _service.GetNextAnnouncement(companySlug, branchSlug));
     }

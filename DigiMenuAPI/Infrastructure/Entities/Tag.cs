@@ -7,15 +7,13 @@ namespace DigiMenuAPI.Infrastructure.Entities
     /// Etiqueta del catálogo global de la Company.
     /// El CompanyAdmin las crea y se asignan a los Products del catálogo global.
     /// Aparecen en el menú público de las Branches que tienen activo el BranchProduct correspondiente.
+    /// El nombre vive exclusivamente en TagTranslation.
     /// </summary>
     public class Tag : BaseEntity
     {
         // ── Multi-Tenant ─────────────────────────────────────────────
         public int CompanyId { get; set; }
         public Company Company { get; set; } = null!;
-
-        [Required, MaxLength(50)]
-        public string Name { get; set; } = null!;
 
         /// <summary>Color en formato hex. Ejemplo: "#4CAF50"</summary>
         [MaxLength(7)]

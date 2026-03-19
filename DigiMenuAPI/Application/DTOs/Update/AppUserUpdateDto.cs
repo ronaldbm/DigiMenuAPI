@@ -1,4 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Update
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DigiMenuAPI.Application.DTOs.Update
 {
     /// <summary>
     /// Edición de datos básicos de un usuario.
@@ -11,8 +13,9 @@
     /// </summary>
     public record AppUserUpdateDto(
         int Id,
-        string FullName,
-        string Email,
-        int? BranchId 
+        [Required, MaxLength(100)] string FullName,
+        [Required, MaxLength(150), EmailAddress] string Email,
+        int? BranchId,
+        [MaxLength(10)] string? AdminLang   // null = no cambiar; cadena vacía = resetear al idioma por defecto
     );
 }

@@ -126,6 +126,22 @@ namespace DigiMenuAPI.Application.Services
 
             _context.CompanyLanguages.Remove(lang);
 
+            // Migrar usuarios que tienen este idioma asignado → idioma por defecto de la empresa
+            var defaultCode = await _context.CompanyLanguages
+                .Where(cl => cl.CompanyId == companyId && cl.IsDefault && cl.LanguageCode != code)
+                .Select(cl => cl.LanguageCode)
+                .FirstOrDefaultAsync();
+
+            if (defaultCode is not null)
+            {
+                var affectedUsers = await _context.Users
+                    .Where(u => u.CompanyId == companyId && !u.IsDeleted && u.AdminLang == code)
+                    .ToListAsync();
+
+                foreach (var user in affectedUsers)
+                    user.AdminLang = defaultCode;
+            }
+
             await _context.SaveChangesAsync();
             await _cache.EvictMenuByCompanyAsync(companyId);
 
@@ -183,5 +199,6 @@ namespace DigiMenuAPI.Application.Services
                     cl.Language.Flag,
                     cl.IsDefault))
                 .ToListAsync();
+
     }
 }

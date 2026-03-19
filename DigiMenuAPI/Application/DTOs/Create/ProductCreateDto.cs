@@ -1,15 +1,20 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Create
+using System.ComponentModel.DataAnnotations;
+
+namespace DigiMenuAPI.Application.DTOs.Create
 {
     /// <summary>
     /// CompanyId NO se recibe del cliente — se inyecta desde el JWT en el servicio.
-    /// Producto del catálogo global de la empresa (sin precio, precio va en BranchProduct).
+    /// Usa [FromForm] por el campo Image. Translations se bindea con campos indexados:
+    /// Translations[0].LanguageCode, Translations[0].Name, etc.
     /// </summary>
-    public record ProductCreateDto(
-        int CategoryId,
-        string Name,
-        string? ShortDescription,
-        string? LongDescription,
-        IFormFile? Image,
-        List<int>? TagIds
-    );
+    public class ProductCreateDto
+    {
+        [Range(1, int.MaxValue, ErrorMessage = "CategoryId inválido.")]
+        public int CategoryId { get; init; }
+        public IFormFile? Image { get; init; }
+        public List<int>? TagIds { get; init; }
+
+        [Required, MinLength(1, ErrorMessage = "Se requiere al menos una traducción.")]
+        public List<ProductTranslationInput> Translations { get; init; } = [];
+    }
 }

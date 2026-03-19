@@ -1,9 +1,14 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Update
+using System.ComponentModel.DataAnnotations;
+using DigiMenuAPI.Application.DTOs.Create;
+
+namespace DigiMenuAPI.Application.DTOs.Update
 {
-    public record CategoryUpdateDto(
-        int Id,
-        string Name,
-        int DisplayOrder,
-        bool IsVisible
-    );
+    public class CategoryUpdateDto
+    {
+        public int Id { get; init; }
+        public bool IsVisible { get; init; }
+
+        [Required, MinLength(1, ErrorMessage = "Se requiere al menos una traducción.")]
+        public List<NameTranslationInput> Translations { get; init; } = [];
+    }
 }

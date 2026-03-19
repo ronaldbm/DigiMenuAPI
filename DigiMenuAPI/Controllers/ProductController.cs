@@ -1,4 +1,4 @@
-﻿using DigiMenuAPI.Application.DTOs.Create;
+using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DigiMenuAPI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class ProductsController : BaseController
     {
@@ -19,8 +20,9 @@ namespace DigiMenuAPI.Controllers
         [HttpGet]
         public async Task<ActionResult> GetAll(
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
-            => HandleResult(await _service.GetAll(page, pageSize));
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? lang = null)
+            => HandleResult(await _service.GetAll(page, pageSize, lang));
 
         /// <summary>
         /// Lista compacta de todos los productos sin paginación.
@@ -48,22 +50,15 @@ namespace DigiMenuAPI.Controllers
             return HandleResult(await _service.Update(dto));
         }
 
+        /// <summary>
+        /// Devuelve los nombres de las etiquetas de un producto resueltos al idioma solicitado.
+        /// Endpoint ligero usado por el tooltip de la lista de productos.
+        /// </summary>
+        [HttpGet("{id}/tags")]
+        public async Task<ActionResult> GetTagNames(int id, [FromQuery] string? lang = null)
+            => HandleResult(await _service.GetTagNames(id, lang));
+
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id) => HandleResult(await _service.Delete(id));
-
-        // ── Traducciones ──────────────────────────────────────────────
-
-        /// <summary>Crea o actualiza la traducción de un producto para el idioma {code}.</summary>
-        [HttpPut("{id}/translations/{code}")]
-        [Authorize]
-        public async Task<ActionResult> UpsertTranslation(
-            int id, string code, [FromBody] ProductTranslationUpsertDto dto)
-            => HandleResult(await _service.UpsertTranslation(id, code, dto));
-
-        /// <summary>Elimina la traducción de un producto para el idioma {code}.</summary>
-        [HttpDelete("{id}/translations/{code}")]
-        [Authorize]
-        public async Task<ActionResult> DeleteTranslation(int id, string code)
-            => HandleResult(await _service.DeleteTranslation(id, code));
     }
 }

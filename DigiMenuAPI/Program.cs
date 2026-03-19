@@ -37,7 +37,12 @@ public partial class Program
 
         // ── DATABASE ─────────────────────────────────────────────────────────
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(
+                builder.Configuration.GetConnectionString("DefaultConnection"),
+                sqlOptions => sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount:  3,
+                    maxRetryDelay:  TimeSpan.FromSeconds(6),
+                    errorNumbersToAdd: null)));
 
         // AppCore services depend on CoreDbContext — ApplicationDbContext extends it,
         // so we register a scoped factory so CoreDbContext resolves to the same instance.

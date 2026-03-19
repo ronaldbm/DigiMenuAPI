@@ -4,8 +4,8 @@ namespace DigiMenuAPI.Application.DTOs.Create
 {
     public record FooterLinkCreateDto(
         int BranchId,
-        string Label,
-        string Url,
+        [Required, MaxLength(100)] string Label,
+        [Required, MaxLength(500)] string Url,
         int? StandardIconId,
         string? CustomSvgContent,
         int DisplayOrder,

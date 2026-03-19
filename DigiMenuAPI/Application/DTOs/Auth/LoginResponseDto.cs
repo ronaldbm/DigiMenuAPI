@@ -9,6 +9,7 @@
     /// </summary>
     public record LoginResponseDto(
         string Token,
+        int UserId,
         string FullName,
         string Email,
         int CompanyId,
@@ -18,6 +19,7 @@
         string? BranchName,
         byte Role,
         DateTime ExpiresAt,
-        bool MustChangePassword
+        bool MustChangePassword,
+        string? AdminLang
     );
 }

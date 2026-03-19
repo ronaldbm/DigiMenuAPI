@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Create;
@@ -33,27 +33,33 @@ namespace DigiMenuAPI.Application.Services
             _cacheStore = cacheStore;
         }
 
-        public async Task<OperationResult<List<CategoryReadDto>>> GetAll()
+        public async Task<OperationResult<List<CategoryListItemDto>>> GetAll(string? lang = null)
         {
             var companyId = _tenantService.GetCompanyId();
 
-            // QueryFilter global ya aplica !IsDeleted — solo falta filtrar por tenant
             var categories = await _context.Categories
                 .AsNoTracking()
+                .Include(c => c.Translations)
                 .Where(c => c.CompanyId == companyId)
                 .OrderBy(c => c.DisplayOrder)
-                .ProjectTo<CategoryReadDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return OperationResult<List<CategoryReadDto>>.Ok(categories);
+            var result = categories.Select(c => new CategoryListItemDto
+            {
+                Id           = c.Id,
+                CompanyId    = c.CompanyId,
+                DisplayOrder = c.DisplayOrder,
+                IsVisible    = c.IsVisible,
+                Name         = ResolveName(c.Translations, lang),
+            }).ToList();
+
+            return OperationResult<List<CategoryListItemDto>>.Ok(result);
         }
 
         public async Task<OperationResult<CategoryReadDto>> GetById(int id)
         {
             var companyId = _tenantService.GetCompanyId();
 
-            // Include explicito garantiza que las traducciones estén disponibles
-            // para el formulario de edición
             var category = await _context.Categories
                 .AsNoTracking()
                 .Include(c => c.Translations)
@@ -62,7 +68,7 @@ namespace DigiMenuAPI.Application.Services
                 .FirstOrDefaultAsync();
 
             if (category is null)
-                return OperationResult<CategoryReadDto>.Fail("Categoría no encontrada.");
+                return OperationResult<CategoryReadDto>.NotFound("Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
 
             return OperationResult<CategoryReadDto>.Ok(category);
         }
@@ -71,21 +77,37 @@ namespace DigiMenuAPI.Application.Services
         {
             var companyId = _tenantService.GetCompanyId();
 
-            var exists = await _context.Categories
-                .AnyAsync(c => c.CompanyId == companyId && c.Name == dto.Name.Trim());
-            if (exists)
-                return OperationResult<CategoryReadDto>.Conflict(
-                    "Ya existe una categoría con ese nombre en tu empresa.",
-                    ErrorKeys.CategoryAlreadyExists);
+            await using var tx = await _context.Database.BeginTransactionAsync();
+
+            var maxOrder = await _context.Categories
+                .Where(c => c.CompanyId == companyId)
+                .MaxAsync(c => (int?)c.DisplayOrder) ?? 0;
 
             var category = _mapper.Map<Category>(dto);
-            category.CompanyId = companyId; // ← siempre desde JWT, nunca del cliente
+            category.CompanyId    = companyId;
+            category.DisplayOrder = maxOrder + 1;
 
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
+            // Guardar traducciones en la misma transacción
+            foreach (var t in dto.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Name)))
+            {
+                _context.CategoryTranslations.Add(new CategoryTranslation
+                {
+                    CategoryId   = category.Id,
+                    LanguageCode = t.LanguageCode.Trim().ToLowerInvariant(),
+                    Name         = t.Name.Trim(),
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
+
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 
+            // Recargar con traducciones para la respuesta
+            await _context.Entry(category).Collection(c => c.Translations).LoadAsync();
             return OperationResult<CategoryReadDto>.Ok(_mapper.Map<CategoryReadDto>(category));
         }
 
@@ -93,15 +115,50 @@ namespace DigiMenuAPI.Application.Services
         {
             var companyId = _tenantService.GetCompanyId();
 
-            // CompanyId garantiza que no se puede modificar categoría de otro tenant
             var category = await _context.Categories
+                .Include(c => c.Translations)
                 .FirstOrDefaultAsync(c => c.Id == dto.Id && c.CompanyId == companyId);
 
             if (category is null)
                 return OperationResult<bool>.NotFound("Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
 
-            _mapper.Map(dto, category);
+            await using var tx = await _context.Database.BeginTransactionAsync();
+
+            // Actualizar campos escalares
+            category.IsVisible = dto.IsVisible;
+
+            // Replace-all para traducciones
+            var incoming = dto.Translations
+                .Where(t => !string.IsNullOrWhiteSpace(t.Name))
+                .ToDictionary(t => t.LanguageCode.Trim().ToLowerInvariant());
+
+            // Eliminar las que ya no vienen
+            var toDelete = category.Translations
+                .Where(t => !incoming.ContainsKey(t.LanguageCode))
+                .ToList();
+            _context.CategoryTranslations.RemoveRange(toDelete);
+
+            // Upsert las que vienen
+            foreach (var (code, input) in incoming)
+            {
+                var existing = category.Translations.FirstOrDefault(t => t.LanguageCode == code);
+                if (existing is null)
+                {
+                    _context.CategoryTranslations.Add(new CategoryTranslation
+                    {
+                        CategoryId   = category.Id,
+                        LanguageCode = code,
+                        Name         = input.Name.Trim(),
+                    });
+                }
+                else
+                {
+                    existing.Name = input.Name.Trim();
+                }
+            }
+
             await _context.SaveChangesAsync();
+            await tx.CommitAsync();
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 
@@ -148,70 +205,17 @@ namespace DigiMenuAPI.Application.Services
             return OperationResult<bool>.Ok(true);
         }
 
-        // ── Traducciones ──────────────────────────────────────────────
+        // ── Helpers ───────────────────────────────────────────────────
 
-        public async Task<OperationResult<TranslationReadDto>> UpsertTranslation(
-            int categoryId, string code, NameTranslationUpsertDto dto)
+        private static string ResolveName(IEnumerable<CategoryTranslation> translations, string? lang)
         {
-            var companyId = _tenantService.GetCompanyId();
-            code = code.Trim().ToLowerInvariant();
-
-            var categoryExists = await _context.Categories
-                .AnyAsync(c => c.Id == categoryId && c.CompanyId == companyId);
-
-            if (!categoryExists)
-                return OperationResult<TranslationReadDto>.NotFound(
-                    "Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
-
-            var translation = await _context.CategoryTranslations
-                .FirstOrDefaultAsync(t => t.CategoryId == categoryId && t.LanguageCode == code);
-
-            if (translation is null)
+            var list = translations.ToList();
+            if (!string.IsNullOrWhiteSpace(lang))
             {
-                translation = new CategoryTranslation
-                {
-                    CategoryId   = categoryId,
-                    LanguageCode = code,
-                    Name         = dto.Name.Trim(),
-                };
-                _context.CategoryTranslations.Add(translation);
+                var match = list.FirstOrDefault(t => t.LanguageCode == lang);
+                if (match is not null) return match.Name;
             }
-            else
-            {
-                translation.Name = dto.Name.Trim();
-            }
-
-            await _context.SaveChangesAsync();
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
-
-            return OperationResult<TranslationReadDto>.Ok(
-                _mapper.Map<TranslationReadDto>(translation));
+            return list.FirstOrDefault()?.Name ?? string.Empty;
         }
-
-        public async Task<OperationResult<bool>> DeleteTranslation(int categoryId, string code)
-        {
-            var companyId = _tenantService.GetCompanyId();
-            code = code.Trim().ToLowerInvariant();
-
-            var categoryExists = await _context.Categories
-                .AnyAsync(c => c.Id == categoryId && c.CompanyId == companyId);
-
-            if (!categoryExists)
-                return OperationResult<bool>.NotFound(
-                    "Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
-
-            var translation = await _context.CategoryTranslations
-                .FirstOrDefaultAsync(t => t.CategoryId == categoryId && t.LanguageCode == code);
-
-            if (translation is not null)
-            {
-                _context.CategoryTranslations.Remove(translation);
-                await _context.SaveChangesAsync();
-                await _cacheStore.EvictByTagAsync(CacheTag, default);
-            }
-
-            return OperationResult<bool>.Ok(true);
-        }
-
     }
 }

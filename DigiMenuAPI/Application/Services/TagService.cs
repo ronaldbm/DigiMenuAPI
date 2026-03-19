@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Create;
@@ -33,18 +33,25 @@ namespace DigiMenuAPI.Application.Services
             _cacheStore = cacheStore;
         }
 
-        public async Task<OperationResult<List<TagReadDto>>> GetAll()
+        public async Task<OperationResult<List<TagListItemDto>>> GetAll(string? lang = null)
         {
             var companyId = _tenantService.GetCompanyId();
 
-            // QueryFilter global ya aplica !IsDeleted — solo falta filtrar por tenant
             var tags = await _context.Tags
                 .AsNoTracking()
+                .Include(t => t.Translations)
                 .Where(t => t.CompanyId == companyId)
-                .ProjectTo<TagReadDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return OperationResult<List<TagReadDto>>.Ok(tags);
+            var result = tags.Select(t => new TagListItemDto
+            {
+                Id        = t.Id,
+                CompanyId = t.CompanyId,
+                Color     = t.Color,
+                Name      = ResolveName(t.Translations, lang),
+            }).ToList();
+
+            return OperationResult<List<TagListItemDto>>.Ok(result);
         }
 
         public async Task<OperationResult<TagReadDto>> GetById(int id)
@@ -53,12 +60,13 @@ namespace DigiMenuAPI.Application.Services
 
             var tag = await _context.Tags
                 .AsNoTracking()
+                .Include(t => t.Translations)
                 .Where(t => t.Id == id && t.CompanyId == companyId)
                 .ProjectTo<TagReadDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
 
             if (tag is null)
-                return OperationResult<TagReadDto>.Fail("Etiqueta no encontrada.");
+                return OperationResult<TagReadDto>.NotFound("Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
 
             return OperationResult<TagReadDto>.Ok(tag);
         }
@@ -67,21 +75,30 @@ namespace DigiMenuAPI.Application.Services
         {
             var companyId = _tenantService.GetCompanyId();
 
-            var exists = await _context.Tags
-                .AnyAsync(t => t.CompanyId == companyId && t.Name == dto.Name.Trim());
-            if (exists)
-                return OperationResult<TagReadDto>.Conflict(
-                    "Ya existe un tag con ese nombre en tu empresa.",
-                    ErrorKeys.TagNotOwned);
+            await using var tx = await _context.Database.BeginTransactionAsync();
 
             var tag = _mapper.Map<Tag>(dto);
-            tag.CompanyId = companyId; // ← siempre desde JWT, nunca del cliente
+            tag.CompanyId = companyId;
 
             _context.Tags.Add(tag);
             await _context.SaveChangesAsync();
 
+            foreach (var t in dto.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Name)))
+            {
+                _context.TagTranslations.Add(new TagTranslation
+                {
+                    TagId        = tag.Id,
+                    LanguageCode = t.LanguageCode.Trim().ToLowerInvariant(),
+                    Name         = t.Name.Trim(),
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
+
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 
+            await _context.Entry(tag).Collection(t => t.Translations).LoadAsync();
             return OperationResult<TagReadDto>.Ok(_mapper.Map<TagReadDto>(tag));
         }
 
@@ -90,13 +107,45 @@ namespace DigiMenuAPI.Application.Services
             var companyId = _tenantService.GetCompanyId();
 
             var tag = await _context.Tags
+                .Include(t => t.Translations)
                 .FirstOrDefaultAsync(t => t.Id == dto.Id && t.CompanyId == companyId);
 
             if (tag is null)
                 return OperationResult<bool>.NotFound("Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
 
-            _mapper.Map(dto, tag);
+            await using var tx = await _context.Database.BeginTransactionAsync();
+
+            tag.Color = dto.Color ?? "#ffffff";
+
+            var incoming = dto.Translations
+                .Where(t => !string.IsNullOrWhiteSpace(t.Name))
+                .ToDictionary(t => t.LanguageCode.Trim().ToLowerInvariant());
+
+            var toDelete = tag.Translations
+                .Where(t => !incoming.ContainsKey(t.LanguageCode))
+                .ToList();
+            _context.TagTranslations.RemoveRange(toDelete);
+
+            foreach (var (code, input) in incoming)
+            {
+                var existing = tag.Translations.FirstOrDefault(t => t.LanguageCode == code);
+                if (existing is null)
+                {
+                    _context.TagTranslations.Add(new TagTranslation
+                    {
+                        TagId        = tag.Id,
+                        LanguageCode = code,
+                        Name         = input.Name.Trim(),
+                    });
+                }
+                else
+                {
+                    existing.Name = input.Name.Trim();
+                }
+            }
+
             await _context.SaveChangesAsync();
+            await tx.CommitAsync();
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 
@@ -121,70 +170,17 @@ namespace DigiMenuAPI.Application.Services
             return OperationResult<bool>.Ok(true);
         }
 
-        // ── Traducciones ──────────────────────────────────────────────
+        // ── Helpers ───────────────────────────────────────────────────
 
-        public async Task<OperationResult<TranslationReadDto>> UpsertTranslation(
-            int tagId, string code, NameTranslationUpsertDto dto)
+        private static string ResolveName(IEnumerable<TagTranslation> translations, string? lang)
         {
-            var companyId = _tenantService.GetCompanyId();
-            code = code.Trim().ToLowerInvariant();
-
-            var tagExists = await _context.Tags
-                .AnyAsync(t => t.Id == tagId && t.CompanyId == companyId);
-
-            if (!tagExists)
-                return OperationResult<TranslationReadDto>.NotFound(
-                    "Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
-
-            var translation = await _context.TagTranslations
-                .FirstOrDefaultAsync(t => t.TagId == tagId && t.LanguageCode == code);
-
-            if (translation is null)
+            var list = translations.ToList();
+            if (!string.IsNullOrWhiteSpace(lang))
             {
-                translation = new TagTranslation
-                {
-                    TagId        = tagId,
-                    LanguageCode = code,
-                    Name         = dto.Name.Trim(),
-                };
-                _context.TagTranslations.Add(translation);
+                var match = list.FirstOrDefault(t => t.LanguageCode == lang);
+                if (match is not null) return match.Name;
             }
-            else
-            {
-                translation.Name = dto.Name.Trim();
-            }
-
-            await _context.SaveChangesAsync();
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
-
-            return OperationResult<TranslationReadDto>.Ok(
-                _mapper.Map<TranslationReadDto>(translation));
+            return list.FirstOrDefault()?.Name ?? string.Empty;
         }
-
-        public async Task<OperationResult<bool>> DeleteTranslation(int tagId, string code)
-        {
-            var companyId = _tenantService.GetCompanyId();
-            code = code.Trim().ToLowerInvariant();
-
-            var tagExists = await _context.Tags
-                .AnyAsync(t => t.Id == tagId && t.CompanyId == companyId);
-
-            if (!tagExists)
-                return OperationResult<bool>.NotFound(
-                    "Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
-
-            var translation = await _context.TagTranslations
-                .FirstOrDefaultAsync(t => t.TagId == tagId && t.LanguageCode == code);
-
-            if (translation is not null)
-            {
-                _context.TagTranslations.Remove(translation);
-                await _context.SaveChangesAsync();
-                await _cacheStore.EvictByTagAsync(CacheTag, default);
-            }
-
-            return OperationResult<bool>.Ok(true);
-        }
-
     }
 }

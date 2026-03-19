@@ -79,16 +79,21 @@ namespace DigiMenuAPI.Application.Services
             var categories = await _context.Categories
                 .AsNoTracking()
                 .Where(c => categoryIds.Contains(c.Id) && c.CompanyId == companyId)
+                .Include(c => c.Translations)
                 .OrderBy(c => c.DisplayOrder)
-                .Select(c => new { c.Id, c.Name, c.DisplayOrder })
+                .Select(c => new { c.Id, c.DisplayOrder, c.Translations })
                 .ToListAsync();
 
             var result = categories.Select(c =>
             {
                 var s = stats.First(x => x.CategoryId == c.Id);
+                // Name ya no existe en la entidad — se resuelve desde Translations
+                var catName = c.Translations.FirstOrDefault(t => t.LanguageCode == "es")?.Name
+                    ?? c.Translations.FirstOrDefault()?.Name
+                    ?? string.Empty;
                 return new BranchCategoryVisibilityDto(
                     c.Id,
-                    c.Name,
+                    catName,
                     c.DisplayOrder,
                     s.VisibleProducts > 0,
                     s.TotalProducts,
@@ -167,6 +172,12 @@ namespace DigiMenuAPI.Application.Services
             if (!categoryExists)
                 return OperationResult<bool>.NotFound(
                     "Categoría no encontrada.", errorKey: ErrorKeys.CategoryNotFound);
+
+            // Validar que el precio de oferta sea menor al precio base
+            if (dto.OfferPrice is not null && dto.OfferPrice >= dto.Price)
+                return OperationResult<bool>.ValidationError(
+                    "El precio de oferta debe ser menor al precio base.",
+                    ErrorKeys.ValidationFailed);
 
             _mapper.Map(dto, branchProduct);
 

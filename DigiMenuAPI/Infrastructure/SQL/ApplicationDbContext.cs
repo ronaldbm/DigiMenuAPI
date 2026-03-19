@@ -56,10 +56,8 @@ namespace DigiMenuAPI.Infrastructure.SQL
             b.Entity<Category>(e =>
             {
                 e.HasKey(c => c.Id);
-                e.Property(c => c.Name).IsRequired().HasMaxLength(100);
 
                 e.HasIndex(c => new { c.CompanyId, c.IsDeleted, c.DisplayOrder });
-                e.HasIndex(c => new { c.CompanyId, c.Name }).IsUnique();
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(c => c.Company)
@@ -77,11 +75,9 @@ namespace DigiMenuAPI.Infrastructure.SQL
             b.Entity<Product>(e =>
             {
                 e.HasKey(p => p.Id);
-                e.Property(p => p.Name).IsRequired().HasMaxLength(150);
 
                 e.HasIndex(p => new { p.CompanyId, p.IsDeleted });
                 e.HasIndex(p => p.CategoryId);
-                e.HasIndex(p => new { p.CompanyId, p.Name }).IsUnique();
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(p => p.Company)
@@ -109,11 +105,9 @@ namespace DigiMenuAPI.Infrastructure.SQL
             b.Entity<Tag>(e =>
             {
                 e.HasKey(t => t.Id);
-                e.Property(t => t.Name).IsRequired().HasMaxLength(50);
                 e.Property(t => t.Color).HasMaxLength(7).HasDefaultValue("#ffffff").IsRequired();
 
                 e.HasIndex(t => new { t.CompanyId, t.IsDeleted });
-                e.HasIndex(t => new { t.CompanyId, t.Name }).IsUnique();
 
                 // RESTRICT: todos los borrados son lógicos (IsDeleted = true).
                 e.HasOne(t => t.Company)
@@ -326,12 +320,22 @@ namespace DigiMenuAPI.Infrastructure.SQL
         {
             var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             b.Entity<Tag>().HasData(
-                new Tag { Id = 1, CompanyId = 1, Name = "Vegano",     Color = "#4CAF50", IsDeleted = false, CreatedAt = seed },
-                new Tag { Id = 2, CompanyId = 1, Name = "Picante",    Color = "#F44336", IsDeleted = false, CreatedAt = seed },
-                new Tag { Id = 3, CompanyId = 1, Name = "Alcohólico", Color = "#9C27B0", IsDeleted = false, CreatedAt = seed },
-                new Tag { Id = 4, CompanyId = 1, Name = "Sin Gluten", Color = "#FF9800", IsDeleted = false, CreatedAt = seed },
-                new Tag { Id = 5, CompanyId = 1, Name = "Popular",    Color = "#F50057", IsDeleted = false, CreatedAt = seed },
-                new Tag { Id = 6, CompanyId = 1, Name = "Nuevo",      Color = "#2196F3", IsDeleted = false, CreatedAt = seed }
+                new Tag { Id = 1, CompanyId = 1, Color = "#4CAF50", IsDeleted = false, CreatedAt = seed },
+                new Tag { Id = 2, CompanyId = 1, Color = "#F44336", IsDeleted = false, CreatedAt = seed },
+                new Tag { Id = 3, CompanyId = 1, Color = "#9C27B0", IsDeleted = false, CreatedAt = seed },
+                new Tag { Id = 4, CompanyId = 1, Color = "#FF9800", IsDeleted = false, CreatedAt = seed },
+                new Tag { Id = 5, CompanyId = 1, Color = "#F50057", IsDeleted = false, CreatedAt = seed },
+                new Tag { Id = 6, CompanyId = 1, Color = "#2196F3", IsDeleted = false, CreatedAt = seed }
+            );
+
+            // Traducciones en español para los tags del seed
+            b.Entity<TagTranslation>().HasData(
+                new TagTranslation { Id = 1001, TagId = 1, LanguageCode = "es", Name = "Vegano"     },
+                new TagTranslation { Id = 1002, TagId = 2, LanguageCode = "es", Name = "Picante"    },
+                new TagTranslation { Id = 1003, TagId = 3, LanguageCode = "es", Name = "Alcohólico" },
+                new TagTranslation { Id = 1004, TagId = 4, LanguageCode = "es", Name = "Sin Gluten" },
+                new TagTranslation { Id = 1005, TagId = 5, LanguageCode = "es", Name = "Popular"    },
+                new TagTranslation { Id = 1006, TagId = 6, LanguageCode = "es", Name = "Nuevo"      }
             );
         }
 
@@ -339,11 +343,20 @@ namespace DigiMenuAPI.Infrastructure.SQL
         {
             var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             b.Entity<Category>().HasData(
-                new Category { Id = 1, CompanyId = 1, Name = "Entradas",            DisplayOrder = 1, IsVisible = true, IsDeleted = false, CreatedAt = seed },
-                new Category { Id = 2, CompanyId = 1, Name = "Platos Fuertes",      DisplayOrder = 2, IsVisible = true, IsDeleted = false, CreatedAt = seed },
-                new Category { Id = 3, CompanyId = 1, Name = "Postres",             DisplayOrder = 3, IsVisible = true, IsDeleted = false, CreatedAt = seed },
-                new Category { Id = 4, CompanyId = 1, Name = "Bebidas",             DisplayOrder = 4, IsVisible = true, IsDeleted = false, CreatedAt = seed },
-                new Category { Id = 5, CompanyId = 1, Name = "Bebidas Alcohólicas", DisplayOrder = 5, IsVisible = true, IsDeleted = false, CreatedAt = seed }
+                new Category { Id = 1, CompanyId = 1, DisplayOrder = 1, IsVisible = true, IsDeleted = false, CreatedAt = seed },
+                new Category { Id = 2, CompanyId = 1, DisplayOrder = 2, IsVisible = true, IsDeleted = false, CreatedAt = seed },
+                new Category { Id = 3, CompanyId = 1, DisplayOrder = 3, IsVisible = true, IsDeleted = false, CreatedAt = seed },
+                new Category { Id = 4, CompanyId = 1, DisplayOrder = 4, IsVisible = true, IsDeleted = false, CreatedAt = seed },
+                new Category { Id = 5, CompanyId = 1, DisplayOrder = 5, IsVisible = true, IsDeleted = false, CreatedAt = seed }
+            );
+
+            // Traducciones en español para las categorías del seed
+            b.Entity<CategoryTranslation>().HasData(
+                new CategoryTranslation { Id = 1001, CategoryId = 1, LanguageCode = "es", Name = "Entradas"            },
+                new CategoryTranslation { Id = 1002, CategoryId = 2, LanguageCode = "es", Name = "Platos Fuertes"      },
+                new CategoryTranslation { Id = 1003, CategoryId = 3, LanguageCode = "es", Name = "Postres"             },
+                new CategoryTranslation { Id = 1004, CategoryId = 4, LanguageCode = "es", Name = "Bebidas"             },
+                new CategoryTranslation { Id = 1005, CategoryId = 5, LanguageCode = "es", Name = "Bebidas Alcohólicas" }
             );
         }
 
@@ -351,19 +364,34 @@ namespace DigiMenuAPI.Infrastructure.SQL
         {
             var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            // Productos del catálogo global (sin precio, el precio va en BranchProduct)
+            // Productos del catálogo global (sin precio, sin nombre — el texto vive en ProductTranslation)
             b.Entity<Product>().HasData(
-                new Product { Id = 1,  CompanyId = 1, CategoryId = 1, Name = "Ceviche Clásico",         ShortDescription = "Fresco ceviche de corvina con limón y culantro.",      IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 2,  CompanyId = 1, CategoryId = 1, Name = "Patacones con Guacamole", ShortDescription = "Patacones crocantes con guacamole casero.",             IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 3,  CompanyId = 1, CategoryId = 2, Name = "Casado Tradicional",      ShortDescription = "Arroz, frijoles, ensalada, maduro y carne a elegir.",   IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 4,  CompanyId = 1, CategoryId = 2, Name = "Lomo al Chimichurri",     ShortDescription = "Lomo de res al punto con salsa chimichurri.",           IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 5,  CompanyId = 1, CategoryId = 2, Name = "Bowl Vegano",             ShortDescription = "Quinoa, vegetales asados, hummus y tahini.",            IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 6,  CompanyId = 1, CategoryId = 3, Name = "Tres Leches",             ShortDescription = "Bizcocho esponjoso bañado en tres tipos de leche.",     IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 7,  CompanyId = 1, CategoryId = 3, Name = "Brownies con Helado",     ShortDescription = "Brownie de chocolate caliente con helado de vainilla.", IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 8,  CompanyId = 1, CategoryId = 4, Name = "Café Americano",          ShortDescription = "Café negro de tueste medio.",                           IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 9,  CompanyId = 1, CategoryId = 4, Name = "Refresco Natural",        ShortDescription = "Cas, tamarindo o guanábana. A elegir.",                 IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 10, CompanyId = 1, CategoryId = 5, Name = "Imperial",                ShortDescription = "Cerveza nacional 355ml bien fría.",                     IsDeleted = false, CreatedAt = seed },
-                new Product { Id = 11, CompanyId = 1, CategoryId = 5, Name = "Guaro Sour",              ShortDescription = "Guaro Cacique, limón, azúcar y hielo.",                 IsDeleted = false, CreatedAt = seed }
+                new Product { Id = 1,  CompanyId = 1, CategoryId = 1, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 2,  CompanyId = 1, CategoryId = 1, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 3,  CompanyId = 1, CategoryId = 2, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 4,  CompanyId = 1, CategoryId = 2, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 5,  CompanyId = 1, CategoryId = 2, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 6,  CompanyId = 1, CategoryId = 3, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 7,  CompanyId = 1, CategoryId = 3, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 8,  CompanyId = 1, CategoryId = 4, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 9,  CompanyId = 1, CategoryId = 4, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 10, CompanyId = 1, CategoryId = 5, IsDeleted = false, CreatedAt = seed },
+                new Product { Id = 11, CompanyId = 1, CategoryId = 5, IsDeleted = false, CreatedAt = seed }
+            );
+
+            // Traducciones en español para los productos del seed
+            b.Entity<ProductTranslation>().HasData(
+                new ProductTranslation { Id = 1001, ProductId = 1,  LanguageCode = "es", Name = "Ceviche Clásico",         ShortDescription = "Fresco ceviche de corvina con limón y culantro."      },
+                new ProductTranslation { Id = 1002, ProductId = 2,  LanguageCode = "es", Name = "Patacones con Guacamole", ShortDescription = "Patacones crocantes con guacamole casero."             },
+                new ProductTranslation { Id = 1003, ProductId = 3,  LanguageCode = "es", Name = "Casado Tradicional",      ShortDescription = "Arroz, frijoles, ensalada, maduro y carne a elegir."   },
+                new ProductTranslation { Id = 1004, ProductId = 4,  LanguageCode = "es", Name = "Lomo al Chimichurri",     ShortDescription = "Lomo de res al punto con salsa chimichurri."           },
+                new ProductTranslation { Id = 1005, ProductId = 5,  LanguageCode = "es", Name = "Bowl Vegano",             ShortDescription = "Quinoa, vegetales asados, hummus y tahini."            },
+                new ProductTranslation { Id = 1006, ProductId = 6,  LanguageCode = "es", Name = "Tres Leches",             ShortDescription = "Bizcocho esponjoso bañado en tres tipos de leche."     },
+                new ProductTranslation { Id = 1007, ProductId = 7,  LanguageCode = "es", Name = "Brownies con Helado",     ShortDescription = "Brownie de chocolate caliente con helado de vainilla." },
+                new ProductTranslation { Id = 1008, ProductId = 8,  LanguageCode = "es", Name = "Café Americano",          ShortDescription = "Café negro de tueste medio."                           },
+                new ProductTranslation { Id = 1009, ProductId = 9,  LanguageCode = "es", Name = "Refresco Natural",        ShortDescription = "Cas, tamarindo o guanábana. A elegir."                 },
+                new ProductTranslation { Id = 1010, ProductId = 10, LanguageCode = "es", Name = "Imperial",                ShortDescription = "Cerveza nacional 355ml bien fría."                     },
+                new ProductTranslation { Id = 1011, ProductId = 11, LanguageCode = "es", Name = "Guaro Sour",              ShortDescription = "Guaro Cacique, limón, azúcar y hielo."                 }
             );
 
             // Activación de productos en la Branch demo con precios

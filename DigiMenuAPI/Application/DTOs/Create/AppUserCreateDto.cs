@@ -1,4 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Create
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DigiMenuAPI.Application.DTOs.Create
 {
     /// <summary>
     /// DTO para crear un usuario dentro de la empresa autenticada.
@@ -10,9 +12,10 @@
     ///   Staff         → sin permiso de crear usuarios
     /// </summary>
     public record AppUserCreateDto(
-        string FullName,
-        string Email,
-        byte Role,
-        int? BranchId   // requerido para BranchAdmin y Staff, null para CompanyAdmin
+        [Required, MaxLength(100)] string FullName,
+        [Required, MaxLength(150), EmailAddress] string Email,
+        [Range(1, 3)] byte Role,
+        int? BranchId,      // requerido para BranchAdmin y Staff, null para CompanyAdmin
+        [MaxLength(10)] string? AdminLang   // null = usar idioma por defecto de la empresa
     );
 }

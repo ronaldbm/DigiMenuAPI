@@ -14,7 +14,8 @@
         byte Role,
         bool IsActive,
         DateTime? LastLoginAt,
-        DateTime CreatedAt
+        DateTime CreatedAt,
+        string? AdminLang
     );
 
     /// <summary>Vista reducida para listas.</summary>

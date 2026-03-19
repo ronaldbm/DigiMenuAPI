@@ -5,6 +5,7 @@ using DigiMenuAPI.Application.Interfaces;
 using AppCore.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DigiMenuAPI.Controllers
 {
@@ -38,6 +39,7 @@ namespace DigiMenuAPI.Controllers
         /// </summary>
         [HttpPost("{companySlug}/{branchSlug}")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> Create(
             string companySlug,
             string branchSlug,

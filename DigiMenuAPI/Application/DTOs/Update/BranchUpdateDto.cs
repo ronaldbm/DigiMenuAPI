@@ -1,4 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Update
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DigiMenuAPI.Application.DTOs.Update
 {
     /// <summary>
     /// Edición de datos básicos de una Branch.
@@ -7,10 +9,10 @@
     /// </summary>
     public record BranchUpdateDto(
         int Id,
-        string Name,
-        string Slug,
-        string? Address,
-        string? Phone,
-        string? Email
+        [Required, MaxLength(100)] string Name,
+        [Required, MaxLength(60)] string Slug,
+        [MaxLength(200)] string? Address,
+        [MaxLength(20)] string? Phone,
+        [MaxLength(150), EmailAddress] string? Email
     );
 }

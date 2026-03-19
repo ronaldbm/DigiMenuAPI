@@ -1,8 +1,10 @@
 ﻿using DigiMenuAPI.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DigiMenuAPI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class StandardIconsController : BaseController
     {

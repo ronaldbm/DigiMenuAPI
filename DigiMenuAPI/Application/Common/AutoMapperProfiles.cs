@@ -85,53 +85,74 @@ namespace DigiMenuAPI.Application.Common
         // ── Category ──────────────────────────────────────────────────
         private void CategoryMappings()
         {
+            // Name ya no existe en la entidad — vive en CategoryTranslation
             CreateMap<Category, CategoryReadDto>()
                 .ForMember(d => d.Translations, o => o.MapFrom(s => s.Translations));
 
             // CategoryMenuDto: nombre resuelto al idioma en el servicio (fallback al base)
             CreateMap<Category, CategoryMenuDto>()
+                .ForMember(d => d.Name, o => o.Ignore())      // servicio resuelve traducción
                 .ForMember(d => d.Products, o => o.Ignore()); // servicio inyecta BranchProducts
 
             // CompanyId NO viene del DTO — servicio lo inyecta desde JWT
+            // Translations se manejan manualmente en el servicio (transacción + replace-all)
             CreateMap<CategoryCreateDto, Category>()
-                .ForMember(d => d.CompanyId, o => o.Ignore());
+                .ForMember(d => d.CompanyId,    o => o.Ignore())
+                .ForMember(d => d.DisplayOrder, o => o.Ignore()) // servicio asigna max+1
+                .ForMember(d => d.Translations, o => o.Ignore());
 
-            CreateMap<CategoryUpdateDto, Category>().ReverseMap();
+            CreateMap<CategoryUpdateDto, Category>()
+                .ForMember(d => d.CompanyId,    o => o.Ignore())
+                .ForMember(d => d.DisplayOrder, o => o.Ignore()) // endpoint /reorder lo gestiona
+                .ForMember(d => d.Translations, o => o.Ignore())
+                .ReverseMap();
         }
 
         // ── Product ───────────────────────────────────────────────────
         private void ProductMappings()
         {
+            // Name/ShortDescription/LongDescription ya no existen en la entidad —
+            // viven en ProductTranslation. CategoryName se resuelve desde la primera
+            // traducción disponible de la Category relacionada.
             CreateMap<Product, ProductSummaryDto>()
-                .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name));
+                .ForMember(d => d.CategoryName, o => o.MapFrom(s =>
+                    s.Category.Translations.Select(t => t.Name).FirstOrDefault() ?? string.Empty));
 
             CreateMap<Product, ProductReadDto>()
-                .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name))
+                .ForMember(d => d.CategoryName, o => o.MapFrom(s =>
+                    s.Category.Translations.Select(t => t.Name).FirstOrDefault() ?? string.Empty))
                 .ForMember(d => d.Tags, o => o.MapFrom(s => s.Tags))
                 .ForMember(d => d.Translations, o => o.MapFrom(s => s.Translations));
 
             // ProductAdminReadDto: igual pero incluye ModifiedAt desde BaseEntity
             CreateMap<Product, ProductAdminReadDto>()
-                .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name))
+                .ForMember(d => d.CategoryName, o => o.MapFrom(s =>
+                    s.Category.Translations.Select(t => t.Name).FirstOrDefault() ?? string.Empty))
                 .ForMember(d => d.Tags, o => o.MapFrom(s => s.Tags))
                 .ForMember(d => d.Translations, o => o.MapFrom(s => s.Translations));
 
             // CompanyId NO viene del DTO — servicio lo inyecta desde JWT
+            // Translations se manejan manualmente en el servicio (transacción + replace-all)
             CreateMap<ProductCreateDto, Product>()
                 .ForMember(d => d.CompanyId, o => o.Ignore())
-                .ForMember(d => d.MainImageUrl, o => o.Ignore()); // servicio sube imagen
+                .ForMember(d => d.MainImageUrl, o => o.Ignore())
+                .ForMember(d => d.Translations, o => o.Ignore());
 
             CreateMap<ProductUpdateDto, Product>()
-                .ForMember(d => d.MainImageUrl, o => o.Ignore()) // servicio sube imagen
+                .ForMember(d => d.MainImageUrl, o => o.Ignore())
+                .ForMember(d => d.Translations, o => o.Ignore())
                 .ReverseMap();
         }
 
         // ── BranchProduct ─────────────────────────────────────────────
         private void BranchProductMappings()
         {
+            // ProductName y CategoryName se resuelven desde la primera traducción disponible.
             CreateMap<BranchProduct, BranchProductReadDto>()
-                .ForMember(d => d.ProductName, o => o.MapFrom(s => s.Product.Name))
-                .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category.Name))
+                .ForMember(d => d.ProductName, o => o.MapFrom(s =>
+                    s.Product.Translations.Select(t => t.Name).FirstOrDefault() ?? string.Empty))
+                .ForMember(d => d.CategoryName, o => o.MapFrom(s =>
+                    s.Product.Category.Translations.Select(t => t.Name).FirstOrDefault() ?? string.Empty))
                 .ForMember(d => d.BaseImageUrl, o => o.MapFrom(s => s.Product.MainImageUrl));
 
             // BranchProductMenuDto: nombre e imagen resueltos en el servicio
@@ -162,10 +183,15 @@ namespace DigiMenuAPI.Application.Common
                 .ForMember(d => d.Name, o => o.Ignore()); // servicio aplica traducción
 
             // CompanyId NO viene del DTO — servicio lo inyecta desde JWT
+            // Translations se manejan manualmente en el servicio (transacción + replace-all)
             CreateMap<TagCreateDto, Tag>()
-                .ForMember(d => d.CompanyId, o => o.Ignore());
+                .ForMember(d => d.CompanyId, o => o.Ignore())
+                .ForMember(d => d.Translations, o => o.Ignore());
 
-            CreateMap<TagUpdateDto, Tag>().ReverseMap();
+            CreateMap<TagUpdateDto, Tag>()
+                .ForMember(d => d.CompanyId, o => o.Ignore())
+                .ForMember(d => d.Translations, o => o.Ignore())
+                .ReverseMap();
         }
 
         // ── Settings ──────────────────────────────────────────────────

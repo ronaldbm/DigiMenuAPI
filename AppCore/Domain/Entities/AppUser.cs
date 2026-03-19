@@ -67,5 +67,12 @@ namespace AppCore.Domain.Entities
         /// </summary>
         public int? BranchId { get; set; }
         public Branch? Branch { get; set; }
+
+        /// <summary>
+        /// Código del idioma de la interfaz de administración para este usuario.
+        /// Ejemplo: "es", "en". Null = usa el idioma por defecto de la empresa.
+        /// </summary>
+        [MaxLength(10)]
+        public string? AdminLang { get; set; }
     }
 }

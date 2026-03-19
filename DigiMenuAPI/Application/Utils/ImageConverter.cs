@@ -58,7 +58,14 @@ namespace DigiMenuAPI.Application.Services
                 return;
 
             var fileName = Path.GetFileName(route);
-            string fullPath = Path.Combine(_rootPath, container, fileName);
+            if (string.IsNullOrEmpty(fileName))
+                return;
+
+            string allowedFolder = Path.GetFullPath(Path.Combine(_rootPath, container));
+            string fullPath      = Path.GetFullPath(Path.Combine(allowedFolder, fileName));
+
+            if (!fullPath.StartsWith(allowedFolder + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                return;
 
             if (File.Exists(fullPath))
                 File.Delete(fullPath);

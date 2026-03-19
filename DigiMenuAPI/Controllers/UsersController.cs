@@ -3,6 +3,7 @@ using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json.Serialization;
 
 namespace DigiMenuAPI.Controllers
 {
@@ -79,5 +80,17 @@ namespace DigiMenuAPI.Controllers
         [HttpPost("{id:int}/reset-password")]
         public async Task<ActionResult> ResetPassword(int id)
             => HandleResult(await _service.ResetPassword(id));
+
+        /// <summary>
+        /// Actualiza el idioma de la interfaz de un usuario.
+        /// Cualquier usuario puede actualizar el suyo propio.
+        /// BranchAdmin+ puede actualizar el idioma de usuarios que gestione.
+        /// lang = null → resetear al idioma por defecto de la empresa.
+        /// </summary>
+        [HttpPatch("{id:int}/language")]
+        public async Task<ActionResult> UpdateLanguage(int id, [FromBody] UpdateLangBody body)
+            => HandleResult(await _service.UpdateLanguage(id, body.Lang));
     }
+
+    public record UpdateLangBody([property: JsonPropertyName("lang")] string? Lang);
 }

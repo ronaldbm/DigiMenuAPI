@@ -1,4 +1,4 @@
-﻿using AppCore.Application.Common;
+using AppCore.Application.Common;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
@@ -7,8 +7,11 @@ namespace DigiMenuAPI.Application.Interfaces
 {
     public interface ICategoryService
     {
-        /// <summary>Catálogo global de la empresa autenticada. CompanyId desde JWT.</summary>
-        Task<OperationResult<List<CategoryReadDto>>> GetAll();
+        /// <summary>
+        /// Listado del catálogo de la empresa autenticada.
+        /// Si se pasa lang, resuelve el nombre en ese idioma (con fallback a la primera traducción disponible).
+        /// </summary>
+        Task<OperationResult<List<CategoryListItemDto>>> GetAll(string? lang = null);
         Task<OperationResult<CategoryReadDto>> GetById(int id);
 
         /// <summary>CompanyId se inyecta desde el JWT — no viene en el DTO.</summary>
@@ -18,10 +21,5 @@ namespace DigiMenuAPI.Application.Interfaces
 
         /// <summary>Reordena varias categorías en una sola operación.</summary>
         Task<OperationResult<bool>> Reorder(List<ReorderItemDto> items);
-
-        // ── Traducciones ──────────────────────────────────────────────
-        Task<OperationResult<TranslationReadDto>> UpsertTranslation(
-            int categoryId, string code, NameTranslationUpsertDto dto);
-        Task<OperationResult<bool>> DeleteTranslation(int categoryId, string code);
     }
 }

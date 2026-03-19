@@ -111,12 +111,31 @@ namespace DigiMenuAPI.Application.Services
                     .OrderBy(bp => bp.DisplayOrder)
                     .ToListAsync();
 
-                // 6. Construir CategoryMenuDto con traducción aplicada y fallback al base
+                // 6a. Idiomas habilitados para la Company (movido antes de la construcción del menú
+                //     para poder calcular el idioma por defecto y usarlo como fallback)
+                var availableLanguages = await _context.CompanyLanguages
+                    .AsNoTracking()
+                    .Where(cl => cl.CompanyId == companyId.Value)
+                    .Include(cl => cl.Language)
+                    .OrderBy(cl => cl.Language.DisplayOrder)
+                    .Select(cl => new CompanyLanguageReadDto(
+                        cl.LanguageCode,
+                        cl.Language.Name,
+                        cl.Language.Flag,
+                        cl.IsDefault))
+                    .ToListAsync();
+
+                // 6. Construir CategoryMenuDto con traducción aplicada y fallback al idioma por defecto
+                //    (entity.Name ya no existe — el texto vive exclusivamente en las traducciones)
+                var defaultLang = availableLanguages.FirstOrDefault(l => l.IsDefault)?.Code ?? lang;
+
                 var categoryDtos = categories.Select(cat =>
                 {
                     var catName = cat.Translations
                         .FirstOrDefault(t => t.LanguageCode == lang)?.Name
-                        ?? cat.Name;
+                        ?? cat.Translations.FirstOrDefault(t => t.LanguageCode == defaultLang)?.Name
+                        ?? cat.Translations.FirstOrDefault()?.Name
+                        ?? string.Empty;
 
                     var products = branchProducts
                         .Where(bp => bp.CategoryId == cat.Id)
@@ -124,22 +143,28 @@ namespace DigiMenuAPI.Application.Services
                         {
                             var prodName = bp.Product.Translations
                                 .FirstOrDefault(t => t.LanguageCode == lang)?.Name
-                                ?? bp.Product.Name;
+                                ?? bp.Product.Translations.FirstOrDefault(t => t.LanguageCode == defaultLang)?.Name
+                                ?? bp.Product.Translations.FirstOrDefault()?.Name
+                                ?? string.Empty;
 
                             var prodShortDesc = bp.Product.Translations
                                 .FirstOrDefault(t => t.LanguageCode == lang)?.ShortDescription
-                                ?? bp.Product.ShortDescription;
+                                ?? bp.Product.Translations.FirstOrDefault(t => t.LanguageCode == defaultLang)?.ShortDescription
+                                ?? bp.Product.Translations.FirstOrDefault()?.ShortDescription;
 
                             var prodLongDesc = bp.Product.Translations
                                 .FirstOrDefault(t => t.LanguageCode == lang)?.LongDescription
-                                ?? bp.Product.LongDescription;
+                                ?? bp.Product.Translations.FirstOrDefault(t => t.LanguageCode == defaultLang)?.LongDescription
+                                ?? bp.Product.Translations.FirstOrDefault()?.LongDescription;
 
                             var tags = bp.Product.Tags
                                 .Select(t => new TagMenuDto(
                                     t.Id,
                                     t.Translations
                                         .FirstOrDefault(tr => tr.LanguageCode == lang)?.Name
-                                        ?? t.Name,
+                                        ?? t.Translations.FirstOrDefault(tr => tr.LanguageCode == defaultLang)?.Name
+                                        ?? t.Translations.FirstOrDefault()?.Name
+                                        ?? string.Empty,
                                     t.Color))
                                 .ToList();
 
@@ -188,19 +213,6 @@ namespace DigiMenuAPI.Application.Services
                         s.IsOpen,
                         s.OpenTime,
                         s.CloseTime))
-                    .ToListAsync();
-
-                // 9. Idiomas habilitados para la Company
-                var availableLanguages = await _context.CompanyLanguages
-                    .AsNoTracking()
-                    .Where(cl => cl.CompanyId == companyId.Value)
-                    .Include(cl => cl.Language)
-                    .OrderBy(cl => cl.Language.DisplayOrder)
-                    .Select(cl => new CompanyLanguageReadDto(
-                        cl.LanguageCode,
-                        cl.Language.Name,
-                        cl.Language.Flag,
-                        cl.IsDefault))
                     .ToListAsync();
 
                 // 11. Días especiales próximos — desde hoy, máximo 30 días

@@ -1,4 +1,6 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Create
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DigiMenuAPI.Application.DTOs.Create
 {
     /// <summary>
     /// DTO para crear una nueva sucursal.
@@ -6,10 +8,10 @@
     /// El Slug es opcional: si no se envía, se genera automáticamente desde el Name.
     /// </summary>
     public record BranchCreateDto(
-        string Name,
-        string? Slug,
-        string? Address,
-        string? Phone,
-        string? Email
+        [Required, MaxLength(100)] string Name,
+        [MaxLength(60)] string? Slug,
+        [MaxLength(200)] string? Address,
+        [MaxLength(20)] string? Phone,
+        [MaxLength(150), EmailAddress] string? Email
     );
 }

@@ -4,50 +4,64 @@
     /// Producto del catálogo global — versión compacta para modales de selección.
     /// Permite al admin elegir qué productos activar en una Branch (BranchProduct).
     /// </summary>
-    public record ProductSummaryDto(
-        int Id,
-        int CategoryId,
-        string CategoryName,
-        string Name,
-        string? MainImageUrl
-    );
+    public class ProductSummaryDto
+    {
+        public int Id { get; init; }
+        public int CategoryId { get; init; }
+        public string CategoryName { get; init; } = string.Empty;
+        public string? MainImageUrl { get; init; }
+    }
 
     /// <summary>
     /// Producto del catálogo global para listados del panel admin.
     /// Sin precio (el precio vive en BranchProduct por sucursal).
+    /// El texto (nombre, descripciones) vive en las Translations.
     /// </summary>
-    public record ProductReadDto(
-        int Id,
-        int CompanyId,
-        int CategoryId,
-        string CategoryName,
-        string Name,
-        string? ShortDescription,
-        string? LongDescription,
-        string? MainImageUrl,
-        List<TagReadDto> Tags,
-        List<ProductTranslationReadDto> Translations,
-        DateTime CreatedAt
-    );
+    public class ProductReadDto
+    {
+        public int Id { get; init; }
+        public int CompanyId { get; init; }
+        public int CategoryId { get; init; }
+        public string CategoryName { get; init; } = string.Empty;
+        public string? MainImageUrl { get; init; }
+        public List<TagReadDto> Tags { get; init; } = [];
+        public List<ProductTranslationReadDto> Translations { get; init; } = [];
+        public DateTime CreatedAt { get; init; }
+    }
+
+    /// <summary>
+    /// Producto para listados del panel admin.
+    /// El nombre ya viene resuelto al idioma solicitado (con fallback).
+    /// TagCount evita cargar las traducciones de cada tag en la lista.
+    /// </summary>
+    public class ProductListItemDto
+    {
+        public int Id { get; init; }
+        public int CategoryId { get; init; }
+        public string CategoryName { get; init; } = string.Empty;
+        public string? MainImageUrl { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public string? ShortDescription { get; init; }
+        public int TagCount { get; init; }
+    }
 
     /// <summary>
     /// Producto completo para el formulario de edición del panel admin.
     /// Incluye traducciones completas y tags con sus propias traducciones.
+    /// El texto (nombre, descripciones) vive en las Translations.
     /// </summary>
-    public record ProductAdminReadDto(
-        int Id,
-        int CompanyId,
-        int CategoryId,
-        string CategoryName,
-        string Name,
-        string? ShortDescription,
-        string? LongDescription,
-        string? MainImageUrl,
-        List<TagReadDto> Tags,           // tags con sus traducciones incluidas
-        List<ProductTranslationReadDto> Translations,
-        DateTime CreatedAt,
-        DateTime? ModifiedAt
-    );
+    public class ProductAdminReadDto
+    {
+        public int Id { get; init; }
+        public int CompanyId { get; init; }
+        public int CategoryId { get; init; }
+        public string CategoryName { get; init; } = string.Empty;
+        public string? MainImageUrl { get; init; }
+        public List<TagReadDto> Tags { get; init; } = [];          // tags con sus traducciones incluidas
+        public List<ProductTranslationReadDto> Translations { get; init; } = [];
+        public DateTime CreatedAt { get; init; }
+        public DateTime? ModifiedAt { get; init; }
+    }
 
     /// <summary>
     /// Producto activado en una Branch para el menú público.
