@@ -84,10 +84,15 @@ namespace DigiMenuAPI.Controllers
             [FromBody] BranchCategoryVisibilityUpdateDto dto)
             => HandleResult(await _service.SetCategoryVisibility(branchId, categoryId, dto));
 
-        /// <summary>Desactiva un BranchProduct (soft delete). No afecta el catálogo global.</summary>
+        /// <summary>
+        /// Desactiva un BranchProduct (soft delete).
+        /// Si el producto tiene promociones activas y forceDeletePromotions=false → 409 Conflict.
+        /// Con forceDeletePromotions=true → elimina las promos y luego desactiva el producto.
+        /// </summary>
         [HttpDelete("{id:int}")]
-        public async Task<ActionResult> Delete(int id)
-            => HandleResult(await _service.Delete(id));
+        public async Task<ActionResult> Delete(int id,
+            [FromQuery] bool forceDeletePromotions = false)
+            => HandleResult(await _service.Delete(id, forceDeletePromotions));
 
         /// <summary>Reordena varios BranchProducts de una sucursal en una sola llamada.</summary>
         [HttpPatch("{branchId:int}/reorder")]

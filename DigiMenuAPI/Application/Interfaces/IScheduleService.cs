@@ -38,6 +38,12 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<BranchScheduleReadDto>> UpdateScheduleDay(
             BranchScheduleUpdateDto dto);
 
+        /// <summary>
+        /// Actualiza los 7 días del horario semanal en una sola operación.
+        /// </summary>
+        Task<OperationResult<List<BranchScheduleReadDto>>> UpdateScheduleWeek(
+            int branchId, List<BranchScheduleUpdateDto> items);
+
         // ── Días especiales ───────────────────────────────────────────
 
         /// <summary>

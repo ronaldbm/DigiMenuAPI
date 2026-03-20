@@ -39,10 +39,12 @@ public partial class Program
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(
                 builder.Configuration.GetConnectionString("DefaultConnection"),
-                sqlOptions => sqlOptions.EnableRetryOnFailure(
-                    maxRetryCount:  3,
-                    maxRetryDelay:  TimeSpan.FromSeconds(6),
-                    errorNumbersToAdd: null)));
+                sqlOptions => sqlOptions
+                    .EnableRetryOnFailure(
+                        maxRetryCount:  3,
+                        maxRetryDelay:  TimeSpan.FromSeconds(6),
+                        errorNumbersToAdd: null)
+                    .UseNetTopologySuite()));
 
         // AppCore services depend on CoreDbContext — ApplicationDbContext extends it,
         // so we register a scoped factory so CoreDbContext resolves to the same instance.
@@ -124,6 +126,8 @@ public partial class Program
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IScheduleService, ScheduleService>();
         builder.Services.AddScoped<IBranchEventService, BranchEventService>();
+        builder.Services.AddScoped<IBranchPromotionService, BranchPromotionService>();
+        builder.Services.AddScoped<ICarouselService, CarouselService>();
         builder.Services.AddScoped<IDashboardService, DashboardService>();
         builder.Services.AddScoped<ICompanyLanguageService, CompanyLanguageService>();
         builder.Services.AddScoped(typeof(LogMessageDispatcher<>));

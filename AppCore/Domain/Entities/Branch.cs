@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using NetTopologySuite.Geometries;
 
 namespace AppCore.Domain.Entities
 {
@@ -41,6 +42,8 @@ namespace AppCore.Domain.Entities
 
         [MaxLength(150)]
         public string? Email { get; set; }
+
+        public Point? Location { get; set; }
 
         public bool IsActive { get; set; } = true;
         public bool IsDeleted { get; set; }

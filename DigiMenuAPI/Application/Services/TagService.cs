@@ -75,26 +75,32 @@ namespace DigiMenuAPI.Application.Services
         {
             var companyId = _tenantService.GetCompanyId();
 
-            await using var tx = await _context.Database.BeginTransactionAsync();
+            Tag tag = null!;
 
-            var tag = _mapper.Map<Tag>(dto);
-            tag.CompanyId = companyId;
-
-            _context.Tags.Add(tag);
-            await _context.SaveChangesAsync();
-
-            foreach (var t in dto.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Name)))
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                _context.TagTranslations.Add(new TagTranslation
-                {
-                    TagId        = tag.Id,
-                    LanguageCode = t.LanguageCode.Trim().ToLowerInvariant(),
-                    Name         = t.Name.Trim(),
-                });
-            }
+                await using var tx = await _context.Database.BeginTransactionAsync();
 
-            await _context.SaveChangesAsync();
-            await tx.CommitAsync();
+                tag = _mapper.Map<Tag>(dto);
+                tag.CompanyId = companyId;
+
+                _context.Tags.Add(tag);
+                await _context.SaveChangesAsync();
+
+                foreach (var t in dto.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Name)))
+                {
+                    _context.TagTranslations.Add(new TagTranslation
+                    {
+                        TagId        = tag.Id,
+                        LanguageCode = t.LanguageCode.Trim().ToLowerInvariant(),
+                        Name         = t.Name.Trim(),
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+            });
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 
@@ -113,39 +119,43 @@ namespace DigiMenuAPI.Application.Services
             if (tag is null)
                 return OperationResult<bool>.NotFound("Etiqueta no encontrada.", errorKey: ErrorKeys.TagNotFound);
 
-            await using var tx = await _context.Database.BeginTransactionAsync();
-
-            tag.Color = dto.Color ?? "#ffffff";
-
-            var incoming = dto.Translations
-                .Where(t => !string.IsNullOrWhiteSpace(t.Name))
-                .ToDictionary(t => t.LanguageCode.Trim().ToLowerInvariant());
-
-            var toDelete = tag.Translations
-                .Where(t => !incoming.ContainsKey(t.LanguageCode))
-                .ToList();
-            _context.TagTranslations.RemoveRange(toDelete);
-
-            foreach (var (code, input) in incoming)
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                var existing = tag.Translations.FirstOrDefault(t => t.LanguageCode == code);
-                if (existing is null)
-                {
-                    _context.TagTranslations.Add(new TagTranslation
-                    {
-                        TagId        = tag.Id,
-                        LanguageCode = code,
-                        Name         = input.Name.Trim(),
-                    });
-                }
-                else
-                {
-                    existing.Name = input.Name.Trim();
-                }
-            }
+                await using var tx = await _context.Database.BeginTransactionAsync();
 
-            await _context.SaveChangesAsync();
-            await tx.CommitAsync();
+                tag.Color = dto.Color ?? "#ffffff";
+
+                var incoming = dto.Translations
+                    .Where(t => !string.IsNullOrWhiteSpace(t.Name))
+                    .ToDictionary(t => t.LanguageCode.Trim().ToLowerInvariant());
+
+                var toDelete = tag.Translations
+                    .Where(t => !incoming.ContainsKey(t.LanguageCode))
+                    .ToList();
+                _context.TagTranslations.RemoveRange(toDelete);
+
+                foreach (var (code, input) in incoming)
+                {
+                    var existing = tag.Translations.FirstOrDefault(t => t.LanguageCode == code);
+                    if (existing is null)
+                    {
+                        _context.TagTranslations.Add(new TagTranslation
+                        {
+                            TagId        = tag.Id,
+                            LanguageCode = code,
+                            Name         = input.Name.Trim(),
+                        });
+                    }
+                    else
+                    {
+                        existing.Name = input.Name.Trim();
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+            });
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 

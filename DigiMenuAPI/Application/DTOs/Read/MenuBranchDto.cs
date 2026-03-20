@@ -70,6 +70,11 @@
         /// El primero con IsDefault=true es el idioma de fallback.
         /// El frontend lo usa para mostrar el selector de idioma en el menú público.
         /// </summary>
-        List<CompanyLanguageReadDto> AvailableLanguages
+        List<CompanyLanguageReadDto> AvailableLanguages,
+
+        // ── Geolocalización ───────────────────────────────────────────
+        decimal? BranchLatitude,
+        decimal? BranchLongitude,
+        bool ShowMapInMenu
     );
 }

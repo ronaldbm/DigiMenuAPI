@@ -48,7 +48,7 @@ namespace DigiMenuAPI.Application.Services
                 //    CompanySeo es opcional — el menú funciona sin SEO configurado.
                 var branch = await _context.Branches.AsNoTracking()
                     .IgnoreQueryFilters()
-                    .Select(br => new { br.Id, br.Phone, br.Email })
+                    .Select(br => new { br.Id, br.Phone, br.Email, br.Location })
                     .FirstOrDefaultAsync(br => br.Id == branchId.Value);
 
                 var info = await _context.CompanyInfos.AsNoTracking()
@@ -287,7 +287,10 @@ namespace DigiMenuAPI.Application.Services
                     //Horarios
                     WeeklySchedule: weeklySchedule.Any() ? weeklySchedule : null,
                     UpcomingSpecialDays: upcomingSpecialDays.Any() ? upcomingSpecialDays : null,
-                    AvailableLanguages: availableLanguages
+                    AvailableLanguages: availableLanguages,
+                    BranchLatitude:  branch?.Location != null ? (decimal?)branch.Location.Y : null,
+                    BranchLongitude: branch?.Location != null ? (decimal?)branch.Location.X : null,
+                    ShowMapInMenu:   theme.ShowMapInMenu
                 );
 
                 return OperationResult<MenuBranchDto>.Ok(menuDto);

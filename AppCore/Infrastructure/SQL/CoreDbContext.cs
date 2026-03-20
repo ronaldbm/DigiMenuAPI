@@ -127,6 +127,7 @@ namespace AppCore.Infrastructure.SQL
                 e.Property(br => br.Address).HasMaxLength(200);
                 e.Property(br => br.Phone).HasMaxLength(20);
                 e.Property(br => br.Email).HasMaxLength(150);
+                e.Property(br => br.Location).HasColumnType("geography");
 
                 // Slug único DENTRO de la Company — dos empresas distintas pueden
                 // tener branches con el mismo slug sin conflicto.
@@ -327,6 +328,7 @@ namespace AppCore.Infrastructure.SQL
                 e.Property(t => t.MenuLayout).HasColumnType("tinyint").HasDefaultValue((byte)1);
                 e.Property(t => t.ProductDisplay).HasColumnType("tinyint").HasDefaultValue((byte)1);
                 e.Property(t => t.FilterMode).HasColumnType("tinyint").HasDefaultValue((byte)0);
+                e.Property(t => t.ShowMapInMenu).HasDefaultValue(true);
 
                 // 1:1 con Company
                 e.HasIndex(t => t.CompanyId).IsUnique();
@@ -704,6 +706,7 @@ namespace AppCore.Infrastructure.SQL
                 FilterMode = 0,
                 ShowContactButton = true,
                 ShowModalProductInfo = false,
+                ShowMapInMenu = true,
                 CreatedAt = seed
             });
 

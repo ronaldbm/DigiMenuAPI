@@ -56,8 +56,12 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<bool>> SetCategoryVisibility(
             int branchId, int categoryId, BranchCategoryVisibilityUpdateDto dto);
 
-        /// <summary>Desactiva un BranchProduct (soft delete). No afecta el catálogo global.</summary>
-        Task<OperationResult<bool>> Delete(int id);
+        /// <summary>
+        /// Desactiva un BranchProduct (soft delete).
+        /// Si tiene promociones activas y forceDeletePromotions=false → retorna Conflict.
+        /// Si forceDeletePromotions=true → elimina las promos físicamente antes de desactivar.
+        /// </summary>
+        Task<OperationResult<bool>> Delete(int id, bool forceDeletePromotions = false);
 
         /// <summary>Reordena varios BranchProducts de una sucursal en una sola operación.</summary>
         Task<OperationResult<bool>> Reorder(int branchId, List<ReorderItemDto> items);

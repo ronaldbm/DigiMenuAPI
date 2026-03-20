@@ -27,6 +27,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
 
         // Por Branch
         public DbSet<BranchProduct> BranchProducts { get; set; }
+        public DbSet<BranchPromotion> BranchPromotions { get; set; }
         public DbSet<BranchReservationForm> BranchReservationForms { get; set; }
         public DbSet<FooterLink> FooterLinks { get; set; }
         public DbSet<Reservation> Reservations { get; set; }
@@ -42,6 +43,7 @@ namespace DigiMenuAPI.Infrastructure.SQL
             ConfigureProductTranslation(modelBuilder);
             ConfigureTagTranslation(modelBuilder);
             ConfigureBranchProduct(modelBuilder);
+            ConfigureBranchPromotion(modelBuilder);
             ConfigureFooterLink(modelBuilder);
             ConfigureBranchReservationForm(modelBuilder);
             ConfigureReservation(modelBuilder);
@@ -222,6 +224,38 @@ namespace DigiMenuAPI.Infrastructure.SQL
                 e.HasOne(f => f.Branch)
                  .WithOne()
                  .HasForeignKey<BranchReservationForm>(f => f.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureBranchPromotion(ModelBuilder b)
+        {
+            b.Entity<BranchPromotion>(e =>
+            {
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.Title).IsRequired().HasMaxLength(200);
+                e.Property(x => x.Description).HasMaxLength(1000);
+                e.Property(x => x.Label).HasMaxLength(50);
+                e.Property(x => x.PromoImageUrl).HasMaxLength(500);
+                e.Property(x => x.StartDate).HasColumnType("date");
+                e.Property(x => x.EndDate).HasColumnType("date");
+
+                // Índice para la consulta pública del carrusel
+                e.HasIndex(x => new { x.BranchId, x.ShowInCarousel, x.IsActive, x.DisplayOrder });
+
+                // Cascade: las promos se eliminan físicamente si se elimina la Branch
+                e.HasOne(x => x.Branch)
+                 .WithMany()
+                 .HasForeignKey(x => x.BranchId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                // Restrict: no se puede eliminar un BranchProduct si tiene promos activas.
+                // forceDeletePromotions=true las elimina manualmente antes de borrar el producto.
+                e.HasOne(x => x.BranchProduct)
+                 .WithMany()
+                 .HasForeignKey(x => x.BranchProductId)
+                 .IsRequired(false)
                  .OnDelete(DeleteBehavior.Restrict);
             });
         }

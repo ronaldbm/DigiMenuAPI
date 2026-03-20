@@ -2,6 +2,7 @@
 using AppCore.Application.Common;
 using AppCore.Application.Utils;
 using AppCore.Domain.Entities;
+using NetTopologySuite.Geometries;
 using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
@@ -45,6 +46,7 @@ namespace DigiMenuAPI.Application.Services
                     b.Id,
                     b.Name,
                     b.Slug,
+                    b.Address,
                     b.IsActive))
                 .ToListAsync();
 
@@ -117,7 +119,10 @@ namespace DigiMenuAPI.Application.Services
                 Address = dto.Address?.Trim(),
                 Phone = dto.Phone?.Trim(),
                 Email = dto.Email?.Trim().ToLower(),
-                IsActive = true
+                IsActive = true,
+                Location = dto.Latitude.HasValue && dto.Longitude.HasValue
+                    ? new Point((double)dto.Longitude.Value, (double)dto.Latitude.Value) { SRID = 4326 }
+                    : null,
             };
             _context.Branches.Add(branch);
             await _context.SaveChangesAsync();
@@ -148,32 +153,16 @@ namespace DigiMenuAPI.Application.Services
                     "Sucursal no encontrada.",
                     ErrorKeys.BranchNotFound);
 
-            // Validar slug único si cambió
-            var newSlug = SlugHelper.Slugify(dto.Slug);
-            if (newSlug != branch.Slug)
-            {
-                var slugExists = await _context.Branches
-                    .AnyAsync(b =>
-                        b.CompanyId == companyId &&
-                        b.Slug == newSlug &&
-                        b.Id != dto.Id &&
-                        !b.IsDeleted);
-
-                if (slugExists)
-                    return OperationResult<BranchReadDto>.Conflict(
-                        "El slug ya está en uso por otra sucursal de tu empresa.",
-                        ErrorKeys.BranchSlugAlreadyExists);
-            }
-
             branch.Name = dto.Name.Trim();
-            branch.Slug = newSlug;
             branch.Address = dto.Address?.Trim();
             branch.Phone = dto.Phone?.Trim();
             branch.Email = dto.Email?.Trim().ToLower();
+            branch.Location = dto.Latitude.HasValue && dto.Longitude.HasValue
+                ? new Point((double)dto.Longitude.Value, (double)dto.Latitude.Value) { SRID = 4326 }
+                : null;
 
             await _context.SaveChangesAsync();
 
-            // Invalidar cache del menú público — el slug pudo haber cambiado
             await _cache.EvictMenuByBranchAsync(branch.Id);
 
             return OperationResult<BranchReadDto>.Ok(_mapper.Map<BranchReadDto>(branch));

@@ -12,6 +12,8 @@ namespace DigiMenuAPI.Application.DTOs.Create
         [MaxLength(60)] string? Slug,
         [MaxLength(200)] string? Address,
         [MaxLength(20)] string? Phone,
-        [MaxLength(150), EmailAddress] string? Email
+        [MaxLength(150), EmailAddress] string? Email,
+        decimal? Latitude,
+        decimal? Longitude
     );
 }

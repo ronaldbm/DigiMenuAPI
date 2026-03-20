@@ -364,6 +364,7 @@ namespace DigiMenuAPI.Migrations
                     EventDate = table.Column<DateTime>(type: "date", nullable: false),
                     StartTime = table.Column<TimeSpan>(type: "time", nullable: true),
                     EndTime = table.Column<TimeSpan>(type: "time", nullable: true),
+                    EndDate = table.Column<DateTime>(type: "date", nullable: false),
                     FlyerImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ShowPromotionalModal = table.Column<bool>(type: "bit", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -868,6 +869,47 @@ namespace DigiMenuAPI.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "BranchPromotions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    BranchProductId = table.Column<int>(type: "int", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Label = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    PromoImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    StartDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    EndDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    StartTime = table.Column<TimeOnly>(type: "time", nullable: true),
+                    EndTime = table.Column<TimeOnly>(type: "time", nullable: true),
+                    ShowInCarousel = table.Column<bool>(type: "bit", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedUserId = table.Column<int>(type: "int", nullable: true),
+                    ModifiedUserId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BranchPromotions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BranchPromotions_BranchProducts_BranchProductId",
+                        column: x => x.BranchProductId,
+                        principalTable: "BranchProducts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_BranchPromotions_Branches_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Branches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Plans",
                 columns: new[] { "Id", "AnnualPrice", "Code", "Description", "DisplayOrder", "IsActive", "IsPublic", "MaxBranches", "MaxUsers", "MonthlyPrice", "Name" },
@@ -1147,6 +1189,16 @@ namespace DigiMenuAPI.Migrations
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_BranchPromotions_BranchId_ShowInCarousel_IsActive_DisplayOrder",
+                table: "BranchPromotions",
+                columns: new[] { "BranchId", "ShowInCarousel", "IsActive", "DisplayOrder" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BranchPromotions_BranchProductId",
+                table: "BranchPromotions",
+                column: "BranchProductId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_BranchReservationForms_BranchId",
                 table: "BranchReservationForms",
                 column: "BranchId",
@@ -1349,7 +1401,7 @@ namespace DigiMenuAPI.Migrations
                 name: "BranchLocales");
 
             migrationBuilder.DropTable(
-                name: "BranchProducts");
+                name: "BranchPromotions");
 
             migrationBuilder.DropTable(
                 name: "BranchReservationForms");
@@ -1400,6 +1452,9 @@ namespace DigiMenuAPI.Migrations
                 name: "TagTranslations");
 
             migrationBuilder.DropTable(
+                name: "BranchProducts");
+
+            migrationBuilder.DropTable(
                 name: "SupportedLanguages");
 
             migrationBuilder.DropTable(
@@ -1415,10 +1470,10 @@ namespace DigiMenuAPI.Migrations
                 name: "Users");
 
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "Tags");
 
             migrationBuilder.DropTable(
-                name: "Tags");
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Branches");

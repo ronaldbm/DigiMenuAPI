@@ -77,10 +77,6 @@ namespace DigiMenuAPI.Application.Services
                         "La hora de cierre es requerida cuando el día está abierto.",
                         ErrorKeys.ScheduleCloseTimeRequired);
 
-                if (dto.CloseTime <= dto.OpenTime)
-                    return OperationResult<BranchScheduleReadDto>.ValidationError(
-                        "La hora de cierre debe ser posterior a la hora de apertura.",
-                        ErrorKeys.ScheduleCloseBeforeOpen);
             }
 
             schedule.IsOpen = dto.IsOpen;
@@ -89,6 +85,46 @@ namespace DigiMenuAPI.Application.Services
             await _context.SaveChangesAsync();
 
             return OperationResult<BranchScheduleReadDto>.Ok(MapToDto(schedule));
+        }
+
+        // ── BULK UPDATE WEEK ──────────────────────────────────────────
+        public async Task<OperationResult<List<BranchScheduleReadDto>>> UpdateScheduleWeek(
+            int branchId, List<BranchScheduleUpdateDto> items)
+        {
+            await _tenantService.ValidateBranchOwnershipAsync(branchId);
+
+            var schedules = await _context.BranchSchedules
+                .Where(s => s.BranchId == branchId)
+                .ToListAsync();
+
+            foreach (var dto in items)
+            {
+                var schedule = schedules.FirstOrDefault(s => s.DayOfWeek == dto.DayOfWeek);
+                if (schedule is null) continue;
+
+                if (dto.IsOpen)
+                {
+                    if (dto.OpenTime is null || dto.CloseTime is null)
+                        return OperationResult<List<BranchScheduleReadDto>>.ValidationError(
+                            $"Hora de apertura y cierre son obligatorias cuando el día está abierto ({DayNames[dto.DayOfWeek]}).",
+                            ErrorKeys.ScheduleOpenTimeRequired);
+                }
+
+                schedule.IsOpen    = dto.IsOpen;
+                schedule.OpenTime  = dto.IsOpen ? dto.OpenTime  : null;
+                schedule.CloseTime = dto.IsOpen ? dto.CloseTime : null;
+            }
+
+            await _context.SaveChangesAsync();
+
+            var updated = await _context.BranchSchedules
+                .AsNoTracking()
+                .Where(s => s.BranchId == branchId)
+                .OrderBy(s => s.DayOfWeek == 0 ? 7 : s.DayOfWeek)
+                .ToListAsync();
+
+            return OperationResult<List<BranchScheduleReadDto>>.Ok(
+                updated.Select(MapToDto).ToList(), "Horario guardado correctamente.");
         }
 
         // ── GET SPECIAL DAYS ──────────────────────────────────────────
@@ -224,10 +260,6 @@ namespace DigiMenuAPI.Application.Services
             if (closeTime is null)
                 return ("La hora de cierre es requerida para un día con horario especial.",
                         ErrorKeys.SpecialDayHoursRequired);
-
-            if (closeTime <= openTime)
-                return ("La hora de cierre debe ser posterior a la hora de apertura.",
-                        ErrorKeys.SpecialDayCloseBeforeOpen);
 
             return null;
         }

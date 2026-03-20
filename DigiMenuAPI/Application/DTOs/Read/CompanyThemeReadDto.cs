@@ -21,6 +21,7 @@ namespace DigiMenuAPI.Application.DTOs.Read
         bool ShowProductDetails,
         byte FilterMode,
         bool ShowContactButton,
-        bool ShowModalProductInfo
+        bool ShowModalProductInfo,
+        bool ShowMapInMenu
     );
 }

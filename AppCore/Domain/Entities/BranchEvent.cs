@@ -30,6 +30,14 @@ namespace AppCore.Domain.Entities
         /// <summary>Hora de fin del evento. Null = todo el día.</summary>
         public TimeSpan? EndTime { get; set; }
 
+        /// <summary>
+        /// Fecha de fin del evento. Igual a EventDate para eventos de un solo día.
+        /// Automáticamente se establece como EventDate + 1 día cuando EndTime &lt; StartTime
+        /// (evento de medianoche, por ej. 20:00 – 02:00).
+        /// </summary>
+        [Column(TypeName = "date")]
+        public DateTime EndDate { get; set; }
+
         /// <summary>URL del flyer promocional (subido por el administrador).</summary>
         [MaxLength(500)]
         public string? FlyerImageUrl { get; set; }

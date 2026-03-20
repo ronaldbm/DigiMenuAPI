@@ -6,21 +6,22 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using NetTopologySuite.Geometries;
 
 #nullable disable
 
 namespace DigiMenuAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260319032328_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260320053254_AddBranchLocationAndMapToggle")]
+    partial class AddBranchLocationAndMapToggle
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -142,6 +143,9 @@ namespace DigiMenuAPI.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Point>("Location")
+                        .HasColumnType("geography");
+
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
 
@@ -207,6 +211,9 @@ namespace DigiMenuAPI.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("date");
 
                     b.Property<TimeSpan?>("EndTime")
                         .HasColumnType("time");
@@ -912,6 +919,11 @@ namespace DigiMenuAPI.Migrations
                     b.Property<bool>("ShowContactButton")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("ShowMapInMenu")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<bool>("ShowModalProductInfo")
                         .HasColumnType("bit");
 
@@ -972,6 +984,7 @@ namespace DigiMenuAPI.Migrations
                             ProductDisplay = (byte)1,
                             SecondaryColor = "#457B9D",
                             ShowContactButton = true,
+                            ShowMapInMenu = true,
                             ShowModalProductInfo = false,
                             ShowProductDetails = true,
                             TabBackgroundColor = "#1D3557",
@@ -1627,6 +1640,79 @@ namespace DigiMenuAPI.Migrations
                             Price = 3500m,
                             ProductId = 11
                         });
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchPromotion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BranchProductId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PromoImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("ShowInCarousel")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchProductId");
+
+                    b.HasIndex("BranchId", "ShowInCarousel", "IsActive", "DisplayOrder");
+
+                    b.ToTable("BranchPromotions");
                 });
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchReservationForm", b =>
@@ -2700,6 +2786,24 @@ namespace DigiMenuAPI.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchPromotion", b =>
+                {
+                    b.HasOne("AppCore.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.BranchProduct", "BranchProduct")
+                        .WithMany()
+                        .HasForeignKey("BranchProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("BranchProduct");
                 });
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchReservationForm", b =>

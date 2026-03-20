@@ -231,7 +231,7 @@ namespace DigiMenuAPI.Application.Services
             return OperationResult<bool>.Ok(true);
         }
 
-        public async Task<OperationResult<bool>> Delete(int id)
+        public async Task<OperationResult<bool>> Delete(int id, bool forceDeletePromotions = false)
         {
             var branchProduct = await _context.BranchProducts
                 .FirstOrDefaultAsync(bp => bp.Id == id);
@@ -241,6 +241,25 @@ namespace DigiMenuAPI.Application.Services
                     "BranchProduct no encontrado.", errorKey: ErrorKeys.BranchProductNotFound);
 
             await _tenantService.ValidateBranchOwnershipAsync(branchProduct.BranchId);
+
+            // Verificar si tiene promociones activas vinculadas
+            var activePromoCount = await _context.BranchPromotions
+                .CountAsync(p => p.BranchProductId == id && p.IsActive);
+
+            if (activePromoCount > 0)
+            {
+                if (!forceDeletePromotions)
+                    return OperationResult<bool>.Conflict(
+                        $"Este producto tiene {activePromoCount} promoción(es) activa(s). " +
+                        "Usa forceDeletePromotions=true para eliminarlas junto con el producto.",
+                        ErrorKeys.ProductHasActivePromotions);
+
+                // Eliminar físicamente todas las promos del producto
+                var promos = await _context.BranchPromotions
+                    .Where(p => p.BranchProductId == id)
+                    .ToListAsync();
+                _context.BranchPromotions.RemoveRange(promos);
+            }
 
             branchProduct.IsDeleted = true;
             await _context.SaveChangesAsync();

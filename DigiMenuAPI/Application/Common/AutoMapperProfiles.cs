@@ -4,6 +4,7 @@ using DigiMenuAPI.Application.DTOs.Create;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Infrastructure.Entities;
+using NetTopologySuite.Geometries;
 
 namespace DigiMenuAPI.Application.Common
 {
@@ -59,10 +60,26 @@ namespace DigiMenuAPI.Application.Common
         // ── Branch ────────────────────────────────────────────────────
         private void BranchMappings()
         {
-            CreateMap<Branch, BranchReadDto>();
+            // BranchReadDto is a positional record — use ConstructUsing to avoid
+            // AutoMapper trying to resolve Latitude/Longitude via property convention.
+            CreateMap<Branch, BranchReadDto>()
+                .ConstructUsing(s => new BranchReadDto(
+                    s.Id, s.CompanyId, s.Name, s.Slug,
+                    s.Address, s.Phone, s.Email, s.IsActive,
+                    s.CreatedAt, s.ModifiedAt,
+                    s.Location != null ? (decimal?)s.Location.Y : null,
+                    s.Location != null ? (decimal?)s.Location.X : null));
+
             CreateMap<Branch, BranchSummaryDto>();
-            CreateMap<BranchCreateDto, Branch>();
-            CreateMap<BranchUpdateDto, Branch>().ReverseMap();
+
+            // BranchService.Create / Update build Branch manually and set Location
+            // directly — these maps exist for completeness but AutoMapper is not
+            // the path that writes Location to the entity.
+            CreateMap<BranchCreateDto, Branch>()
+                .ForMember(d => d.Location, o => o.Ignore());
+
+            CreateMap<BranchUpdateDto, Branch>()
+                .ForMember(d => d.Location, o => o.Ignore());
         }
 
         // ── AppUser ───────────────────────────────────────────────────

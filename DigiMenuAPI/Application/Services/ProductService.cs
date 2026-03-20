@@ -130,39 +130,45 @@ namespace DigiMenuAPI.Application.Services
             if (!categoryBelongs)
                 return OperationResult<ProductReadDto>.NotFound("La categoría no se ha encontrado.", errorKey: ErrorKeys.CategoryNotFound);
 
-            await using var tx = await _context.Database.BeginTransactionAsync();
+            Product product = null!;
 
-            var product = _mapper.Map<Product>(dto);
-            product.CompanyId = companyId;
-
-            if (dto.Image is not null)
-                product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
-
-            if (dto.TagIds is { Count: > 0 })
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                var tags = await _context.Tags
-                    .Where(t => dto.TagIds.Contains(t.Id) && t.CompanyId == companyId)
-                    .ToListAsync();
-                product.Tags = tags;
-            }
+                await using var tx = await _context.Database.BeginTransactionAsync();
 
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
+                product = _mapper.Map<Product>(dto);
+                product.CompanyId = companyId;
 
-            foreach (var t in dto.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Name)))
-            {
-                _context.ProductTranslations.Add(new ProductTranslation
+                if (dto.Image is not null)
+                    product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
+
+                if (dto.TagIds is { Count: > 0 })
                 {
-                    ProductId        = product.Id,
-                    LanguageCode     = t.LanguageCode.Trim().ToLowerInvariant(),
-                    Name             = t.Name.Trim(),
-                    ShortDescription = t.ShortDescription?.Trim(),
-                    LongDescription  = t.LongDescription?.Trim(),
-                });
-            }
+                    var tags = await _context.Tags
+                        .Where(t => dto.TagIds.Contains(t.Id) && t.CompanyId == companyId)
+                        .ToListAsync();
+                    product.Tags = tags;
+                }
 
-            await _context.SaveChangesAsync();
-            await tx.CommitAsync();
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
+
+                foreach (var t in dto.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Name)))
+                {
+                    _context.ProductTranslations.Add(new ProductTranslation
+                    {
+                        ProductId        = product.Id,
+                        LanguageCode     = t.LanguageCode.Trim().ToLowerInvariant(),
+                        Name             = t.Name.Trim(),
+                        ShortDescription = t.ShortDescription?.Trim(),
+                        LongDescription  = t.LongDescription?.Trim(),
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+            });
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 
@@ -188,58 +194,62 @@ namespace DigiMenuAPI.Application.Services
             if (!categoryBelongs)
                 return OperationResult<bool>.NotFound("La categoría no se ha encontrado a tu empresa.", errorKey: ErrorKeys.CategoryNotFound);
 
-            await using var tx = await _context.Database.BeginTransactionAsync();
-
-            _mapper.Map(dto, product);
-
-            if (dto.Image is not null)
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                _fileStorage.DeleteFile(product.MainImageUrl ?? "", "products");
-                product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
-            }
+                await using var tx = await _context.Database.BeginTransactionAsync();
 
-            if (dto.TagIds is not null)
-            {
-                var tags = await _context.Tags
-                    .Where(t => dto.TagIds.Contains(t.Id) && t.CompanyId == companyId)
-                    .ToListAsync();
-                product.Tags = tags;
-            }
+                _mapper.Map(dto, product);
 
-            // Replace-all para traducciones
-            var incoming = dto.Translations
-                .Where(t => !string.IsNullOrWhiteSpace(t.Name))
-                .ToDictionary(t => t.LanguageCode.Trim().ToLowerInvariant());
-
-            var toDelete = product.Translations
-                .Where(t => !incoming.ContainsKey(t.LanguageCode))
-                .ToList();
-            _context.ProductTranslations.RemoveRange(toDelete);
-
-            foreach (var (code, input) in incoming)
-            {
-                var existing = product.Translations.FirstOrDefault(t => t.LanguageCode == code);
-                if (existing is null)
+                if (dto.Image is not null)
                 {
-                    _context.ProductTranslations.Add(new ProductTranslation
+                    _fileStorage.DeleteFile(product.MainImageUrl ?? "", "products");
+                    product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
+                }
+
+                if (dto.TagIds is not null)
+                {
+                    var tags = await _context.Tags
+                        .Where(t => dto.TagIds.Contains(t.Id) && t.CompanyId == companyId)
+                        .ToListAsync();
+                    product.Tags = tags;
+                }
+
+                // Replace-all para traducciones
+                var incoming = dto.Translations
+                    .Where(t => !string.IsNullOrWhiteSpace(t.Name))
+                    .ToDictionary(t => t.LanguageCode.Trim().ToLowerInvariant());
+
+                var toDelete = product.Translations
+                    .Where(t => !incoming.ContainsKey(t.LanguageCode))
+                    .ToList();
+                _context.ProductTranslations.RemoveRange(toDelete);
+
+                foreach (var (code, input) in incoming)
+                {
+                    var existing = product.Translations.FirstOrDefault(t => t.LanguageCode == code);
+                    if (existing is null)
                     {
-                        ProductId        = product.Id,
-                        LanguageCode     = code,
-                        Name             = input.Name.Trim(),
-                        ShortDescription = input.ShortDescription?.Trim(),
-                        LongDescription  = input.LongDescription?.Trim(),
-                    });
+                        _context.ProductTranslations.Add(new ProductTranslation
+                        {
+                            ProductId        = product.Id,
+                            LanguageCode     = code,
+                            Name             = input.Name.Trim(),
+                            ShortDescription = input.ShortDescription?.Trim(),
+                            LongDescription  = input.LongDescription?.Trim(),
+                        });
+                    }
+                    else
+                    {
+                        existing.Name             = input.Name.Trim();
+                        existing.ShortDescription = input.ShortDescription?.Trim();
+                        existing.LongDescription  = input.LongDescription?.Trim();
+                    }
                 }
-                else
-                {
-                    existing.Name             = input.Name.Trim();
-                    existing.ShortDescription = input.ShortDescription?.Trim();
-                    existing.LongDescription  = input.LongDescription?.Trim();
-                }
-            }
 
-            await _context.SaveChangesAsync();
-            await tx.CommitAsync();
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+            });
 
             await _cacheStore.EvictByTagAsync(CacheTag, default);
 

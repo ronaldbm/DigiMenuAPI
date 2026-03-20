@@ -51,6 +51,19 @@ namespace DigiMenuAPI.Controllers
         }
 
         /// <summary>
+        /// Actualiza los 7 días del horario semanal en una sola operación.
+        /// </summary>
+        [HttpPut("{branchId:int}/week")]
+        public async Task<ActionResult> UpdateScheduleWeek(
+            int branchId, [FromBody] List<BranchScheduleUpdateDto> items)
+        {
+            if (items.Any(d => d.BranchId != branchId))
+                return BadRequest(new { Success = false, Message = "BranchId inconsistente en uno o más días." });
+
+            return HandleResult(await _service.UpdateScheduleWeek(branchId, items));
+        }
+
+        /// <summary>
         /// Lista todos los días especiales ordenados por fecha.
         /// Incluye fechas pasadas para historial.
         /// </summary>

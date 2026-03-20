@@ -14,7 +14,9 @@
         string? Email,
         bool IsActive,
         DateTime CreatedAt,
-        DateTime? ModifiedAt   
+        DateTime? ModifiedAt,
+        decimal? Latitude,
+        decimal? Longitude
     );
 
     /// <summary>
@@ -24,6 +26,7 @@
         int Id,
         string Name,
         string Slug,
+        string? Address,
         bool IsActive
     );
 }

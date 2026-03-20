@@ -10,9 +10,10 @@ namespace DigiMenuAPI.Application.DTOs.Update
     public record BranchUpdateDto(
         int Id,
         [Required, MaxLength(100)] string Name,
-        [Required, MaxLength(60)] string Slug,
         [MaxLength(200)] string? Address,
         [MaxLength(20)] string? Phone,
-        [MaxLength(150), EmailAddress] string? Email
+        [MaxLength(150), EmailAddress] string? Email,
+        decimal? Latitude,
+        decimal? Longitude
     );
 }

@@ -128,5 +128,10 @@ namespace AppCore.Application.Common
         public const string EventPastDate = "EVENT_PAST_DATE";
         public const string EventEndBeforeStart = "EVENT_END_BEFORE_START";
         public const string EventStartRequiredWithEnd = "EVENT_START_REQUIRED_WITH_END";
+
+        // ── BranchPromotion ────────────────────────────────────────────
+        public const string PromotionNotFound = "PROMOTION_NOT_FOUND";
+        public const string PromotionEndBeforeStart = "PROMOTION_END_BEFORE_START";
+        public const string ProductHasActivePromotions = "PRODUCT_HAS_ACTIVE_PROMOTIONS";
     }
 }

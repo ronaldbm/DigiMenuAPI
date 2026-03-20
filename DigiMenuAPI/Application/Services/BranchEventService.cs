@@ -79,12 +79,14 @@ namespace DigiMenuAPI.Application.Services
             if (dto.FlyerImage is not null)
                 flyerUrl = await _fileStorage.SaveFile(dto.FlyerImage, Container);
 
+            var eventDate = dto.EventDate.ToDateTime(TimeOnly.MinValue);
             var ev = new BranchEvent
             {
                 BranchId             = dto.BranchId,
                 Title                = dto.Title.Trim(),
                 Description          = dto.Description?.Trim(),
-                EventDate            = dto.EventDate.ToDateTime(TimeOnly.MinValue),
+                EventDate            = eventDate,
+                EndDate              = ComputeEndDate(eventDate, dto.StartTime, dto.EndTime),
                 StartTime            = dto.StartTime,
                 EndTime              = dto.EndTime,
                 FlyerImageUrl        = flyerUrl,
@@ -129,9 +131,11 @@ namespace DigiMenuAPI.Application.Services
                 ev.FlyerImageUrl = await _fileStorage.SaveFile(dto.FlyerImage, Container);
             }
 
+            var updatedEventDate = dto.EventDate.ToDateTime(TimeOnly.MinValue);
             ev.Title                = dto.Title.Trim();
             ev.Description          = dto.Description?.Trim();
-            ev.EventDate            = dto.EventDate.ToDateTime(TimeOnly.MinValue);
+            ev.EventDate            = updatedEventDate;
+            ev.EndDate              = ComputeEndDate(updatedEventDate, dto.StartTime, dto.EndTime);
             ev.StartTime            = dto.StartTime;
             ev.EndTime              = dto.EndTime;
             ev.ShowPromotionalModal = dto.ShowPromotionalModal;
@@ -183,7 +187,7 @@ namespace DigiMenuAPI.Application.Services
                 .AsNoTracking()
                 .Where(e => e.BranchId == branchId.Value
                          && e.IsActive
-                         && e.EventDate >= today)
+                         && e.EndDate >= today)
                 .OrderBy(e => e.EventDate)
                 .ThenBy(e => e.StartTime)
                 .ToListAsync();
@@ -208,7 +212,7 @@ namespace DigiMenuAPI.Application.Services
                 .Where(e => e.BranchId == branchId.Value
                          && e.IsActive
                          && e.ShowPromotionalModal
-                         && e.EventDate >= today)
+                         && e.EndDate >= today)
                 .OrderBy(e => e.EventDate)
                 .ThenBy(e => e.StartTime)
                 .FirstOrDefaultAsync();
@@ -234,8 +238,16 @@ namespace DigiMenuAPI.Application.Services
         );
 
         /// <summary>
-        /// Valida que si se proporciona EndTime también haya StartTime,
-        /// y que EndTime sea posterior a StartTime.
+        /// Calcula EndDate: si endTime &lt; startTime (evento de medianoche, ej. 20:00–02:00),
+        /// el evento termina al día siguiente. En cualquier otro caso coincide con EventDate.
+        /// </summary>
+        private static DateTime ComputeEndDate(DateTime eventDate, TimeSpan? start, TimeSpan? end)
+            => (start.HasValue && end.HasValue && end.Value < start.Value)
+                ? eventDate.AddDays(1)
+                : eventDate;
+
+        /// <summary>
+        /// Valida que si se proporciona EndTime también haya StartTime.
         /// Devuelve (true, null, null) si no hay error.
         /// </summary>
         private static (bool ok, string? msg, string? key) ValidateTimes(TimeSpan? start, TimeSpan? end)
@@ -244,11 +256,6 @@ namespace DigiMenuAPI.Application.Services
                 return (false,
                     "Si se especifica hora de fin, también se debe indicar la hora de inicio.",
                     ErrorKeys.EventStartRequiredWithEnd);
-
-            if (start.HasValue && end.HasValue && end.Value <= start.Value)
-                return (false,
-                    "La hora de fin debe ser posterior a la hora de inicio.",
-                    ErrorKeys.EventEndBeforeStart);
 
             return (true, null, null);
         }

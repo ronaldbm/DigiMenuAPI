@@ -4,17 +4,19 @@ using DigiMenuAPI.Infrastructure.SQL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using NetTopologySuite.Geometries;
 
 #nullable disable
 
 namespace DigiMenuAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260320042333_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -139,9 +141,6 @@ namespace DigiMenuAPI.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<Point>("Location")
-                        .HasColumnType("geography");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
@@ -916,11 +915,6 @@ namespace DigiMenuAPI.Migrations
                     b.Property<bool>("ShowContactButton")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("ShowMapInMenu")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
                     b.Property<bool>("ShowModalProductInfo")
                         .HasColumnType("bit");
 
@@ -981,7 +975,6 @@ namespace DigiMenuAPI.Migrations
                             ProductDisplay = (byte)1,
                             SecondaryColor = "#457B9D",
                             ShowContactButton = true,
-                            ShowMapInMenu = true,
                             ShowModalProductInfo = false,
                             ShowProductDetails = true,
                             TabBackgroundColor = "#1D3557",

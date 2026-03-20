@@ -70,5 +70,6 @@ namespace AppCore.Domain.Entities
         public byte FilterMode { get; set; } = 0;
         public bool ShowContactButton { get; set; }
         public bool ShowModalProductInfo { get; set; }
+        public bool ShowMapInMenu { get; set; } = true;
     }
 }
