@@ -364,3 +364,4 @@ FodyWeavers.xsd
 
 # Claude Code
 .claude/
+/DigiMenuAPI/wwwroot
