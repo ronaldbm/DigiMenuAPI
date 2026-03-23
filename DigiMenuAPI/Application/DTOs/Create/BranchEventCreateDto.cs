@@ -32,5 +32,8 @@ namespace DigiMenuAPI.Application.DTOs.Create
 
         /// <summary>Imagen del flyer (opcional). Formatos: jpg, png, webp.</summary>
         public IFormFile? FlyerImage { get; set; }
+
+        public string? FlyerObjectFit { get; set; }
+        public string? FlyerObjectPosition { get; set; }
     }
 }

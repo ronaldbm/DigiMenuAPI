@@ -15,16 +15,19 @@ namespace DigiMenuAPI.Application.Services
         private readonly ApplicationDbContext _context;
         private readonly ITenantService _tenantService;
         private readonly IFileStorageService _fileStorage;
+        private readonly ICacheService _cache;
         private const string Container = "promotions";
 
         public BranchPromotionService(
             ApplicationDbContext context,
             ITenantService tenantService,
-            IFileStorageService fileStorage)
+            IFileStorageService fileStorage,
+            ICacheService cache)
         {
             _context = context;
             _tenantService = tenantService;
             _fileStorage = fileStorage;
+            _cache = cache;
         }
 
         public async Task<OperationResult<List<BranchPromotionReadDto>>> GetByBranch(int branchId)
@@ -83,23 +86,26 @@ namespace DigiMenuAPI.Application.Services
 
             var promo = new BranchPromotion
             {
-                BranchId        = dto.BranchId,
-                BranchProductId = dto.BranchProductId,
-                Title           = dto.Title.Trim(),
-                Description     = dto.Description?.Trim(),
-                Label           = dto.Label?.Trim(),
-                PromoImageUrl   = imageUrl,
-                StartDate       = dto.StartDate,
-                EndDate         = dto.EndDate,
-                StartTime       = dto.StartTime,
-                EndTime         = dto.EndTime,
-                ShowInCarousel  = dto.ShowInCarousel,
-                DisplayOrder    = dto.DisplayOrder,
-                IsActive        = true,
+                BranchId          = dto.BranchId,
+                BranchProductId   = dto.BranchProductId,
+                Title             = dto.Title.Trim(),
+                Description       = dto.Description?.Trim(),
+                Label             = dto.Label?.Trim(),
+                PromoImageUrl     = imageUrl,
+                StartDate         = dto.StartDate,
+                EndDate           = dto.EndDate,
+                StartTime         = dto.StartTime,
+                EndTime           = dto.EndTime,
+                ShowInCarousel    = dto.ShowInCarousel,
+                DisplayOrder      = dto.DisplayOrder,
+                IsActive          = true,
+                PromoObjectFit    = dto.PromoObjectFit ?? "cover",
+                PromoObjectPosition = dto.PromoObjectPosition ?? "50% 50%",
             };
 
             _context.BranchPromotions.Add(promo);
             await _context.SaveChangesAsync();
+            await _cache.EvictMenuByBranchAsync(dto.BranchId);
 
             // Reload with navigation for full DTO
             promo = await _context.BranchPromotions
@@ -152,8 +158,11 @@ namespace DigiMenuAPI.Application.Services
             promo.ShowInCarousel  = dto.ShowInCarousel;
             promo.DisplayOrder    = dto.DisplayOrder;
             promo.IsActive        = dto.IsActive;
+            if (dto.PromoObjectFit is not null)      promo.PromoObjectFit      = dto.PromoObjectFit;
+            if (dto.PromoObjectPosition is not null)  promo.PromoObjectPosition = dto.PromoObjectPosition;
 
             await _context.SaveChangesAsync();
+            await _cache.EvictMenuByBranchAsync(promo.BranchId);
 
             promo = await _context.BranchPromotions
                 .AsNoTracking()
@@ -182,6 +191,7 @@ namespace DigiMenuAPI.Application.Services
             }
 
             await _context.SaveChangesAsync();
+            await _cache.EvictMenuByBranchAsync(branchId);
             return OperationResult<bool>.Ok(true, "Orden guardado.");
         }
 
@@ -199,8 +209,10 @@ namespace DigiMenuAPI.Application.Services
             if (promo.PromoImageUrl is not null)
                 _fileStorage.DeleteFile(promo.PromoImageUrl, Container);
 
+            var branchId = promo.BranchId;
             _context.BranchPromotions.Remove(promo);
             await _context.SaveChangesAsync();
+            await _cache.EvictMenuByBranchAsync(branchId);
 
             return OperationResult<bool>.Ok(true, "Promoción eliminada.");
         }
@@ -226,7 +238,9 @@ namespace DigiMenuAPI.Application.Services
                 p.ShowInCarousel,
                 p.DisplayOrder,
                 p.IsActive,
-                p.CreatedAt
+                p.CreatedAt,
+                p.PromoObjectFit,
+                p.PromoObjectPosition
             );
         }
 

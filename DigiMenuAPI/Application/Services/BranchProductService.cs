@@ -8,7 +8,6 @@ using DigiMenuAPI.Application.Interfaces;
 using AppCore.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
-using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiMenuAPI.Application.Services
@@ -19,21 +18,20 @@ namespace DigiMenuAPI.Application.Services
         private readonly IMapper _mapper;
         private readonly ITenantService _tenantService;
         private readonly IFileStorageService _fileStorage;
-        private readonly IOutputCacheStore _cacheStore;
-        private const string CacheTag = "tag-menu-publico";
+        private readonly ICacheService _cache;
 
         public BranchProductService(
             ApplicationDbContext context,
             IMapper mapper,
             ITenantService tenantService,
             IFileStorageService fileStorage,
-            IOutputCacheStore cacheStore)
+            ICacheService cache)
         {
             _context = context;
             _mapper = mapper;
             _tenantService = tenantService;
             _fileStorage = fileStorage;
-            _cacheStore = cacheStore;
+            _cache = cache;
         }
 
         public async Task<OperationResult<List<BranchProductReadDto>>> GetByBranch(int branchId)
@@ -132,6 +130,8 @@ namespace DigiMenuAPI.Application.Services
                     ErrorKeys.BranchProductAlreadyExists);
 
             var branchProduct = _mapper.Map<BranchProduct>(dto);
+            branchProduct.ImageObjectFit      = dto.ImageObjectFit      ?? "cover";
+            branchProduct.ImageObjectPosition = dto.ImageObjectPosition ?? "50% 50%";
 
             if (dto.ImageOverride is not null)
                 branchProduct.ImageOverrideUrl = await _fileStorage.SaveFile(
@@ -139,7 +139,7 @@ namespace DigiMenuAPI.Application.Services
 
             _context.BranchProducts.Add(branchProduct);
             await _context.SaveChangesAsync();
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByBranchAsync(dto.BranchId);
 
             // Recargar con navegaciones para construir el DTO completo
             var result = await _context.BranchProducts
@@ -180,6 +180,8 @@ namespace DigiMenuAPI.Application.Services
                     ErrorKeys.ValidationFailed);
 
             _mapper.Map(dto, branchProduct);
+            if (dto.ImageObjectFit is not null)      branchProduct.ImageObjectFit      = dto.ImageObjectFit;
+            if (dto.ImageObjectPosition is not null)  branchProduct.ImageObjectPosition = dto.ImageObjectPosition;
 
             if (dto.ImageOverride is not null)
             {
@@ -189,7 +191,7 @@ namespace DigiMenuAPI.Application.Services
             }
 
             await _context.SaveChangesAsync();
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByBranchAsync(branchProduct.BranchId);
 
             return OperationResult<bool>.Ok(true);
         }
@@ -207,7 +209,7 @@ namespace DigiMenuAPI.Application.Services
 
             branchProduct.IsVisible = !branchProduct.IsVisible;
             await _context.SaveChangesAsync();
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByBranchAsync(branchProduct.BranchId);
 
             return OperationResult<bool>.Ok(branchProduct.IsVisible);
         }
@@ -226,7 +228,7 @@ namespace DigiMenuAPI.Application.Services
                     "No se encontraron productos de esa categoría en esta sucursal.",
                     errorKey: ErrorKeys.CategoryNotFound);
 
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByBranchAsync(branchId);
 
             return OperationResult<bool>.Ok(true);
         }
@@ -263,7 +265,7 @@ namespace DigiMenuAPI.Application.Services
 
             branchProduct.IsDeleted = true;
             await _context.SaveChangesAsync();
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByBranchAsync(branchProduct.BranchId);
 
             return OperationResult<bool>.Ok(true);
         }
@@ -286,7 +288,7 @@ namespace DigiMenuAPI.Application.Services
             }
 
             await _context.SaveChangesAsync();
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByBranchAsync(branchId);
 
             return OperationResult<bool>.Ok(true);
         }

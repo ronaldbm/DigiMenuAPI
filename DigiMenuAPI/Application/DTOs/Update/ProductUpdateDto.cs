@@ -19,5 +19,8 @@ namespace DigiMenuAPI.Application.DTOs.Update
 
         [Required, MinLength(1, ErrorMessage = "Se requiere al menos una traducción.")]
         public List<ProductTranslationInput> Translations { get; init; } = [];
+
+        public string? ImageObjectFit { get; init; }
+        public string? ImageObjectPosition { get; init; }
     }
 }

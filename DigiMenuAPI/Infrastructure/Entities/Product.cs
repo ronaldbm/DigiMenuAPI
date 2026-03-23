@@ -1,4 +1,5 @@
 using AppCore.Domain.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace DigiMenuAPI.Infrastructure.Entities
 {
@@ -31,6 +32,10 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public Category Category { get; set; } = null!;
 
         public bool IsDeleted { get; set; }
+
+        // ── Metadatos de encuadre de imagen ──────────────────────────
+        [MaxLength(20)] public string ImageObjectFit { get; set; } = "cover";
+        [MaxLength(50)] public string ImageObjectPosition { get; set; } = "50% 50%";
 
         // ── Muchos a Muchos con Tags ──────────────────────────────────
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();

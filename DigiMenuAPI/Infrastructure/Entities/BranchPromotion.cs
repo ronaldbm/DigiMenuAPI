@@ -52,5 +52,9 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public int DisplayOrder { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        // ── Metadatos de encuadre de imagen ──────────────────────────
+        [MaxLength(20)] public string PromoObjectFit { get; set; } = "cover";
+        [MaxLength(50)] public string PromoObjectPosition { get; set; } = "50% 50%";
     }
 }

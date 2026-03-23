@@ -17,6 +17,8 @@ namespace DigiMenuAPI.Application.DTOs.Read
         bool ShowInCarousel,
         int DisplayOrder,
         bool IsActive,
-        DateTime CreatedAt
+        DateTime CreatedAt,
+        string PromoObjectFit,
+        string PromoObjectPosition
     );
 }

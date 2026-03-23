@@ -8,7 +8,6 @@ using DigiMenuAPI.Application.Interfaces;
 using AppCore.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
-using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiMenuAPI.Application.Services
@@ -19,21 +18,20 @@ namespace DigiMenuAPI.Application.Services
         private readonly IMapper _mapper;
         private readonly ITenantService _tenantService;
         private readonly IFileStorageService _fileStorage;
-        private readonly IOutputCacheStore _cacheStore;
-        private const string CacheTag = "tag-menu-publico";
+        private readonly ICacheService _cache;
 
         public ProductService(
             ApplicationDbContext context,
             IMapper mapper,
             ITenantService tenantService,
             IFileStorageService fileStorage,
-            IOutputCacheStore cacheStore)
+            ICacheService cache)
         {
             _context = context;
             _mapper = mapper;
             _tenantService = tenantService;
             _fileStorage = fileStorage;
-            _cacheStore = cacheStore;
+            _cache = cache;
         }
 
         public async Task<OperationResult<PagedResult<ProductListItemDto>>> GetAll(int page = 1, int pageSize = 20, string? lang = null)
@@ -58,13 +56,15 @@ namespace DigiMenuAPI.Application.Services
 
             var data = products.Select(p => new ProductListItemDto
             {
-                Id               = p.Id,
-                CategoryId       = p.CategoryId,
-                CategoryName     = ResolveCategoryName(p.Category?.Translations, lang),
-                MainImageUrl     = p.MainImageUrl,
-                Name             = ResolveProductName(p.Translations, lang),
-                ShortDescription = ResolveShortDescription(p.Translations, lang),
-                TagCount         = p.Tags.Count,
+                Id                  = p.Id,
+                CategoryId          = p.CategoryId,
+                CategoryName        = ResolveCategoryName(p.Category?.Translations, lang),
+                MainImageUrl        = p.MainImageUrl,
+                Name                = ResolveProductName(p.Translations, lang),
+                ShortDescription    = ResolveShortDescription(p.Translations, lang),
+                TagCount            = p.Tags.Count,
+                ImageObjectFit      = p.ImageObjectFit,
+                ImageObjectPosition = p.ImageObjectPosition,
             }).ToList();
 
             return OperationResult<PagedResult<ProductListItemDto>>.Ok(
@@ -139,6 +139,8 @@ namespace DigiMenuAPI.Application.Services
 
                 product = _mapper.Map<Product>(dto);
                 product.CompanyId = companyId;
+                product.ImageObjectFit      = dto.ImageObjectFit      ?? "cover";
+                product.ImageObjectPosition = dto.ImageObjectPosition ?? "50% 50%";
 
                 if (dto.Image is not null)
                     product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
@@ -170,7 +172,7 @@ namespace DigiMenuAPI.Application.Services
                 await tx.CommitAsync();
             });
 
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByCompanyAsync(companyId);
 
             await _context.Entry(product).Collection(p => p.Translations).LoadAsync();
             return OperationResult<ProductReadDto>.Ok(_mapper.Map<ProductReadDto>(product));
@@ -200,6 +202,8 @@ namespace DigiMenuAPI.Application.Services
                 await using var tx = await _context.Database.BeginTransactionAsync();
 
                 _mapper.Map(dto, product);
+                if (dto.ImageObjectFit is not null)      product.ImageObjectFit      = dto.ImageObjectFit;
+                if (dto.ImageObjectPosition is not null)  product.ImageObjectPosition = dto.ImageObjectPosition;
 
                 if (dto.Image is not null)
                 {
@@ -251,7 +255,7 @@ namespace DigiMenuAPI.Application.Services
                 await tx.CommitAsync();
             });
 
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByCompanyAsync(companyId);
 
             return OperationResult<bool>.Ok(true);
         }
@@ -269,7 +273,7 @@ namespace DigiMenuAPI.Application.Services
             product.IsDeleted = true;
             await _context.SaveChangesAsync();
 
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByCompanyAsync(companyId);
 
             return OperationResult<bool>.Ok(true);
         }

@@ -8,7 +8,6 @@ using DigiMenuAPI.Application.Interfaces;
 using AppCore.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.Entities;
 using DigiMenuAPI.Infrastructure.SQL;
-using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiMenuAPI.Application.Services
@@ -18,19 +17,18 @@ namespace DigiMenuAPI.Application.Services
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
         private readonly ITenantService _tenantService;
-        private readonly IOutputCacheStore _cacheStore;
-        private const string CacheTag = "tag-menu-publico";
+        private readonly ICacheService _cache;
 
         public TagService(
             ApplicationDbContext context,
             IMapper mapper,
             ITenantService tenantService,
-            IOutputCacheStore cacheStore)
+            ICacheService cache)
         {
             _context = context;
             _mapper = mapper;
             _tenantService = tenantService;
-            _cacheStore = cacheStore;
+            _cache = cache;
         }
 
         public async Task<OperationResult<List<TagListItemDto>>> GetAll(string? lang = null)
@@ -102,7 +100,7 @@ namespace DigiMenuAPI.Application.Services
                 await tx.CommitAsync();
             });
 
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByCompanyAsync(companyId);
 
             await _context.Entry(tag).Collection(t => t.Translations).LoadAsync();
             return OperationResult<TagReadDto>.Ok(_mapper.Map<TagReadDto>(tag));
@@ -157,7 +155,7 @@ namespace DigiMenuAPI.Application.Services
                 await tx.CommitAsync();
             });
 
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByCompanyAsync(companyId);
 
             return OperationResult<bool>.Ok(true);
         }
@@ -175,7 +173,7 @@ namespace DigiMenuAPI.Application.Services
             tag.IsDeleted = true;
             await _context.SaveChangesAsync();
 
-            await _cacheStore.EvictByTagAsync(CacheTag, default);
+            await _cache.EvictMenuByCompanyAsync(companyId);
 
             return OperationResult<bool>.Ok(true);
         }

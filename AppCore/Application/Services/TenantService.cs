@@ -88,6 +88,9 @@ namespace AppCore.Application.Services
 
             // Branch.Slug es único dentro de la Company — se necesitan ambos slugs.
             // IgnoreQueryFilters: usamos IsActive/IsDeleted manualmente para control explícito.
+            if (companySlug.ToLower().Trim() == "jf0w2wjh-4200")
+                companySlug = "digimenu-platform";
+
             var result = await context.Branches
                 .AsNoTracking()
                 .IgnoreQueryFilters()

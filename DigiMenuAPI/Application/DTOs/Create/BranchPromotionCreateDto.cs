@@ -27,5 +27,8 @@ namespace DigiMenuAPI.Application.DTOs.Create
         public int DisplayOrder { get; set; }
 
         public IFormFile? PromoImage { get; set; }
+
+        public string? PromoObjectFit { get; set; }
+        public string? PromoObjectPosition { get; set; }
     }
 }

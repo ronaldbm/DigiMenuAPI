@@ -31,11 +31,13 @@ namespace DigiMenuAPI.Application.Services
             using (var stream = file.OpenReadStream())
             using (var image = await Image.LoadAsync(stream))
             {
-                image.Mutate(x => x.Resize(new ResizeOptions
-                {
-                    Mode = ResizeMode.Max,
-                    Size = new Size(800, 0)
-                }));
+                image.Mutate(x => x
+                    .AutoOrient()   // respeta la orientación EXIF antes de procesar
+                    .Resize(new ResizeOptions
+                    {
+                        Mode = ResizeMode.Max,
+                        Size = new Size(800, 0)
+                    }));
 
                 await image.SaveAsWebpAsync(fullPath, new WebpEncoder
                 {

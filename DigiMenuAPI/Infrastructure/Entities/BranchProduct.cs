@@ -50,5 +50,9 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public int DisplayOrder { get; set; }
         public bool IsVisible { get; set; }
         public bool IsDeleted { get; set; }
+
+        // ── Metadatos de encuadre de imagen ──────────────────────────
+        [MaxLength(20)] public string ImageObjectFit { get; set; } = "cover";
+        [MaxLength(50)] public string ImageObjectPosition { get; set; } = "50% 50%";
     }
 }

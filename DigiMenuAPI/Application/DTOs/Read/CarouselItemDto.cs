@@ -17,6 +17,8 @@ namespace DigiMenuAPI.Application.DTOs.Read
         TimeSpan? EndTime,
         bool? IsAllDay,
         string? Label,
-        int? DisplayOrder
+        int? DisplayOrder,
+        string ImageObjectFit,
+        string ImageObjectPosition
     );
 }

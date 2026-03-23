@@ -92,6 +92,8 @@ namespace DigiMenuAPI.Application.Services
                 FlyerImageUrl        = flyerUrl,
                 ShowPromotionalModal = dto.ShowPromotionalModal,
                 IsActive             = true,
+                FlyerObjectFit       = dto.FlyerObjectFit ?? "cover",
+                FlyerObjectPosition  = dto.FlyerObjectPosition ?? "50% 50%",
             };
 
             _context.BranchEvents.Add(ev);
@@ -140,6 +142,8 @@ namespace DigiMenuAPI.Application.Services
             ev.EndTime              = dto.EndTime;
             ev.ShowPromotionalModal = dto.ShowPromotionalModal;
             ev.IsActive             = dto.IsActive;
+            if (dto.FlyerObjectFit is not null)      ev.FlyerObjectFit      = dto.FlyerObjectFit;
+            if (dto.FlyerObjectPosition is not null)  ev.FlyerObjectPosition = dto.FlyerObjectPosition;
 
             await _context.SaveChangesAsync();
             await _cache.EvictMenuByBranchAsync(ev.BranchId);
@@ -234,7 +238,9 @@ namespace DigiMenuAPI.Application.Services
             e.ShowPromotionalModal,
             IsAllDay: e.StartTime is null && e.EndTime is null,
             e.IsActive,
-            e.CreatedAt
+            e.CreatedAt,
+            e.FlyerObjectFit,
+            e.FlyerObjectPosition
         );
 
         /// <summary>

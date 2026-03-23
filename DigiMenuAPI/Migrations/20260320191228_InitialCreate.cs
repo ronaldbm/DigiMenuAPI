@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using NetTopologySuite.Geometries;
 
 #nullable disable
 
@@ -124,6 +125,7 @@ namespace DigiMenuAPI.Migrations
                     Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
+                    Location = table.Column<Point>(type: "geography", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -311,6 +313,7 @@ namespace DigiMenuAPI.Migrations
                     FilterMode = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)0),
                     ShowContactButton = table.Column<bool>(type: "bit", nullable: false),
                     ShowModalProductInfo = table.Column<bool>(type: "bit", nullable: false),
+                    ShowMapInMenu = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedUserId = table.Column<int>(type: "int", nullable: true),
@@ -368,6 +371,8 @@ namespace DigiMenuAPI.Migrations
                     FlyerImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ShowPromotionalModal = table.Column<bool>(type: "bit", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    FlyerObjectFit = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    FlyerObjectPosition = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedUserId = table.Column<int>(type: "int", nullable: true),
@@ -686,6 +691,8 @@ namespace DigiMenuAPI.Migrations
                     MainImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CategoryId = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    ImageObjectFit = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ImageObjectPosition = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedUserId = table.Column<int>(type: "int", nullable: true),
@@ -794,6 +801,8 @@ namespace DigiMenuAPI.Migrations
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
                     IsVisible = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    ImageObjectFit = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ImageObjectPosition = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedUserId = table.Column<int>(type: "int", nullable: true),
@@ -888,6 +897,8 @@ namespace DigiMenuAPI.Migrations
                     ShowInCarousel = table.Column<bool>(type: "bit", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    PromoObjectFit = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    PromoObjectPosition = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedUserId = table.Column<int>(type: "int", nullable: true),
@@ -964,8 +975,8 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "Branches",
-                columns: new[] { "Id", "Address", "CompanyId", "CreatedAt", "CreatedUserId", "Email", "IsActive", "IsDeleted", "ModifiedAt", "ModifiedUserId", "Name", "Phone", "Slug" },
-                values: new object[] { 1, "San José, Costa Rica", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", true, false, null, null, "Sucursal Principal", "+50600000000", "Principal" });
+                columns: new[] { "Id", "Address", "CompanyId", "CreatedAt", "CreatedUserId", "Email", "IsActive", "IsDeleted", "Location", "ModifiedAt", "ModifiedUserId", "Name", "Phone", "Slug" },
+                values: new object[] { 1, "San José, Costa Rica", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@digimenu.app", true, false, null, null, null, "Sucursal Principal", "+50600000000", "Principal" });
 
             migrationBuilder.InsertData(
                 table: "Categories",
@@ -1007,8 +1018,8 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "CompanyThemes",
-                columns: new[] { "Id", "BrowserThemeColor", "CompanyId", "CreatedAt", "CreatedUserId", "HeaderBackgroundColor", "HeaderStyle", "HeaderTextColor", "IsDarkMode", "MenuLayout", "ModifiedAt", "ModifiedUserId", "PageBackgroundColor", "PrimaryColor", "PrimaryTextColor", "ProductDisplay", "SecondaryColor", "ShowContactButton", "ShowModalProductInfo", "ShowProductDetails", "TabBackgroundColor", "TabTextColor", "TextColor", "TitlesColor" },
-                values: new object[] { 1, "#FFFFFF", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "#FFFFFF", (byte)1, "#1D3557", false, (byte)1, null, null, "#F1FAEE", "#E63946", "#FFFFFF", (byte)1, "#457B9D", true, false, true, "#1D3557", "#FFFFFF", "#1D3557", "#1D3557" });
+                columns: new[] { "Id", "BrowserThemeColor", "CompanyId", "CreatedAt", "CreatedUserId", "HeaderBackgroundColor", "HeaderStyle", "HeaderTextColor", "IsDarkMode", "MenuLayout", "ModifiedAt", "ModifiedUserId", "PageBackgroundColor", "PrimaryColor", "PrimaryTextColor", "ProductDisplay", "SecondaryColor", "ShowContactButton", "ShowMapInMenu", "ShowModalProductInfo", "ShowProductDetails", "TabBackgroundColor", "TabTextColor", "TextColor", "TitlesColor" },
+                values: new object[] { 1, "#FFFFFF", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "#FFFFFF", (byte)1, "#1D3557", false, (byte)1, null, null, "#F1FAEE", "#E63946", "#FFFFFF", (byte)1, "#457B9D", true, true, false, true, "#1D3557", "#FFFFFF", "#1D3557", "#1D3557" });
 
             migrationBuilder.InsertData(
                 table: "Tags",
@@ -1075,20 +1086,20 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "Products",
-                columns: new[] { "Id", "CategoryId", "CompanyId", "CreatedAt", "CreatedUserId", "IsDeleted", "MainImageUrl", "ModifiedAt", "ModifiedUserId" },
+                columns: new[] { "Id", "CategoryId", "CompanyId", "CreatedAt", "CreatedUserId", "ImageObjectFit", "ImageObjectPosition", "IsDeleted", "MainImageUrl", "ModifiedAt", "ModifiedUserId" },
                 values: new object[,]
                 {
-                    { 1, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 2, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 3, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 4, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 5, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 6, 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 7, 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 8, 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 9, 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 10, 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null },
-                    { 11, 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, false, null, null, null }
+                    { 1, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 2, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 3, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 4, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 5, 2, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 6, 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 7, 3, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 8, 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 9, 4, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 10, 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null },
+                    { 11, 5, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "cover", "50% 50%", false, null, null, null }
                 });
 
             migrationBuilder.InsertData(
@@ -1106,20 +1117,20 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "BranchProducts",
-                columns: new[] { "Id", "BranchId", "CategoryId", "CreatedAt", "CreatedUserId", "DisplayOrder", "ImageOverrideUrl", "IsDeleted", "IsVisible", "ModifiedAt", "ModifiedUserId", "OfferPrice", "Price", "ProductId" },
+                columns: new[] { "Id", "BranchId", "CategoryId", "CreatedAt", "CreatedUserId", "DisplayOrder", "ImageObjectFit", "ImageObjectPosition", "ImageOverrideUrl", "IsDeleted", "IsVisible", "ModifiedAt", "ModifiedUserId", "OfferPrice", "Price", "ProductId" },
                 values: new object[,]
                 {
-                    { 1, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, null, false, true, null, null, null, 5500m, 1 },
-                    { 2, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, null, false, true, null, null, 3000m, 3500m, 2 },
-                    { 3, 1, 2, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, null, false, true, null, null, null, 7500m, 3 },
-                    { 4, 1, 2, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, null, false, true, null, null, 10900m, 12500m, 4 },
-                    { 5, 1, 2, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 3, null, false, true, null, null, null, 8500m, 5 },
-                    { 6, 1, 3, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, null, false, true, null, null, null, 3200m, 6 },
-                    { 7, 1, 3, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, null, false, true, null, null, null, 3800m, 7 },
-                    { 8, 1, 4, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, null, false, true, null, null, null, 1500m, 8 },
-                    { 9, 1, 4, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, null, false, true, null, null, null, 1800m, 9 },
-                    { 10, 1, 5, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, null, false, true, null, null, null, 2200m, 10 },
-                    { 11, 1, 5, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, null, false, true, null, null, null, 3500m, 11 }
+                    { 1, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, "cover", "50% 50%", null, false, true, null, null, null, 5500m, 1 },
+                    { 2, 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, "cover", "50% 50%", null, false, true, null, null, 3000m, 3500m, 2 },
+                    { 3, 1, 2, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, "cover", "50% 50%", null, false, true, null, null, null, 7500m, 3 },
+                    { 4, 1, 2, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, "cover", "50% 50%", null, false, true, null, null, 10900m, 12500m, 4 },
+                    { 5, 1, 2, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 3, "cover", "50% 50%", null, false, true, null, null, null, 8500m, 5 },
+                    { 6, 1, 3, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, "cover", "50% 50%", null, false, true, null, null, null, 3200m, 6 },
+                    { 7, 1, 3, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, "cover", "50% 50%", null, false, true, null, null, null, 3800m, 7 },
+                    { 8, 1, 4, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, "cover", "50% 50%", null, false, true, null, null, null, 1500m, 8 },
+                    { 9, 1, 4, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, "cover", "50% 50%", null, false, true, null, null, null, 1800m, 9 },
+                    { 10, 1, 5, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 1, "cover", "50% 50%", null, false, true, null, null, null, 2200m, 10 },
+                    { 11, 1, 5, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, 2, "cover", "50% 50%", null, false, true, null, null, null, 3500m, 11 }
                 });
 
             migrationBuilder.InsertData(

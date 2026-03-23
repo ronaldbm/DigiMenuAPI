@@ -31,5 +31,8 @@ namespace DigiMenuAPI.Application.DTOs.Update
         public bool IsActive { get; set; }
 
         public IFormFile? PromoImage { get; set; }
+
+        public string? PromoObjectFit { get; set; }
+        public string? PromoObjectPosition { get; set; }
     }
 }

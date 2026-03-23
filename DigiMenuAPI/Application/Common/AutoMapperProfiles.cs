@@ -150,14 +150,19 @@ namespace DigiMenuAPI.Application.Common
 
             // CompanyId NO viene del DTO — servicio lo inyecta desde JWT
             // Translations se manejan manualmente en el servicio (transacción + replace-all)
+            // ImageObjectFit/Position se aplican explícitamente en el servicio (permite null=sin cambio)
             CreateMap<ProductCreateDto, Product>()
-                .ForMember(d => d.CompanyId, o => o.Ignore())
-                .ForMember(d => d.MainImageUrl, o => o.Ignore())
-                .ForMember(d => d.Translations, o => o.Ignore());
+                .ForMember(d => d.CompanyId,          o => o.Ignore())
+                .ForMember(d => d.MainImageUrl,        o => o.Ignore())
+                .ForMember(d => d.Translations,        o => o.Ignore())
+                .ForMember(d => d.ImageObjectFit,      o => o.Ignore())
+                .ForMember(d => d.ImageObjectPosition, o => o.Ignore());
 
             CreateMap<ProductUpdateDto, Product>()
-                .ForMember(d => d.MainImageUrl, o => o.Ignore())
-                .ForMember(d => d.Translations, o => o.Ignore())
+                .ForMember(d => d.MainImageUrl,        o => o.Ignore())
+                .ForMember(d => d.Translations,        o => o.Ignore())
+                .ForMember(d => d.ImageObjectFit,      o => o.Ignore())
+                .ForMember(d => d.ImageObjectPosition, o => o.Ignore())
                 .ReverseMap();
         }
 
@@ -174,18 +179,26 @@ namespace DigiMenuAPI.Application.Common
 
             // BranchProductMenuDto: nombre e imagen resueltos en el servicio
             CreateMap<BranchProduct, BranchProductMenuDto>()
-                .ForMember(d => d.ProductId, o => o.MapFrom(s => s.ProductId))
-                .ForMember(d => d.Name, o => o.Ignore())  // servicio aplica traducción
-                .ForMember(d => d.ShortDescription, o => o.Ignore())  // servicio aplica traducción
-                .ForMember(d => d.ImageUrl, o => o.MapFrom(s =>
+                .ForMember(d => d.ProductId,           o => o.MapFrom(s => s.ProductId))
+                .ForMember(d => d.Name,                o => o.Ignore())  // servicio aplica traducción
+                .ForMember(d => d.ShortDescription,    o => o.Ignore())  // servicio aplica traducción
+                .ForMember(d => d.ImageUrl,            o => o.MapFrom(s =>
                     s.ImageOverrideUrl ?? s.Product.MainImageUrl))
-                .ForMember(d => d.Tags, o => o.MapFrom(s => s.Product.Tags));
+                .ForMember(d => d.Tags,                o => o.MapFrom(s => s.Product.Tags))
+                .ForMember(d => d.ImageObjectFit,      o => o.MapFrom(s =>
+                    s.ImageOverrideUrl != null ? s.ImageObjectFit : s.Product.ImageObjectFit))
+                .ForMember(d => d.ImageObjectPosition, o => o.MapFrom(s =>
+                    s.ImageOverrideUrl != null ? s.ImageObjectPosition : s.Product.ImageObjectPosition));
 
             CreateMap<BranchProductCreateDto, BranchProduct>()
-                .ForMember(d => d.ImageOverrideUrl, o => o.Ignore()); // servicio sube imagen
+                .ForMember(d => d.ImageOverrideUrl,    o => o.Ignore())  // servicio sube imagen
+                .ForMember(d => d.ImageObjectFit,      o => o.Ignore())  // servicio aplica con ?? "cover"
+                .ForMember(d => d.ImageObjectPosition, o => o.Ignore());
 
             CreateMap<BranchProductUpdateDto, BranchProduct>()
-                .ForMember(d => d.ImageOverrideUrl, o => o.Ignore()) // servicio sube imagen
+                .ForMember(d => d.ImageOverrideUrl,    o => o.Ignore())  // servicio sube imagen
+                .ForMember(d => d.ImageObjectFit,      o => o.Ignore())  // servicio aplica condicionalmente
+                .ForMember(d => d.ImageObjectPosition, o => o.Ignore())
                 .ReverseMap();
         }
 

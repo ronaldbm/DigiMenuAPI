@@ -57,31 +57,35 @@ namespace DigiMenuAPI.Application.Services
             var items = new List<CarouselItemDto>();
 
             items.AddRange(events.Select(e => new CarouselItemDto(
-                Type:        CarouselItemType.Event,
-                SourceId:    e.Id,
-                Title:       e.Title,
-                Description: e.Description,
-                ImageUrl:    e.FlyerImageUrl,
-                EventDate:   DateOnly.FromDateTime(e.EventDate),
-                StartTime:   e.StartTime,
-                EndTime:     e.EndTime,
-                IsAllDay:    e.StartTime is null && e.EndTime is null,
-                Label:       null,
-                DisplayOrder: null
+                Type:                CarouselItemType.Event,
+                SourceId:            e.Id,
+                Title:               e.Title,
+                Description:         e.Description,
+                ImageUrl:            e.FlyerImageUrl,
+                EventDate:           DateOnly.FromDateTime(e.EventDate),
+                StartTime:           e.StartTime,
+                EndTime:             e.EndTime,
+                IsAllDay:            e.StartTime is null && e.EndTime is null,
+                Label:               null,
+                DisplayOrder:        null,
+                ImageObjectFit:      e.FlyerObjectFit,
+                ImageObjectPosition: e.FlyerObjectPosition
             )));
 
             items.AddRange(promos.Select(p => new CarouselItemDto(
-                Type:        CarouselItemType.Promotion,
-                SourceId:    p.Id,
-                Title:       p.Title,
-                Description: p.Description,
-                ImageUrl:    p.PromoImageUrl,
-                EventDate:   null,
-                StartTime:   p.StartTime?.ToTimeSpan(),
-                EndTime:     p.EndTime?.ToTimeSpan(),
-                IsAllDay:    p.StartTime is null && p.EndTime is null ? null : false,
-                Label:       p.Label,
-                DisplayOrder: p.DisplayOrder
+                Type:                CarouselItemType.Promotion,
+                SourceId:            p.Id,
+                Title:               p.Title,
+                Description:         p.Description,
+                ImageUrl:            p.PromoImageUrl,
+                EventDate:           null,
+                StartTime:           p.StartTime?.ToTimeSpan(),
+                EndTime:             p.EndTime?.ToTimeSpan(),
+                IsAllDay:            p.StartTime is null && p.EndTime is null ? null : false,
+                Label:               p.Label,
+                DisplayOrder:        p.DisplayOrder,
+                ImageObjectFit:      p.PromoObjectFit,
+                ImageObjectPosition: p.PromoObjectPosition
             )));
 
             return OperationResult<List<CarouselItemDto>>.Ok(items);

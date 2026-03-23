@@ -8,6 +8,8 @@ namespace DigiMenuAPI.Application.DTOs.Update
         [Range(0, 9999999.99)] decimal Price,
         [Range(0, 9999999.99)] decimal? OfferPrice,
         IFormFile? ImageOverride,
-        bool IsVisible
+        bool IsVisible,
+        string? ImageObjectFit = null,
+        string? ImageObjectPosition = null
     );
 }

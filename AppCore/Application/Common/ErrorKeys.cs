@@ -27,6 +27,8 @@ namespace AppCore.Application.Common
         public const string Forbidden = "FORBIDDEN";
         public const string ModuleRequired = "MODULE_REQUIRED";
         public const string IdMismatch = "ID_MISMATCH";
+        public const string DbUnavailable = "DB_UNAVAILABLE";
+        public const string RequestTimeout = "REQUEST_TIMEOUT";
 
         // ── Auth ──────────────────────────────────────────────────────
         public const string InvalidCredentials = "INVALID_CREDENTIALS";

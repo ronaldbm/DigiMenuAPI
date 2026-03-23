@@ -47,5 +47,9 @@ namespace AppCore.Domain.Entities
 
         /// <summary>Permite ocultar temporalmente el evento sin eliminarlo.</summary>
         public bool IsActive { get; set; } = true;
+
+        // ── Metadatos de encuadre de imagen ──────────────────────────
+        [MaxLength(20)] public string FlyerObjectFit { get; set; } = "cover";
+        [MaxLength(50)] public string FlyerObjectPosition { get; set; } = "50% 50%";
     }
 }

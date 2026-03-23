@@ -4,6 +4,8 @@ using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.Interfaces;
 using AppCore.Application.Interfaces;
 using DigiMenuAPI.Infrastructure.SQL;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiMenuAPI.Application.Services
@@ -13,17 +15,20 @@ namespace DigiMenuAPI.Application.Services
         private readonly ApplicationDbContext _context;
         private readonly ITenantService _tenantService;
         private readonly LogMessageDispatcher<StoreService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         // AutoMapper eliminado: MenuBranchDto se construye manualmente
         // desde 4 entidades distintas — no hay un mapeo 1:1 posible.
         public StoreService(
             ApplicationDbContext context,
             ITenantService tenantService,
-            LogMessageDispatcher<StoreService> logger)
+            LogMessageDispatcher<StoreService> logger,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _tenantService = tenantService;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<OperationResult<MenuBranchDto>> GetStoreMenu(
@@ -39,6 +44,16 @@ namespace DigiMenuAPI.Application.Services
 
                 if (branchId is null || companyId is null)
                     return OperationResult<MenuBranchDto>.Fail("Menú no encontrado.");
+
+                // Registrar los tags del tenant en la entrada de OutputCache.
+                // Sin esto, EvictByTagAsync("menu-branch:{id}") no encuentra la entrada
+                // y la invalidación no tiene efecto hasta que el TTL expire.
+                var cacheFeature = _httpContextAccessor.HttpContext?.Features.Get<IOutputCacheFeature>();
+                if (cacheFeature is not null)
+                {
+                    cacheFeature.Context.Tags.Add(CacheKeys.MenuBranch(branchId.Value));
+                    cacheFeature.Context.Tags.Add(CacheKeys.MenuCompany(companyId.Value));
+                }
 
                 // 2. Leer las entidades de configuración secuencialmente.
                 //    DbContext no es thread-safe — Task.WhenAll sobre el mismo contexto
@@ -178,7 +193,9 @@ namespace DigiMenuAPI.Application.Services
                                 bp.Price,
                                 bp.OfferPrice,
                                 bp.DisplayOrder,
-                                tags);
+                                tags,
+                                bp.ImageOverrideUrl != null ? bp.ImageObjectFit     : bp.Product.ImageObjectFit,
+                                bp.ImageOverrideUrl != null ? bp.ImageObjectPosition : bp.Product.ImageObjectPosition);
                         })
                         .ToList();
 

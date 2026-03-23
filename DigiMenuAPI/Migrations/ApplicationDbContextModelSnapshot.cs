@@ -222,6 +222,16 @@ namespace DigiMenuAPI.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("FlyerObjectFit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("FlyerObjectPosition")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -1463,6 +1473,16 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
+                    b.Property<string>("ImageObjectFit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ImageObjectPosition")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("ImageOverrideUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -1510,6 +1530,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 1,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 5500m,
@@ -1522,6 +1544,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 2,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             OfferPrice = 3000m,
@@ -1535,6 +1559,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 1,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 7500m,
@@ -1547,6 +1573,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 2,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             OfferPrice = 10900m,
@@ -1560,6 +1588,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 3,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 8500m,
@@ -1572,6 +1602,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 3,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 1,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 3200m,
@@ -1584,6 +1616,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 3,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 2,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 3800m,
@@ -1596,6 +1630,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 4,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 1,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 1500m,
@@ -1608,6 +1644,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 4,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 2,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 1800m,
@@ -1620,6 +1658,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 5,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 1,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 2200m,
@@ -1632,6 +1672,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 5,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 2,
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false,
                             IsVisible = true,
                             Price = 3500m,
@@ -1688,6 +1730,16 @@ namespace DigiMenuAPI.Migrations
                     b.Property<string>("PromoImageUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PromoObjectFit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PromoObjectPosition")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("ShowInCarousel")
                         .HasColumnType("bit");
@@ -2074,6 +2126,16 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int?>("CreatedUserId")
                         .HasColumnType("int");
 
+                    b.Property<string>("ImageObjectFit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ImageObjectPosition")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -2101,6 +2163,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 1,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2109,6 +2173,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 1,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2117,6 +2183,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2125,6 +2193,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2133,6 +2203,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 2,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2141,6 +2213,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 3,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2149,6 +2223,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 3,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2157,6 +2233,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 4,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2165,6 +2243,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 4,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2173,6 +2253,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 5,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         },
                         new
@@ -2181,6 +2263,8 @@ namespace DigiMenuAPI.Migrations
                             CategoryId = 5,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ImageObjectFit = "cover",
+                            ImageObjectPosition = "50% 50%",
                             IsDeleted = false
                         });
                 });

@@ -20,5 +20,8 @@ namespace DigiMenuAPI.Application.DTOs.Update
 
         /// <summary>Nueva imagen del flyer. Si null, se conserva la existente.</summary>
         public IFormFile? FlyerImage { get; set; }
+
+        public string? FlyerObjectFit { get; set; }
+        public string? FlyerObjectPosition { get; set; }
     }
 }

@@ -24,6 +24,8 @@
         public int CategoryId { get; init; }
         public string CategoryName { get; init; } = string.Empty;
         public string? MainImageUrl { get; init; }
+        public string ImageObjectFit { get; init; } = "cover";
+        public string ImageObjectPosition { get; init; } = "50% 50%";
         public List<TagReadDto> Tags { get; init; } = [];
         public List<ProductTranslationReadDto> Translations { get; init; } = [];
         public DateTime CreatedAt { get; init; }
@@ -43,6 +45,8 @@
         public string Name { get; init; } = string.Empty;
         public string? ShortDescription { get; init; }
         public int TagCount { get; init; }
+        public string ImageObjectFit { get; init; } = "cover";
+        public string ImageObjectPosition { get; init; } = "50% 50%";
     }
 
     /// <summary>
@@ -57,6 +61,8 @@
         public int CategoryId { get; init; }
         public string CategoryName { get; init; } = string.Empty;
         public string? MainImageUrl { get; init; }
+        public string ImageObjectFit { get; init; } = "cover";
+        public string ImageObjectPosition { get; init; } = "50% 50%";
         public List<TagReadDto> Tags { get; init; } = [];          // tags con sus traducciones incluidas
         public List<ProductTranslationReadDto> Translations { get; init; } = [];
         public DateTime CreatedAt { get; init; }
@@ -78,7 +84,9 @@
         decimal Price,
         decimal? OfferPrice,
         int DisplayOrder,
-        List<TagMenuDto> Tags
+        List<TagMenuDto> Tags,
+        string ImageObjectFit,
+        string ImageObjectPosition
     );
 
     /// <summary>
@@ -97,6 +105,8 @@
         public decimal? OfferPrice { get; init; }
         public string? ImageOverrideUrl { get; init; }
         public string? BaseImageUrl { get; init; }
+        public string ImageObjectFit { get; init; } = "cover";
+        public string ImageObjectPosition { get; init; } = "50% 50%";
         public int DisplayOrder { get; init; }
         public bool IsVisible { get; init; }
     }

@@ -16,6 +16,8 @@ namespace DigiMenuAPI.Application.DTOs.Read
         bool ShowPromotionalModal,
         bool IsAllDay,
         bool IsActive,
-        DateTime CreatedAt
+        DateTime CreatedAt,
+        string FlyerObjectFit,
+        string FlyerObjectPosition
     );
 }

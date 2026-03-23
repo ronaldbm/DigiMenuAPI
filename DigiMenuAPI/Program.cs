@@ -9,6 +9,7 @@ using AppCore.Infrastructure.SQL;
 using DigiMenuAPI.Application.Interfaces;
 using DigiMenuAPI.Application.Services;
 using DigiMenuAPI.Infrastructure.SQL;
+using DigiMenuAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -41,9 +42,9 @@ public partial class Program
                 builder.Configuration.GetConnectionString("DefaultConnection"),
                 sqlOptions => sqlOptions
                     .EnableRetryOnFailure(
-                        maxRetryCount:  3,
-                        maxRetryDelay:  TimeSpan.FromSeconds(6),
-                        errorNumbersToAdd: null)
+                        maxRetryCount:     3,
+                        maxRetryDelay:     TimeSpan.FromSeconds(6),
+                        errorNumbersToAdd: [-2, 258]) // timeout numbers explícitos
                     .UseNetTopologySuite()));
 
         // AppCore services depend on CoreDbContext — ApplicationDbContext extends it,
@@ -184,25 +185,13 @@ public partial class Program
         var app = builder.Build();
         // ════════════════════════════════════════════════════════════════════
 
-        app.UseExceptionHandler(exceptionHandlerApp =>
-        {
-            exceptionHandlerApp.Run(async context =>
-            {
-                var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-                if (feature?.Error is UnauthorizedAccessException uae)
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(new
-                    {
-                        Success = false,
-                        ErrorCode = "Forbidden",
-                        ErrorKey = AppCore.Application.Common.ErrorKeys.Forbidden,
-                        Message = uae.Message
-                    });
-                }
-            });
-        });
+        // ── MIDDLEWARE DE CORRELACIÓN Y EXCEPCIONES GLOBALES ─────────────────
+        // Orden crítico: CorrelationId primero (sella el LogContext),
+        // GlobalException segundo (envuelve todo el pipeline restante).
+        // Ambos deben ir ANTES de UseSerilogRequestLogging para que el
+        // CorrelationId aparezca en los logs de request y de excepción.
+        app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseMiddleware<GlobalExceptionMiddleware>();
 
         if (app.Environment.IsDevelopment())
         {
@@ -213,7 +202,18 @@ public partial class Program
             app.MapScalarApiReference();
         }
 
-        app.UseSerilogRequestLogging();
+        app.UseSerilogRequestLogging(opts =>
+        {
+            opts.MessageTemplate =
+                "HTTP {RequestMethod} {RequestPath} → {StatusCode} in {Elapsed:0.0000}ms [{CorrelationId}]";
+            opts.EnrichDiagnosticContext = (diag, ctx) =>
+            {
+                diag.Set("RequestHost", ctx.Request.Host.Value);
+                diag.Set("UserAgent", ctx.Request.Headers.UserAgent.ToString());
+                if (ctx.Request.Headers.TryGetValue("X-Correlation-ID", out var cid))
+                    diag.Set("CorrelationId", cid.ToString());
+            };
+        });
         app.UseHttpsRedirection();
         app.UseCors("Frontend");
         app.UseAuthentication();
