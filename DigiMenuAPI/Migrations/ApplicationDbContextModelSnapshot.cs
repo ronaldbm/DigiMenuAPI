@@ -578,7 +578,7 @@ namespace DigiMenuAPI.Migrations
                             Name = "DigiMenu Platform",
                             Phone = "+50600000000",
                             PlanId = 4,
-                            Slug = "digimenu-platform"
+                            Slug = "demo"
                         });
                 });
 
@@ -607,6 +607,12 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int?>("CreatedUserId")
                         .HasColumnType("int");
 
+                    b.Property<int>("DefaultMaxOpenTabs")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DefaultMaxTabAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("FaviconUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -618,6 +624,12 @@ namespace DigiMenuAPI.Migrations
 
                     b.Property<int?>("ModifiedUserId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("TabRequiresManagerApproval")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("TabsEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Tagline")
                         .HasMaxLength(200)
@@ -637,6 +649,10 @@ namespace DigiMenuAPI.Migrations
                             BusinessName = "DigiMenu Demo",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultMaxOpenTabs = 3,
+                            DefaultMaxTabAmount = 0m,
+                            TabRequiresManagerApproval = false,
+                            TabsEnabled = false,
                             Tagline = "El mejor menú digital para tu restaurante"
                         });
                 });
@@ -836,12 +852,10 @@ namespace DigiMenuAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("BrowserThemeColor")
-                        .IsRequired()
+                    b.Property<byte>("CategoryHeaderStyle")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#FFFFFF");
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
 
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
@@ -852,29 +866,20 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int?>("CreatedUserId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("DarkModeAutoGenerate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<byte>("FilterMode")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint")
                         .HasDefaultValue((byte)0);
 
-                    b.Property<string>("HeaderBackgroundColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#FFFFFF");
-
                     b.Property<byte>("HeaderStyle")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint")
                         .HasDefaultValue((byte)1);
-
-                    b.Property<string>("HeaderTextColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#000000");
 
                     b.Property<bool>("IsDarkMode")
                         .HasColumnType("bit");
@@ -890,38 +895,15 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int?>("ModifiedUserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("PageBackgroundColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#FFFFFF");
-
-                    b.Property<string>("PrimaryColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#E63946");
-
-                    b.Property<string>("PrimaryTextColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#FFFFFF");
-
                     b.Property<byte>("ProductDisplay")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint")
                         .HasDefaultValue((byte)1);
 
-                    b.Property<string>("SecondaryColor")
-                        .IsRequired()
+                    b.Property<bool>("ShowCategoryImages")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#457B9D");
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("ShowContactButton")
                         .HasColumnType("bit");
@@ -935,35 +917,9 @@ namespace DigiMenuAPI.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("ShowProductDetails")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("TabBackgroundColor")
-                        .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#000000");
-
-                    b.Property<string>("TabTextColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#FFFFFF");
-
-                    b.Property<string>("TextColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#1D3557");
-
-                    b.Property<string>("TitlesColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)")
-                        .HasDefaultValue("#000000");
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.HasKey("Id");
 
@@ -976,28 +932,136 @@ namespace DigiMenuAPI.Migrations
                         new
                         {
                             Id = 1,
-                            BrowserThemeColor = "#FFFFFF",
+                            CategoryHeaderStyle = (byte)1,
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DarkModeAutoGenerate = true,
                             FilterMode = (byte)0,
-                            HeaderBackgroundColor = "#FFFFFF",
                             HeaderStyle = (byte)1,
-                            HeaderTextColor = "#1D3557",
                             IsDarkMode = false,
                             MenuLayout = (byte)1,
-                            PageBackgroundColor = "#F1FAEE",
-                            PrimaryColor = "#E63946",
-                            PrimaryTextColor = "#FFFFFF",
                             ProductDisplay = (byte)1,
-                            SecondaryColor = "#457B9D",
+                            ShowCategoryImages = true,
                             ShowContactButton = true,
                             ShowMapInMenu = true,
                             ShowModalProductInfo = false,
-                            ShowProductDetails = true,
-                            TabBackgroundColor = "#1D3557",
-                            TabTextColor = "#FFFFFF",
-                            TextColor = "#1D3557",
-                            TitlesColor = "#1D3557"
+                            ShowProductDetails = true
+                        });
+                });
+
+            modelBuilder.Entity("AppCore.Domain.Entities.DecorativeFrame", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SvgContent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DecorativeFrames");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Category = "universal",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 1,
+                            Name = "Classic Border",
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><rect x='2' y='2' width='96' height='96' rx='4'/></svg>"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Category = "fine-dining",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 2,
+                            Name = "Double Line",
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor'><rect x='2' y='2' width='96' height='96' stroke-width='0.5'/><rect x='4' y='4' width='92' height='92' stroke-width='0.5'/></svg>"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Category = "cafe",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 3,
+                            Name = "Corner Accents",
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1.5'><path d='M2 18 L2 2 L18 2'/><path d='M82 2 L98 2 L98 18'/><path d='M98 82 L98 98 L82 98'/><path d='M18 98 L2 98 L2 82'/></svg>"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Category = "universal",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 4,
+                            Name = "Rounded",
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><rect x='2' y='2' width='96' height='96' rx='12'/></svg>"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Category = "fine-dining",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 5,
+                            Name = "Ornate",
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='0.8'><rect x='3' y='3' width='94' height='94'/><rect x='6' y='6' width='88' height='88'/><circle cx='3' cy='3' r='2' fill='currentColor'/><circle cx='97' cy='3' r='2' fill='currentColor'/><circle cx='97' cy='97' r='2' fill='currentColor'/><circle cx='3' cy='97' r='2' fill='currentColor'/></svg>"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Category = "bar",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 6,
+                            Name = "Minimal Top",
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><line x1='5' y1='3' x2='95' y2='3'/><line x1='5' y1='97' x2='95' y2='97'/></svg>"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Category = "fine-dining",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 7,
+                            Name = "Diamond Corners",
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><rect x='3' y='3' width='94' height='94'/><polygon points='3,10 10,3 3,3' fill='currentColor'/><polygon points='90,3 97,3 97,10' fill='currentColor'/><polygon points='97,90 97,97 90,97' fill='currentColor'/><polygon points='10,97 3,97 3,90' fill='currentColor'/></svg>"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Category = "bar",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 8,
+                            Name = "Wave",
+                            SvgContent = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><path d='M2 2 Q10 8 18 2 Q26 -4 34 2 Q42 8 50 2 Q58 -4 66 2 Q74 8 82 2 Q90 -4 98 2'/><path d='M2 98 Q10 92 18 98 Q26 104 34 98 Q42 92 50 98 Q58 104 66 98 Q74 92 82 98 Q90 104 98 98'/></svg>"
                         });
                 });
 
@@ -1450,6 +1514,338 @@ namespace DigiMenuAPI.Migrations
                     b.ToTable("PasswordResetRequests");
                 });
 
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Account", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClientIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int?>("TabAuthorizedByUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("TabAuthorizedByUserId");
+
+                    b.HasIndex("BranchId", "Status");
+
+                    b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountAuditEntry", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("HumanReadable")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("AccountAuditEntries");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountDiscount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AccountItemId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("AppliesTo")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int?>("AuthorizedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BranchDiscountId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("DiscountType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("AccountItemId");
+
+                    b.HasIndex("AuthorizedByUserId");
+
+                    b.HasIndex("BranchDiscountId");
+
+                    b.ToTable("AccountDiscounts");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BranchProductId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("BranchProductId");
+
+                    b.ToTable("AccountItems");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountSplit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SplitName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("AccountSplits");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountSplitItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AccountSplitId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountItemId");
+
+                    b.HasIndex("AccountSplitId");
+
+                    b.ToTable("AccountSplitItems");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchDiscount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte>("AppliesTo")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DefaultValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<byte>("DiscountType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("MaxValueForStaff")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "IsActive");
+
+                    b.ToTable("BranchDiscounts");
+                });
+
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchProduct", b =>
                 {
                     b.Property<int>("Id")
@@ -1891,6 +2287,12 @@ namespace DigiMenuAPI.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
+                    b.Property<string>("HeaderImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte?>("HeaderStyleOverride")
+                        .HasColumnType("tinyint");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -2023,6 +2425,68 @@ namespace DigiMenuAPI.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Customer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("CreditLimit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CurrentBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxOpenTabs")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("MaxTabAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ModifiedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "IsActive");
+
+                    b.ToTable("Customers");
+                });
+
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.FooterLink", b =>
                 {
                     b.Property<int>("Id")
@@ -2102,8 +2566,57 @@ namespace DigiMenuAPI.Migrations
                             IsVisible = true,
                             Label = "WhatsApp",
                             StandardIconId = 3,
-                            Url = "https://wa.me/50612345678"
+                            Url = "https://wa.me/5060616827"
                         });
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RelatedEntity")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("RelatedEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TargetUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "IsRead");
+
+                    b.HasIndex("CompanyId", "TargetUserId");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Product", b =>
@@ -2791,7 +3304,178 @@ namespace DigiMenuAPI.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.OwnsOne("AppCore.Domain.Entities.BackgroundSettingsData", "BackgroundSettings", b1 =>
+                        {
+                            b1.Property<int>("CompanyThemeId");
+
+                            b1.Property<byte>("Opacity");
+
+                            b1.Property<byte>("Position");
+
+                            b1.Property<bool>("Repeat");
+
+                            b1.Property<byte>("Size");
+
+                            b1.HasKey("CompanyThemeId");
+
+                            b1.ToTable("CompanyThemes");
+
+                            b1
+                                .ToJson("BackgroundSettings")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CompanyThemeId");
+                        });
+
+                    b.OwnsOne("AppCore.Domain.Entities.ColorPaletteData", "ColorPalette", b1 =>
+                        {
+                            b1.Property<int>("CompanyThemeId");
+
+                            b1.Property<string>("BrowserThemeColor")
+                                .IsRequired();
+
+                            b1.Property<string>("CardBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("CardBorderColor")
+                                .IsRequired();
+
+                            b1.Property<string>("FooterBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("HeaderBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("HeaderTextColor")
+                                .IsRequired();
+
+                            b1.Property<string>("PageBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("PrimaryColor")
+                                .IsRequired();
+
+                            b1.Property<string>("PrimaryTextColor")
+                                .IsRequired();
+
+                            b1.Property<string>("SecondaryColor")
+                                .IsRequired();
+
+                            b1.Property<string>("TabBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("TabTextColor")
+                                .IsRequired();
+
+                            b1.Property<string>("TextColor")
+                                .IsRequired();
+
+                            b1.Property<string>("TitlesColor")
+                                .IsRequired();
+
+                            b1.HasKey("CompanyThemeId");
+
+                            b1.ToTable("CompanyThemes");
+
+                            b1
+                                .ToJson("ColorPalette")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CompanyThemeId");
+                        });
+
+                    b.OwnsOne("AppCore.Domain.Entities.ColorPaletteData", "DarkModePalette", b1 =>
+                        {
+                            b1.Property<int>("CompanyThemeId");
+
+                            b1.Property<string>("BrowserThemeColor")
+                                .IsRequired();
+
+                            b1.Property<string>("CardBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("CardBorderColor")
+                                .IsRequired();
+
+                            b1.Property<string>("FooterBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("HeaderBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("HeaderTextColor")
+                                .IsRequired();
+
+                            b1.Property<string>("PageBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("PrimaryColor")
+                                .IsRequired();
+
+                            b1.Property<string>("PrimaryTextColor")
+                                .IsRequired();
+
+                            b1.Property<string>("SecondaryColor")
+                                .IsRequired();
+
+                            b1.Property<string>("TabBackgroundColor")
+                                .IsRequired();
+
+                            b1.Property<string>("TabTextColor")
+                                .IsRequired();
+
+                            b1.Property<string>("TextColor")
+                                .IsRequired();
+
+                            b1.Property<string>("TitlesColor")
+                                .IsRequired();
+
+                            b1.HasKey("CompanyThemeId");
+
+                            b1.ToTable("CompanyThemes");
+
+                            b1
+                                .ToJson("DarkModePalette")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CompanyThemeId");
+                        });
+
+                    b.OwnsOne("AppCore.Domain.Entities.FrameSettingsData", "FrameSettings", b1 =>
+                        {
+                            b1.Property<int>("CompanyThemeId");
+
+                            b1.Property<string>("CustomFrameUrl");
+
+                            b1.Property<byte>("FrameId");
+
+                            b1.HasKey("CompanyThemeId");
+
+                            b1.ToTable("CompanyThemes");
+
+                            b1
+                                .ToJson("FrameSettings")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CompanyThemeId");
+                        });
+
+                    b.Navigation("BackgroundSettings")
+                        .IsRequired();
+
+                    b.Navigation("ColorPalette")
+                        .IsRequired();
+
                     b.Navigation("Company");
+
+                    b.Navigation("DarkModePalette");
+
+                    b.Navigation("FrameSettings")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("AppCore.Infrastructure.Entities.OutboxEmail", b =>
@@ -2840,6 +3524,135 @@ namespace DigiMenuAPI.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Account", b =>
+                {
+                    b.HasOne("AppCore.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.Customer", "Customer")
+                        .WithMany("Accounts")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AppCore.Domain.Entities.AppUser", "TabAuthorizedByUser")
+                        .WithMany()
+                        .HasForeignKey("TabAuthorizedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("TabAuthorizedByUser");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountAuditEntry", b =>
+                {
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountDiscount", b =>
+                {
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.Account", "Account")
+                        .WithMany("Discounts")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.AccountItem", "AccountItem")
+                        .WithMany("Discounts")
+                        .HasForeignKey("AccountItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AppCore.Domain.Entities.AppUser", "AuthorizedByUser")
+                        .WithMany()
+                        .HasForeignKey("AuthorizedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.BranchDiscount", "BranchDiscount")
+                        .WithMany("AccountDiscounts")
+                        .HasForeignKey("BranchDiscountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("AccountItem");
+
+                    b.Navigation("AuthorizedByUser");
+
+                    b.Navigation("BranchDiscount");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountItem", b =>
+                {
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.Account", "Account")
+                        .WithMany("Items")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.BranchProduct", "BranchProduct")
+                        .WithMany()
+                        .HasForeignKey("BranchProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("BranchProduct");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountSplit", b =>
+                {
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.Account", "Account")
+                        .WithMany("Splits")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountSplitItem", b =>
+                {
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.AccountItem", "AccountItem")
+                        .WithMany("SplitItems")
+                        .HasForeignKey("AccountItemId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("DigiMenuAPI.Infrastructure.Entities.AccountSplit", "AccountSplit")
+                        .WithMany("Items")
+                        .HasForeignKey("AccountSplitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AccountItem");
+
+                    b.Navigation("AccountSplit");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchDiscount", b =>
+                {
+                    b.HasOne("AppCore.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchProduct", b =>
@@ -2918,6 +3731,17 @@ namespace DigiMenuAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Customer", b =>
+                {
+                    b.HasOne("AppCore.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.FooterLink", b =>
@@ -3061,6 +3885,32 @@ namespace DigiMenuAPI.Migrations
                     b.Navigation("Body");
                 });
 
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Account", b =>
+                {
+                    b.Navigation("Discounts");
+
+                    b.Navigation("Items");
+
+                    b.Navigation("Splits");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountItem", b =>
+                {
+                    b.Navigation("Discounts");
+
+                    b.Navigation("SplitItems");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.AccountSplit", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.BranchDiscount", b =>
+                {
+                    b.Navigation("AccountDiscounts");
+                });
+
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Category", b =>
                 {
                     b.Navigation("BranchProducts");
@@ -3068,6 +3918,11 @@ namespace DigiMenuAPI.Migrations
                     b.Navigation("Products");
 
                     b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Customer", b =>
+                {
+                    b.Navigation("Accounts");
                 });
 
             modelBuilder.Entity("DigiMenuAPI.Infrastructure.Entities.Product", b =>

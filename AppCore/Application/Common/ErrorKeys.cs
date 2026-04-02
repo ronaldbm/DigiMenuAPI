@@ -135,5 +135,36 @@ namespace AppCore.Application.Common
         public const string PromotionNotFound = "PROMOTION_NOT_FOUND";
         public const string PromotionEndBeforeStart = "PROMOTION_END_BEFORE_START";
         public const string ProductHasActivePromotions = "PRODUCT_HAS_ACTIVE_PROMOTIONS";
+
+        // ── Customer ─────────────────────────────────────────────────────────────
+        public const string CustomerNotFound            = "CUSTOMER_NOT_FOUND";
+        public const string CustomerInactive            = "CUSTOMER_INACTIVE";
+        public const string CustomerTabLimitReached     = "CUSTOMER_TAB_LIMIT_REACHED";
+        public const string CustomerMaxTabAmountReached = "CUSTOMER_MAX_TAB_AMOUNT_REACHED";
+        public const string CustomerCreditLimitReached  = "CUSTOMER_CREDIT_LIMIT_REACHED";
+        public const string CompanyTabLimitReached      = "COMPANY_TAB_LIMIT_REACHED";
+        public const string CompanyMaxTabAmountReached  = "COMPANY_MAX_TAB_AMOUNT_REACHED";
+
+        // ── Account Management ────────────────────────────────────────────────────
+        public const string AccountNotFound                = "ACCOUNT_NOT_FOUND";
+        public const string AccountNotOwned               = "ACCOUNT_NOT_OWNED";
+        public const string AccountClosed                 = "ACCOUNT_CLOSED";
+        public const string AccountCancelled              = "ACCOUNT_CANCELLED";
+        public const string AccountAlreadyClosed          = "ACCOUNT_ALREADY_CLOSED";
+        public const string AccountItemNotFound           = "ACCOUNT_ITEM_NOT_FOUND";
+        public const string AccountItemNotOwned           = "ACCOUNT_ITEM_NOT_OWNED";
+        public const string AccountSplitNotFound          = "ACCOUNT_SPLIT_NOT_FOUND";
+        public const string AccountSplitQtyExceedsItem    = "ACCOUNT_SPLIT_QTY_EXCEEDS_ITEM";
+        public const string BranchDiscountNotFound        = "BRANCH_DISCOUNT_NOT_FOUND";
+        public const string BranchDiscountNotOwned        = "BRANCH_DISCOUNT_NOT_OWNED";
+        public const string BranchDiscountInactive        = "BRANCH_DISCOUNT_INACTIVE";
+        public const string BranchDiscountInUse           = "BRANCH_DISCOUNT_IN_USE";
+        public const string AccountDiscountNotFound       = "ACCOUNT_DISCOUNT_NOT_FOUND";
+        public const string AccountDiscountAlreadyProcessed = "ACCOUNT_DISCOUNT_ALREADY_PROCESSED";
+        public const string TabsNotEnabled                = "TABS_NOT_ENABLED";
+        public const string TabRequiresManagerApproval    = "TAB_REQUIRES_MANAGER_APPROVAL";
+        public const string DiscountRequiresApproval      = "DISCOUNT_REQUIRES_APPROVAL";
+        public const string DiscountApprovalUnauthorized  = "DISCOUNT_APPROVAL_UNAUTHORIZED";
+        public const string BranchProductNotVisibleForAccount = "BRANCH_PRODUCT_NOT_VISIBLE_FOR_ACCOUNT";
     }
 }

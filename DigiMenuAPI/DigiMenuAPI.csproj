@@ -21,4 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AppCore\AppCore.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="logs\" />
+  </ItemGroup>
 </Project>

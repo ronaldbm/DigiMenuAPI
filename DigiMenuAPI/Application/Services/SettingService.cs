@@ -407,6 +407,29 @@ namespace DigiMenuAPI.Application.Services
                     branch.Phone, branch.Email));
         }
 
+        // ── Tabs: ACTUALIZACIÓN ───────────────────────────────────────
+
+        public async Task<OperationResult<CompanyInfoReadDto>> UpdateCompanyTabs(
+            CompanyTabsUpdateDto dto)
+        {
+            var companyId = _tenantService.GetCompanyId();
+
+            var info = await _context.CompanyInfos
+                .FirstOrDefaultAsync(i => i.CompanyId == companyId);
+
+            if (info is null)
+                return OperationResult<CompanyInfoReadDto>.Fail("Información no encontrada.");
+
+            info.TabsEnabled                 = dto.TabsEnabled;
+            info.DefaultMaxOpenTabs          = dto.DefaultMaxOpenTabs;
+            info.DefaultMaxTabAmount         = dto.DefaultMaxTabAmount;
+            info.TabRequiresManagerApproval   = dto.TabRequiresManagerApproval;
+            await _context.SaveChangesAsync();
+            await _cache.EvictMenuByCompanyAsync(companyId);
+
+            return OperationResult<CompanyInfoReadDto>.Ok(_mapper.Map<CompanyInfoReadDto>(info));
+        }
+
         /// <summary>Valida extensión de imagen. Lanza si no es permitida.</summary>
         private static void AssertImageExtension(string fileName)
         {

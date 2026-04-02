@@ -144,5 +144,13 @@ namespace DigiMenuAPI.Controllers
         public async Task<ActionResult> UpdateBranchContact(
             int branchId, [FromBody] BranchContactUpdateDto dto)
             => HandleResult(await _service.UpdateBranchContact(branchId, dto));
+
+        // ── Tabs ──────────────────────────────────────────────────────────
+
+        /// <summary>Actualiza las pestañas visibles de la Company.</summary>
+        [HttpPatch("company/tabs")]
+        public async Task<ActionResult> UpdateCompanyTabs([FromBody] CompanyTabsUpdateDto dto)
+            => HandleResult(await _service.UpdateCompanyTabs(dto));
+
     }
 }

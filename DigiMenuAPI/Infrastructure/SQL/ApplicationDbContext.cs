@@ -32,6 +32,21 @@ namespace DigiMenuAPI.Infrastructure.SQL
         public DbSet<FooterLink> FooterLinks { get; set; }
         public DbSet<Reservation> Reservations { get; set; }
 
+        // ── Customers ───────────────────────────────────────────────────────────────
+        public DbSet<Customer>        Customers        { get; set; }
+
+        // ── Account Management ────────────────────────────────────────────────────
+        public DbSet<Account>            Accounts            { get; set; }
+        public DbSet<AccountItem>        AccountItems        { get; set; }
+        public DbSet<AccountAuditEntry>  AccountAuditEntries { get; set; }
+
+        // ── Notifications ───────────────────────────────────────────────────────────
+        public DbSet<Notification>       Notifications       { get; set; }
+        public DbSet<AccountSplit>    AccountSplits    { get; set; }
+        public DbSet<AccountSplitItem> AccountSplitItems { get; set; }
+        public DbSet<BranchDiscount>  BranchDiscounts  { get; set; }
+        public DbSet<AccountDiscount> AccountDiscounts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -47,6 +62,15 @@ namespace DigiMenuAPI.Infrastructure.SQL
             ConfigureFooterLink(modelBuilder);
             ConfigureBranchReservationForm(modelBuilder);
             ConfigureReservation(modelBuilder);
+            ConfigureCustomer(modelBuilder);
+            ConfigureAccount(modelBuilder);
+            ConfigureAccountItem(modelBuilder);
+            ConfigureAccountSplit(modelBuilder);
+            ConfigureAccountSplitItem(modelBuilder);
+            ConfigureBranchDiscount(modelBuilder);
+            ConfigureAccountDiscount(modelBuilder);
+            ConfigureAccountAuditEntry(modelBuilder);
+            ConfigureNotification(modelBuilder);
 
             SeedMenuData(modelBuilder);
         }
@@ -449,8 +473,204 @@ namespace DigiMenuAPI.Infrastructure.SQL
             var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             b.Entity<FooterLink>().HasData(
                 new FooterLink { Id = 1, BranchId = 1, Label = "Instagram", Url = "https://instagram.com/digimenu", StandardIconId = 2, DisplayOrder = 1, IsVisible = true, IsDeleted = false, CreatedAt = seed },
-                new FooterLink { Id = 2, BranchId = 1, Label = "WhatsApp",  Url = "https://wa.me/50612345678",      StandardIconId = 3, DisplayOrder = 2, IsVisible = true, IsDeleted = false, CreatedAt = seed }
+                new FooterLink { Id = 2, BranchId = 1, Label = "WhatsApp",  Url = "https://wa.me/5060616827",      StandardIconId = 3, DisplayOrder = 2, IsVisible = true, IsDeleted = false, CreatedAt = seed }
             );
+        }
+
+        // ── Customer ─────────────────────────────────────────────────────────────
+
+        private static void ConfigureCustomer(ModelBuilder b)
+        {
+            b.Entity<Customer>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+                e.Property(x => x.Phone).HasMaxLength(20);
+                e.Property(x => x.Email).HasMaxLength(200);
+                e.Property(x => x.Notes).HasMaxLength(500);
+                e.Property(x => x.CreditLimit).HasColumnType("decimal(18,2)");
+                e.Property(x => x.CurrentBalance).HasColumnType("decimal(18,2)");
+                e.Property(x => x.MaxTabAmount).HasColumnType("decimal(18,2)");
+
+                e.HasIndex(x => new { x.CompanyId, x.IsActive });
+
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        // ── Account Management ────────────────────────────────────────────────────
+
+        private static void ConfigureAccount(ModelBuilder b)
+        {
+            b.Entity<Account>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.ClientIdentifier).IsRequired().HasMaxLength(200);
+                e.Property(x => x.Notes).HasMaxLength(500);
+
+                e.HasIndex(x => new { x.BranchId, x.Status });
+
+                e.HasOne(x => x.Branch)
+                 .WithMany()
+                 .HasForeignKey(x => x.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.TabAuthorizedByUser)
+                 .WithMany()
+                 .HasForeignKey(x => x.TabAuthorizedByUserId)
+                 .IsRequired(false)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.Customer)
+                 .WithMany(c => c.Accounts)
+                 .HasForeignKey(x => x.CustomerId)
+                 .IsRequired(false)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureAccountItem(ModelBuilder b)
+        {
+            b.Entity<AccountItem>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.ProductName).IsRequired().HasMaxLength(200);
+                e.Property(x => x.Notes).HasMaxLength(300);
+                e.Property(x => x.UnitPrice).HasColumnType("decimal(18,2)");
+
+                e.HasIndex(x => x.AccountId);
+
+                e.HasOne(x => x.Account)
+                 .WithMany(a => a.Items)
+                 .HasForeignKey(x => x.AccountId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.BranchProduct)
+                 .WithMany()
+                 .HasForeignKey(x => x.BranchProductId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureAccountSplit(ModelBuilder b)
+        {
+            b.Entity<AccountSplit>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.SplitName).IsRequired().HasMaxLength(100);
+
+                e.HasOne(x => x.Account)
+                 .WithMany(a => a.Splits)
+                 .HasForeignKey(x => x.AccountId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+
+        private static void ConfigureAccountSplitItem(ModelBuilder b)
+        {
+            b.Entity<AccountSplitItem>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Quantity).HasColumnType("decimal(18,3)");
+
+                e.HasOne(x => x.AccountSplit)
+                 .WithMany(s => s.Items)
+                 .HasForeignKey(x => x.AccountSplitId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.AccountItem)
+                 .WithMany(i => i.SplitItems)
+                 .HasForeignKey(x => x.AccountItemId)
+                 // NoAction: evita ciclos de cascada en SQL Server.
+                 // La eliminación en cadena ya la cubre Account→AccountSplit→AccountSplitItem.
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+        }
+
+        private static void ConfigureBranchDiscount(ModelBuilder b)
+        {
+            b.Entity<BranchDiscount>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Name).IsRequired().HasMaxLength(100);
+                e.Property(x => x.DefaultValue).HasColumnType("decimal(18,2)");
+                e.Property(x => x.MaxValueForStaff).HasColumnType("decimal(18,2)");
+
+                e.HasIndex(x => new { x.BranchId, x.IsActive });
+
+                e.HasOne(x => x.Branch)
+                 .WithMany()
+                 .HasForeignKey(x => x.BranchId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureAccountDiscount(ModelBuilder b)
+        {
+            b.Entity<AccountDiscount>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Reason).IsRequired().HasMaxLength(300);
+                e.Property(x => x.DiscountValue).HasColumnType("decimal(18,2)");
+
+                e.HasOne(x => x.Account)
+                 .WithMany(a => a.Discounts)
+                 .HasForeignKey(x => x.AccountId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.BranchDiscount)
+                 .WithMany(d => d.AccountDiscounts)
+                 .HasForeignKey(x => x.BranchDiscountId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.AccountItem)
+                 .WithMany(i => i.Discounts)
+                 .HasForeignKey(x => x.AccountItemId)
+                 .IsRequired(false)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.AuthorizedByUser)
+                 .WithMany()
+                 .HasForeignKey(x => x.AuthorizedByUserId)
+                 .IsRequired(false)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureNotification(ModelBuilder b)
+        {
+            b.Entity<Notification>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Type).HasMaxLength(50).IsRequired();
+                e.Property(x => x.Message).HasMaxLength(500).IsRequired();
+                e.Property(x => x.RelatedEntity).HasMaxLength(50);
+
+                e.HasIndex(x => new { x.CompanyId, x.IsRead });
+                e.HasIndex(x => new { x.CompanyId, x.TargetUserId });
+            });
+        }
+
+        private static void ConfigureAccountAuditEntry(ModelBuilder b)
+        {
+            b.Entity<AccountAuditEntry>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Action).HasMaxLength(50).IsRequired();
+                e.Property(x => x.UserName).HasMaxLength(200);
+                e.Property(x => x.Details).HasMaxLength(2000);
+                e.Property(x => x.HumanReadable).HasMaxLength(500).IsRequired();
+
+                e.HasIndex(x => x.AccountId);
+
+                e.HasOne(x => x.Account)
+                 .WithMany()
+                 .HasForeignKey(x => x.AccountId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

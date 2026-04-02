@@ -76,5 +76,9 @@ namespace DigiMenuAPI.Application.Interfaces
         Task<OperationResult<CompanyContactReadDto>> UpdateCompanyContact(CompanyContactUpdateDto dto);
 
         Task<OperationResult<BranchContactReadDto>> UpdateBranchContact(int branchId, BranchContactUpdateDto dto);
+
+        // ── Tabs: ACTUALIZACIÓN ───────────────────────────────────────
+
+        Task<OperationResult<CompanyInfoReadDto>> UpdateCompanyTabs(CompanyTabsUpdateDto dto);
     }
 }

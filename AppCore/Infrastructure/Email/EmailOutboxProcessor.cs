@@ -14,12 +14,21 @@ namespace AppCore.Infrastructure.Email
     ///   BatchSize       → correos por ciclo (default: 20)
     ///
     /// Backoff exponencial: 2^(RetryCount-1) minutos entre reintentos.
+    ///
+    /// Circuit breaker integrado: tras N fallos consecutivos de BD,
+    /// el processor se detiene por un periodo de cooldown antes de reintentar,
+    /// evitando saturar el pool de conexiones cuando SQL Server no responde.
     /// </summary>
     public class EmailOutboxProcessor : BackgroundService
     {
         private readonly IServiceProvider _services;
         private readonly ILogger<EmailOutboxProcessor> _logger;
         private readonly IConfiguration _config;
+
+        // ── Circuit Breaker State ─────────────────────────────────────────
+        private int _consecutiveDbFailures;
+        private const int CircuitBreakerThreshold = 3;
+        private static readonly TimeSpan CircuitBreakerCooldown = TimeSpan.FromMinutes(5);
 
         private int IntervalSeconds => int.Parse(_config["Email:Outbox:IntervalSeconds"] ?? "30");
         private int MaxRetries => int.Parse(_config["Email:Outbox:MaxRetries"] ?? "5");
@@ -45,7 +54,45 @@ namespace AppCore.Infrastructure.Email
             {
                 try
                 {
+                    // ── Circuit Breaker: si hay demasiados fallos consecutivos,
+                    //    esperar un período largo antes de reintentar para no
+                    //    saturar el pool de conexiones.
+                    if (_consecutiveDbFailures >= CircuitBreakerThreshold)
+                    {
+                        _logger.LogWarning(
+                            "[EmailOutbox] ⚡ Circuit breaker abierto tras {Failures} fallos consecutivos de BD. " +
+                            "Esperando {Cooldown} antes de reintentar.",
+                            _consecutiveDbFailures, CircuitBreakerCooldown);
+
+                        await Task.Delay(CircuitBreakerCooldown, stoppingToken);
+                        _consecutiveDbFailures = 0; // Reset para reintentar
+
+                        _logger.LogInformation("[EmailOutbox] ⚡ Circuit breaker cerrado. Reintentando conexión.");
+                    }
+
+                    // ── Health Check rápido antes de procesar ──────────────────
+                    if (!await IsDatabaseReachableAsync(stoppingToken))
+                    {
+                        _consecutiveDbFailures++;
+                        _logger.LogWarning(
+                            "[EmailOutbox] ⚠️ BD no alcanzable (fallo {N}/{Max}). Saltando ciclo.",
+                            _consecutiveDbFailures, CircuitBreakerThreshold);
+
+                        await Task.Delay(TimeSpan.FromSeconds(IntervalSeconds), stoppingToken);
+                        continue;
+                    }
+
+                    // Si llegamos aquí, la BD respondió → reset del circuit breaker
+                    _consecutiveDbFailures = 0;
+
                     await ProcessBatchAsync(stoppingToken);
+                }
+                catch (Exception ex) when (IsDbConnectionError(ex))
+                {
+                    _consecutiveDbFailures++;
+                    _logger.LogError(ex,
+                        "[EmailOutbox] Error de conexión a BD (fallo {N}/{Max}). Saltando ciclo.",
+                        _consecutiveDbFailures, CircuitBreakerThreshold);
                 }
                 catch (Exception ex)
                 {
@@ -54,6 +101,38 @@ namespace AppCore.Infrastructure.Email
 
                 await Task.Delay(TimeSpan.FromSeconds(IntervalSeconds), stoppingToken);
             }
+        }
+
+        /// <summary>
+        /// Verifica que la BD sea alcanzable con un SELECT 1 rápido (timeout 5s).
+        /// No consume conexiones del pool de forma prolongada.
+        /// </summary>
+        private async Task<bool> IsDatabaseReachableAsync(CancellationToken ct)
+        {
+            try
+            {
+                using var scope = _services.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+                // CanConnectAsync usa un timeout corto y libera la conexión inmediatamente
+                return await context.Database.CanConnectAsync(ct);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Determina si la excepción es un error de conexión a BD
+        /// (para distinguirlo de errores de lógica de negocio).
+        /// </summary>
+        private static bool IsDbConnectionError(Exception ex)
+        {
+            return ex is Microsoft.Data.SqlClient.SqlException
+                || ex is Microsoft.EntityFrameworkCore.Storage.RetryLimitExceededException
+                || ex is TimeoutException
+                || ex.InnerException is Microsoft.Data.SqlClient.SqlException;
         }
 
         private async Task ProcessBatchAsync(CancellationToken ct)

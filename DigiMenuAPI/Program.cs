@@ -1,5 +1,6 @@
-﻿using AppCore.Application.Interfaces;
+using AppCore.Application.Interfaces;
 using AppCore.Application.Services;
+using DigiMenuAPI.Infrastructure.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using AppCore.Application.Services.Email;
@@ -42,16 +43,21 @@ public partial class Program
                 builder.Configuration.GetConnectionString("DefaultConnection"),
                 sqlOptions => sqlOptions
                     .EnableRetryOnFailure(
-                        maxRetryCount:     3,
-                        maxRetryDelay:     TimeSpan.FromSeconds(6),
-                        errorNumbersToAdd: [-2, 258]) // timeout numbers explícitos
-                    .UseNetTopologySuite()));
+                        maxRetryCount:     2,
+                        maxRetryDelay:     TimeSpan.FromSeconds(3),
+                        errorNumbersToAdd: null) // usa la lista por defecto — no agregar -2/258 manualmente
+                    .UseNetTopologySuite()
+                    .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
         // AppCore services depend on CoreDbContext — ApplicationDbContext extends it,
         // so we register a scoped factory so CoreDbContext resolves to the same instance.
         builder.Services.AddScoped<CoreDbContext>(sp =>
             sp.GetRequiredService<ApplicationDbContext>());
         
+        // ── HEALTH CHECKS ────────────────────────────────────────────────────
+        builder.Services.AddHealthChecks()
+            .AddCheck<DatabaseHealthCheck>("database");
+
         // ── MODULE GUARD ─────────────────────────────────────────────────────
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<IModuleGuard, ModuleGuard>();
@@ -129,7 +135,13 @@ public partial class Program
         builder.Services.AddScoped<IBranchEventService, BranchEventService>();
         builder.Services.AddScoped<IBranchPromotionService, BranchPromotionService>();
         builder.Services.AddScoped<ICarouselService, CarouselService>();
+        builder.Services.AddScoped<ICustomerService, CustomerService>();
+        builder.Services.AddScoped<INotificationService, NotificationService>();
+        builder.Services.AddScoped<IAccountAuditService, AccountAuditService>();
+        builder.Services.AddScoped<IAccountService, AccountService>();
+        builder.Services.AddScoped<IBranchDiscountService, BranchDiscountService>();
         builder.Services.AddScoped<IDashboardService, DashboardService>();
+        builder.Services.AddScoped<IReportService, ReportService>();
         builder.Services.AddScoped<ICompanyLanguageService, CompanyLanguageService>();
         builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
 
@@ -140,16 +152,37 @@ public partial class Program
         builder.Services.AddControllers();
 
         // ── CORS ─────────────────────────────────────────────────────────────
+        var allowedDomain = builder.Configuration["AllowedDomain"] ?? "tudominio.com";
+        var extraOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("Frontend", policy =>
                 policy
-                    .WithOrigins(
-                        builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
-                        ?? ["http://localhost:5173"])
+                    .SetIsOriginAllowed(origin =>
+                    {
+                        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                            return false;
+
+                        var host = uri.Host;
+
+                        // Hosts explícitos desde appsettings
+                        if (extraOrigins.Any(o => Uri.TryCreate(o, UriKind.Absolute, out var u) && u.Host == host))
+                            return true;
+
+                        // Localhost wildcard (desarrollo)
+                        if (host == "localhost" || host.EndsWith(".localhost"))
+                            return true;
+
+                        // Dominio de producción wildcard
+                        return host == allowedDomain || host.EndsWith($".{allowedDomain}");
+                    })
                     .AllowAnyHeader()
-                    .AllowAnyMethod());
+                    .AllowAnyMethod()
+                    .AllowCredentials());
         });
+
+
 
         // ── OPENAPI (.NET 10 nativo) + Scalar UI ─────────────────────────────
         builder.Services.AddOpenApi(options =>
@@ -223,6 +256,10 @@ public partial class Program
         app.UseStaticFiles();
 
         app.MapControllers();
+
+        // GET /health — sin autenticación, sin logging de Serilog (filtrado por path)
+        app.MapHealthChecks("/health").AllowAnonymous();
+
         app.Run();
     }
 }

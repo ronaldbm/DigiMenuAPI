@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AppCore.Domain.Entities
 {
@@ -32,5 +33,15 @@ namespace AppCore.Domain.Entities
 
         /// <summary>URL de imagen de fondo del menú. Gestionado por FileStorageService.</summary>
         public string? BackgroundImageUrl { get; set; }
+
+        public bool TabsEnabled { get; set; } = false;
+
+        // ── Tab / Credit Defaults ────────────────────────────────────
+        public int DefaultMaxOpenTabs { get; set; } = 3;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal DefaultMaxTabAmount { get; set; } = 0;
+
+        public bool TabRequiresManagerApproval { get; set; } = false;
     }
 }

@@ -11,5 +11,6 @@ namespace AppCore.Application.Common
         public const string TableManagement = "TABLE_MANAGEMENT";
         public const string Analytics = "ANALYTICS";
         public const string OnlineOrders = "ONLINE_ORDERS";
+        public const string AccountManagement = "ACCOUNT_MANAGEMENT";
     }
 }
