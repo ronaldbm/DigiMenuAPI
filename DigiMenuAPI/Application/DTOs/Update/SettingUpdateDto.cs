@@ -1,4 +1,6 @@
-﻿public record SettingUpdateDto(
+using DigiMenuAPI.Application.DTOs.Update;
+
+public record SettingUpdateDto(
         int Id,
         int BranchId,
         IFormFile Logo,
@@ -9,19 +11,15 @@
         string? MetaDescription,
         string? GoogleAnalyticsId,
         string? FacebookPixelId,
-        // Tema visual
+        // Tema visual — paletas de color
+        ColorPaletteUpdateDto ColorPalette,
+        ColorPaletteUpdateDto? DarkModePalette,
+        // Fondo y marco
+        BackgroundSettingsUpdateDto BackgroundSettings,
+        FrameSettingsUpdateDto FrameSettings,
+        // Modo oscuro
         bool IsDarkMode,
-        string PageBackgroundColor,
-        string HeaderBackgroundColor,
-        string HeaderTextColor,
-        string TabBackgroundColor,
-        string TabTextColor,
-        string PrimaryColor,
-        string PrimaryTextColor,
-        string SecondaryColor,
-        string TitlesColor,
-        string TextColor,
-        string BrowserThemeColor,
+        bool DarkModeAutoGenerate,
         // Layout
         byte HeaderStyle,
         byte MenuLayout,
@@ -30,6 +28,9 @@
         byte FilterMode,
         bool ShowContactButton,
         bool ShowModalProductInfo,
+        // Categorías
+        byte CategoryHeaderStyle,
+        bool ShowCategoryImages,
         // Localización
         string CountryCode,
         string PhoneCode,

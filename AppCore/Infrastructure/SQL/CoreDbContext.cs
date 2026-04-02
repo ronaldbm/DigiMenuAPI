@@ -37,6 +37,7 @@ namespace AppCore.Infrastructure.SQL
         // Company config
         public DbSet<CompanyInfo> CompanyInfos { get; set; }
         public DbSet<CompanyTheme> CompanyThemes { get; set; }
+        public DbSet<DecorativeFrame> DecorativeFrames { get; set; }
         public DbSet<CompanySeo> CompanySeos { get; set; }
         public DbSet<CompanyLanguage> CompanyLanguages { get; set; }
 
@@ -65,6 +66,7 @@ namespace AppCore.Infrastructure.SQL
             ConfigurePasswordResetRequest(modelBuilder);
             ConfigureCompanyInfo(modelBuilder);
             ConfigureCompanyTheme(modelBuilder);
+            ConfigureDecorativeFrame(modelBuilder);
             ConfigureCompanySeo(modelBuilder);
             ConfigureBranchLocale(modelBuilder);
             ConfigureBranchSchedule(modelBuilder);
@@ -312,23 +314,22 @@ namespace AppCore.Infrastructure.SQL
             {
                 e.HasKey(t => t.Id);
 
-                // Valores por defecto de colores
-                e.Property(t => t.PageBackgroundColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.HeaderBackgroundColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.HeaderTextColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(t => t.TabBackgroundColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(t => t.TabTextColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.PrimaryColor).HasMaxLength(7).HasDefaultValue("#E63946");
-                e.Property(t => t.PrimaryTextColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
-                e.Property(t => t.SecondaryColor).HasMaxLength(7).HasDefaultValue("#457B9D");
-                e.Property(t => t.TitlesColor).HasMaxLength(7).HasDefaultValue("#000000");
-                e.Property(t => t.TextColor).HasMaxLength(7).HasDefaultValue("#1D3557");
-                e.Property(t => t.BrowserThemeColor).HasMaxLength(7).HasDefaultValue("#FFFFFF");
+                // JSON owned types — no columnas individuales por campo de color
+                e.OwnsOne(t => t.ColorPalette, o => o.ToJson());
+                e.OwnsOne(t => t.DarkModePalette, o => o.ToJson());
+                e.OwnsOne(t => t.BackgroundSettings, o => o.ToJson());
+                e.OwnsOne(t => t.FrameSettings, o => o.ToJson());
+
+                // Escalares con defaults
                 e.Property(t => t.HeaderStyle).HasColumnType("tinyint").HasDefaultValue((byte)1);
                 e.Property(t => t.MenuLayout).HasColumnType("tinyint").HasDefaultValue((byte)1);
                 e.Property(t => t.ProductDisplay).HasColumnType("tinyint").HasDefaultValue((byte)1);
                 e.Property(t => t.FilterMode).HasColumnType("tinyint").HasDefaultValue((byte)0);
+                e.Property(t => t.CategoryHeaderStyle).HasColumnType("tinyint").HasDefaultValue((byte)1);
+                e.Property(t => t.ShowProductDetails).HasDefaultValue(true);
                 e.Property(t => t.ShowMapInMenu).HasDefaultValue(true);
+                e.Property(t => t.ShowCategoryImages).HasDefaultValue(true);
+                e.Property(t => t.DarkModeAutoGenerate).HasDefaultValue(true);
 
                 // 1:1 con Company
                 e.HasIndex(t => t.CompanyId).IsUnique();
@@ -336,6 +337,17 @@ namespace AppCore.Infrastructure.SQL
                  .WithOne(c => c.Theme)
                  .HasForeignKey<CompanyTheme>(t => t.CompanyId)
                  .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureDecorativeFrame(ModelBuilder b)
+        {
+            b.Entity<DecorativeFrame>(e =>
+            {
+                e.HasKey(f => f.Id);
+                e.Property(f => f.Name).IsRequired().HasMaxLength(50);
+                e.Property(f => f.Category).IsRequired().HasMaxLength(30);
+                e.Property(f => f.SvgContent).IsRequired().HasColumnType("nvarchar(max)");
             });
         }
 
@@ -497,6 +509,7 @@ namespace AppCore.Infrastructure.SQL
             SeedMasterCompanyModules(b);
             SeedMasterBranchSchedule(b);
             SeedMasterCompanyLanguages(b);
+            SeedDecorativeFrames(b);
         }
 
         private static void SeedSupportedLanguages(ModelBuilder b)
@@ -619,7 +632,7 @@ namespace AppCore.Infrastructure.SQL
             {
                 Id          = 1,
                 Name        = "DigiMenu Platform",
-                Slug        = "digimenu-platform",
+                Slug        = "demo",
                 Email       = "admin@digimenu.app",
                 Phone       = "+50600000000",
                 CountryCode = "CR",
@@ -683,27 +696,23 @@ namespace AppCore.Infrastructure.SQL
                 CreatedAt = seed
             });
 
-            b.Entity<CompanyTheme>().HasData(new CompanyTheme
+            // NOTE: JSON-owned properties (ColorPalette, DarkModePalette, BackgroundSettings,
+            // FrameSettings) cannot be seeded via HasData — EF Core does not support HasData
+            // for JSON-mapped owned types. Those columns will be populated by the application
+            // layer (AuthService.RegisterAsync) using entity C# initializers / DefaultTheme values.
+            b.Entity<CompanyTheme>().HasData(new
             {
                 Id = 1,
                 CompanyId = 1,
                 IsDarkMode = false,
-                PageBackgroundColor   = DefaultTheme.PageBackground,
-                HeaderBackgroundColor = DefaultTheme.HeaderBackground,
-                HeaderTextColor       = DefaultTheme.HeaderText,
-                TabBackgroundColor    = DefaultTheme.TabBackground,
-                TabTextColor          = DefaultTheme.TabText,
-                PrimaryColor          = DefaultTheme.Primary,
-                PrimaryTextColor      = DefaultTheme.PrimaryText,
-                SecondaryColor        = DefaultTheme.Secondary,
-                TitlesColor           = DefaultTheme.Titles,
-                TextColor             = DefaultTheme.Text,
-                BrowserThemeColor     = DefaultTheme.BrowserTheme,
-                HeaderStyle = 1,
-                MenuLayout = 1,
-                ProductDisplay = 1,
+                DarkModeAutoGenerate = true,
+                HeaderStyle = (byte)1,
+                MenuLayout = (byte)1,
+                ProductDisplay = (byte)1,
+                CategoryHeaderStyle = (byte)1,
                 ShowProductDetails = true,
-                FilterMode = 0,
+                ShowCategoryImages = true,
+                FilterMode = (byte)0,
                 ShowContactButton = true,
                 ShowModalProductInfo = false,
                 ShowMapInMenu = true,
@@ -764,6 +773,88 @@ namespace AppCore.Infrastructure.SQL
                 new BranchSchedule { Id = 5, BranchId = 1, DayOfWeek = 4, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }, // Jueves
                 new BranchSchedule { Id = 6, BranchId = 1, DayOfWeek = 5, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }, // Viernes
                 new BranchSchedule { Id = 7, BranchId = 1, DayOfWeek = 6, IsOpen = true,  OpenTime = open,  CloseTime = close, CreatedAt = seed }  // Sábado
+            );
+        }
+
+        private static void SeedDecorativeFrames(ModelBuilder b)
+        {
+            // Marcos decorativos predefinidos de la plataforma.
+            // IDs 1-8 son fijos e inmutables en producción.
+            // El SVG usa currentColor para heredar el color secundario de la marca del tenant.
+            var seed = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            b.Entity<DecorativeFrame>().HasData(
+                new DecorativeFrame
+                {
+                    Id           = 1,
+                    Name         = "Classic Border",
+                    Category     = "universal",
+                    SvgContent   = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><rect x='2' y='2' width='96' height='96' rx='4'/></svg>",
+                    DisplayOrder = 1,
+                    CreatedAt    = seed
+                },
+                new DecorativeFrame
+                {
+                    Id           = 2,
+                    Name         = "Double Line",
+                    Category     = "fine-dining",
+                    SvgContent   = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor'><rect x='2' y='2' width='96' height='96' stroke-width='0.5'/><rect x='4' y='4' width='92' height='92' stroke-width='0.5'/></svg>",
+                    DisplayOrder = 2,
+                    CreatedAt    = seed
+                },
+                new DecorativeFrame
+                {
+                    Id           = 3,
+                    Name         = "Corner Accents",
+                    Category     = "cafe",
+                    SvgContent   = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1.5'><path d='M2 18 L2 2 L18 2'/><path d='M82 2 L98 2 L98 18'/><path d='M98 82 L98 98 L82 98'/><path d='M18 98 L2 98 L2 82'/></svg>",
+                    DisplayOrder = 3,
+                    CreatedAt    = seed
+                },
+                new DecorativeFrame
+                {
+                    Id           = 4,
+                    Name         = "Rounded",
+                    Category     = "universal",
+                    SvgContent   = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><rect x='2' y='2' width='96' height='96' rx='12'/></svg>",
+                    DisplayOrder = 4,
+                    CreatedAt    = seed
+                },
+                new DecorativeFrame
+                {
+                    Id           = 5,
+                    Name         = "Ornate",
+                    Category     = "fine-dining",
+                    SvgContent   = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='0.8'><rect x='3' y='3' width='94' height='94'/><rect x='6' y='6' width='88' height='88'/><circle cx='3' cy='3' r='2' fill='currentColor'/><circle cx='97' cy='3' r='2' fill='currentColor'/><circle cx='97' cy='97' r='2' fill='currentColor'/><circle cx='3' cy='97' r='2' fill='currentColor'/></svg>",
+                    DisplayOrder = 5,
+                    CreatedAt    = seed
+                },
+                new DecorativeFrame
+                {
+                    Id           = 6,
+                    Name         = "Minimal Top",
+                    Category     = "bar",
+                    SvgContent   = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><line x1='5' y1='3' x2='95' y2='3'/><line x1='5' y1='97' x2='95' y2='97'/></svg>",
+                    DisplayOrder = 6,
+                    CreatedAt    = seed
+                },
+                new DecorativeFrame
+                {
+                    Id           = 7,
+                    Name         = "Diamond Corners",
+                    Category     = "fine-dining",
+                    SvgContent   = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><rect x='3' y='3' width='94' height='94'/><polygon points='3,10 10,3 3,3' fill='currentColor'/><polygon points='90,3 97,3 97,10' fill='currentColor'/><polygon points='97,90 97,97 90,97' fill='currentColor'/><polygon points='10,97 3,97 3,90' fill='currentColor'/></svg>",
+                    DisplayOrder = 7,
+                    CreatedAt    = seed
+                },
+                new DecorativeFrame
+                {
+                    Id           = 8,
+                    Name         = "Wave",
+                    Category     = "bar",
+                    SvgContent   = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='currentColor' stroke-width='1'><path d='M2 2 Q10 8 18 2 Q26 -4 34 2 Q42 8 50 2 Q58 -4 66 2 Q74 8 82 2 Q90 -4 98 2'/><path d='M2 98 Q10 92 18 98 Q26 104 34 98 Q42 92 50 98 Q58 104 66 98 Q74 92 82 98 Q90 104 98 98'/></svg>",
+                    DisplayOrder = 8,
+                    CreatedAt    = seed
+                }
             );
         }
 
@@ -830,7 +921,17 @@ namespace AppCore.Infrastructure.SQL
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+            optionsBuilder.ConfigureWarnings(w =>
+            {
+                w.Ignore(RelationalEventId.PendingModelChangesWarning);
+
+                // Query filters en Branch, Category, Product, Tag, BranchProduct, FooterLink
+                // y Reservation marcan IsDeleted. Las entidades hijas (Translations, Events,
+                // Schedules, etc.) no tienen filtro propio — el borrado lógico se gestiona
+                // en la capa de servicios. Suprimir el warning de EF que alerta sobre esto
+                // ya que es un diseño intencional.
+                w.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning);
+            });
         }
     }
 }

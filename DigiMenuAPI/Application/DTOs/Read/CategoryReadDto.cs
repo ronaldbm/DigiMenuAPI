@@ -1,9 +1,7 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Read
+namespace DigiMenuAPI.Application.DTOs.Read
 {
     /// <summary>
     /// Visibilidad de una categoría dentro de una Branch específica.
-    /// Se calcula a partir de los BranchProducts activos de esa categoría en esa sucursal.
-    /// AnyVisible = true si al menos un producto está visible.
     /// </summary>
     public record BranchCategoryVisibilityDto(
         int CategoryId,
@@ -14,37 +12,40 @@
         int VisibleProducts
     );
 
-    /// <summary>Categoría para el panel admin (incluye traducciones).</summary>
+    /// <summary>Categoría para el panel admin (incluye traducciones y campos de apariencia).</summary>
     public class CategoryReadDto
     {
         public int Id { get; init; }
         public int CompanyId { get; init; }
         public int DisplayOrder { get; init; }
         public bool IsVisible { get; init; }
+        public string? HeaderImageUrl { get; init; }
+        public byte? HeaderStyleOverride { get; init; }
         public List<TranslationReadDto> Translations { get; init; } = [];
     }
 
-    /// <summary>
-    /// Categoría para listados del panel admin.
-    /// El nombre ya viene resuelto al idioma solicitado (con fallback).
-    /// </summary>
+    /// <summary>Categoría para listados del panel admin.</summary>
     public class CategoryListItemDto
     {
         public int Id { get; init; }
         public int CompanyId { get; init; }
         public int DisplayOrder { get; init; }
         public bool IsVisible { get; init; }
+        public string? HeaderImageUrl { get; init; }
+        public byte? HeaderStyleOverride { get; init; }
         public string Name { get; init; } = string.Empty;
     }
 
     /// <summary>
     /// Categoría para el menú público de una Branch.
-    /// El nombre ya viene resuelto al idioma solicitado (con fallback al base).
+    /// HeaderImageUrl será null si ShowCategoryImages=false en CompanyTheme.
     /// </summary>
     public record CategoryMenuDto(
         int Id,
         string Name,
         int DisplayOrder,
+        string? HeaderImageUrl,
+        byte? HeaderStyleOverride,
         List<BranchProductMenuDto> Products
     );
 }

@@ -19,6 +19,12 @@ namespace DigiMenuAPI.Infrastructure.Entities
         public bool IsVisible { get; set; }
         public bool IsDeleted { get; set; }
 
+        /// <summary>Imagen de encabezado para esta categoría. Null = usar estilo global.</summary>
+        public string? HeaderImageUrl { get; set; }
+
+        /// <summary>Override del estilo de encabezado. Null = usar default global de CompanyTheme.</summary>
+        public byte? HeaderStyleOverride { get; set; }
+
         // ── Navegación ───────────────────────────────────────────────
         public ICollection<Product> Products { get; set; } = new List<Product>();
         public ICollection<BranchProduct> BranchProducts { get; set; } = new List<BranchProduct>();

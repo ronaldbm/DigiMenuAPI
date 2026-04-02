@@ -1,4 +1,4 @@
-﻿namespace DigiMenuAPI.Application.DTOs.Read
+namespace DigiMenuAPI.Application.DTOs.Read
 {
     /// <summary>
     /// DTO raíz del menú público de una Branch.
@@ -6,6 +6,8 @@
     ///
     /// WeeklySchedule:      7 días ordenados Lun-Dom. Null si no hay horario configurado.
     /// UpcomingSpecialDays: días especiales desde hoy hasta 30 días. Null si no hay ninguno.
+    /// BackgroundSettings:  null si no hay imagen de fondo configurada (optimización payload).
+    /// FrameSettings:       null si FrameId=0 (sin marco).
     /// </summary>
     public record MenuBranchDto(
         // ── Identidad — BranchInfo ────────────────────────────────────
@@ -14,19 +16,14 @@
         string? LogoUrl,
         string? FaviconUrl,
         string? BackgroundImageUrl,
-        // ── Tema visual — BranchTheme ─────────────────────────────────
+        // ── Tema visual — Colores ─────────────────────────────────────
+        ColorPaletteDto ColorPalette,
+        ColorPaletteDto? DarkModePalette,
+        BackgroundSettingsDto? BackgroundSettings,
+        FrameSettingsDto? FrameSettings,
+        // ── Modo oscuro ───────────────────────────────────────────────
         bool IsDarkMode,
-        string PageBackgroundColor,
-        string HeaderBackgroundColor,
-        string HeaderTextColor,
-        string TabBackgroundColor,
-        string TabTextColor,
-        string PrimaryColor,
-        string PrimaryTextColor,
-        string SecondaryColor,
-        string TitlesColor,
-        string TextColor,
-        string BrowserThemeColor,
+        bool DarkModeAutoGenerate,
         // ── Layout — BranchTheme ──────────────────────────────────────
         byte HeaderStyle,
         byte MenuLayout,
@@ -35,6 +32,9 @@
         byte FilterMode,
         bool ShowContactButton,
         bool ShowModalProductInfo,
+        // ── Categorías ────────────────────────────────────────────────
+        byte CategoryHeaderStyle,
+        bool ShowCategoryImages,
         // ── Localización — BranchLocale ───────────────────────────────
         string Language,
         string Currency,
@@ -52,26 +52,9 @@
         List<CategoryMenuDto> Categories,
         List<FooterLinkReadDto> FooterLinks,
         // ── Horario ───────────────────────────────────────────────────
-
-        /// <summary>
-        /// Los 7 días del horario semanal ordenados Lun-Dom.
-        /// Null si la Branch no tiene horario configurado aún.
-        /// </summary>
         List<BranchScheduleReadDto>? WeeklySchedule,
-
-        /// <summary>
-        /// Días especiales desde hoy hasta 30 días adelante.
-        /// Null si no hay días especiales próximos.
-        /// </summary>
         List<BranchSpecialDayReadDto>? UpcomingSpecialDays,
-
-        /// <summary>
-        /// Códigos ISO 639-1 de los idiomas habilitados para esta Company (ej: ["es","en"]).
-        /// El primero con IsDefault=true es el idioma de fallback.
-        /// El frontend lo usa para mostrar el selector de idioma en el menú público.
-        /// </summary>
         List<CompanyLanguageReadDto> AvailableLanguages,
-
         // ── Geolocalización ───────────────────────────────────────────
         decimal? BranchLatitude,
         decimal? BranchLongitude,

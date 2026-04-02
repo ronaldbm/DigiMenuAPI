@@ -41,8 +41,8 @@ namespace DigiMenuAPI.Application.Services
 
                 await image.SaveAsWebpAsync(fullPath, new WebpEncoder
                 {
-                    Quality = 80,
-                    Method = WebpEncodingMethod.BestQuality
+                    Quality = 75,
+                    Method = WebpEncodingMethod.Default
                 });
             }
 

@@ -199,7 +199,16 @@ namespace DigiMenuAPI.Application.Services
                         })
                         .ToList();
 
-                    return new CategoryMenuDto(cat.Id, catName, cat.DisplayOrder, products);
+                    // Omitir HeaderImageUrl si ShowCategoryImages está desactivado en el tema
+                    var headerImageUrl = theme.ShowCategoryImages ? cat.HeaderImageUrl : null;
+
+                    return new CategoryMenuDto(
+                        cat.Id,
+                        catName,
+                        cat.DisplayOrder,
+                        headerImageUrl,
+                        cat.HeaderStyleOverride,
+                        products);
                 }).ToList();
 
                 // 7. FooterLinks de la Branch — QueryFilter aplica !IsDeleted
@@ -257,7 +266,53 @@ namespace DigiMenuAPI.Application.Services
 
                 // 12. Construir MenuBranchDto manualmente desde las 4 entidades.
                 //    No se usa AutoMapper porque el origen es multi-entidad
-                //    y el destino es un DTO plano compuesto.
+                //    y el destino es un DTO compuesto.
+                var colorPalette = new ColorPaletteDto(
+                    theme.ColorPalette.HeaderBackgroundColor,
+                    theme.ColorPalette.HeaderTextColor,
+                    theme.ColorPalette.PageBackgroundColor,
+                    theme.ColorPalette.TextColor,
+                    theme.ColorPalette.TitlesColor,
+                    theme.ColorPalette.CardBackgroundColor,
+                    theme.ColorPalette.CardBorderColor,
+                    theme.ColorPalette.TabBackgroundColor,
+                    theme.ColorPalette.TabTextColor,
+                    theme.ColorPalette.PrimaryColor,
+                    theme.ColorPalette.PrimaryTextColor,
+                    theme.ColorPalette.SecondaryColor,
+                    theme.ColorPalette.FooterBackgroundColor,
+                    theme.ColorPalette.BrowserThemeColor);
+
+                ColorPaletteDto? darkPalette = theme.DarkModePalette is null ? null : new ColorPaletteDto(
+                    theme.DarkModePalette.HeaderBackgroundColor,
+                    theme.DarkModePalette.HeaderTextColor,
+                    theme.DarkModePalette.PageBackgroundColor,
+                    theme.DarkModePalette.TextColor,
+                    theme.DarkModePalette.TitlesColor,
+                    theme.DarkModePalette.CardBackgroundColor,
+                    theme.DarkModePalette.CardBorderColor,
+                    theme.DarkModePalette.TabBackgroundColor,
+                    theme.DarkModePalette.TabTextColor,
+                    theme.DarkModePalette.PrimaryColor,
+                    theme.DarkModePalette.PrimaryTextColor,
+                    theme.DarkModePalette.SecondaryColor,
+                    theme.DarkModePalette.FooterBackgroundColor,
+                    theme.DarkModePalette.BrowserThemeColor);
+
+                // BackgroundSettings: null si no hay imagen (optimización de payload)
+                BackgroundSettingsDto? backgroundSettings = info.BackgroundImageUrl is null ? null
+                    : new BackgroundSettingsDto(
+                        theme.BackgroundSettings.Opacity,
+                        theme.BackgroundSettings.Position,
+                        theme.BackgroundSettings.Size,
+                        theme.BackgroundSettings.Repeat);
+
+                // FrameSettings: null si FrameId=0 (sin marco)
+                FrameSettingsDto? frameSettings = theme.FrameSettings.FrameId == 0 ? null
+                    : new FrameSettingsDto(
+                        theme.FrameSettings.FrameId,
+                        theme.FrameSettings.CustomFrameUrl);
+
                 var menuDto = new MenuBranchDto(
                     // Identidad — BranchInfo
                     info.BusinessName,
@@ -265,19 +320,15 @@ namespace DigiMenuAPI.Application.Services
                     info.LogoUrl,
                     info.FaviconUrl,
                     info.BackgroundImageUrl,
-                    // Tema visual — BranchTheme
+                    // Tema visual — Colores
+                    colorPalette,
+                    darkPalette,
+                    backgroundSettings,
+                    frameSettings,
+                    // Modo oscuro
                     theme.IsDarkMode,
-                    theme.PageBackgroundColor,
-                    theme.HeaderBackgroundColor,
-                    theme.HeaderTextColor,
-                    theme.TabBackgroundColor,
-                    theme.TabTextColor,
-                    theme.PrimaryColor,
-                    theme.PrimaryTextColor,
-                    theme.SecondaryColor,
-                    theme.TitlesColor,
-                    theme.TextColor,
-                    theme.BrowserThemeColor,
+                    theme.DarkModeAutoGenerate,
+                    // Layout
                     theme.HeaderStyle,
                     theme.MenuLayout,
                     theme.ProductDisplay,
@@ -285,6 +336,9 @@ namespace DigiMenuAPI.Application.Services
                     theme.FilterMode,
                     theme.ShowContactButton,
                     theme.ShowModalProductInfo,
+                    // Categorías
+                    theme.CategoryHeaderStyle,
+                    theme.ShowCategoryImages,
                     // Localización — BranchLocale
                     locale.Language,
                     locale.Currency,
@@ -301,7 +355,7 @@ namespace DigiMenuAPI.Application.Services
                     // Contenido dinámico
                     categoryDtos,
                     footerLinks,
-                    //Horarios
+                    // Horarios
                     WeeklySchedule: weeklySchedule.Any() ? weeklySchedule : null,
                     UpcomingSpecialDays: upcomingSpecialDays.Any() ? upcomingSpecialDays : null,
                     AvailableLanguages: availableLanguages,

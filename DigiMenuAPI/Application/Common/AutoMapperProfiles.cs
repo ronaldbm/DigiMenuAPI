@@ -108,8 +108,10 @@ namespace DigiMenuAPI.Application.Common
 
             // CategoryMenuDto: nombre resuelto al idioma en el servicio (fallback al base)
             CreateMap<Category, CategoryMenuDto>()
-                .ForMember(d => d.Name, o => o.Ignore())      // servicio resuelve traducción
-                .ForMember(d => d.Products, o => o.Ignore()); // servicio inyecta BranchProducts
+                .ForMember(d => d.Name,                o => o.Ignore())      // servicio resuelve traducción
+                .ForMember(d => d.HeaderImageUrl,      o => o.MapFrom(s => s.HeaderImageUrl))
+                .ForMember(d => d.HeaderStyleOverride, o => o.MapFrom(s => s.HeaderStyleOverride))
+                .ForMember(d => d.Products,            o => o.Ignore()); // servicio inyecta BranchProducts
 
             // CompanyId NO viene del DTO — servicio lo inyecta desde JWT
             // Translations se manejan manualmente en el servicio (transacción + replace-all)
@@ -234,9 +236,27 @@ namespace DigiMenuAPI.Application.Common
                 .ForMember(d => d.FaviconUrl, o => o.Ignore())        // servicio sube imagen
                 .ForMember(d => d.BackgroundImageUrl, o => o.Ignore()); // servicio sube imagen
 
-            // CompanyTheme
-            CreateMap<CompanyTheme, CompanyThemeReadDto>();
-            CreateMap<CompanyThemeUpdateDto, CompanyTheme>().ReverseMap();
+            // CompanyTheme — JSON owned types require explicit nested mapping
+            CreateMap<ColorPaletteData, ColorPaletteDto>();
+            CreateMap<BackgroundSettingsData, BackgroundSettingsDto>();
+            CreateMap<FrameSettingsData, FrameSettingsDto>();
+
+            CreateMap<ColorPaletteUpdateDto, ColorPaletteData>().ReverseMap();
+            CreateMap<BackgroundSettingsUpdateDto, BackgroundSettingsData>().ReverseMap();
+            CreateMap<FrameSettingsUpdateDto, FrameSettingsData>().ReverseMap();
+
+            CreateMap<CompanyTheme, CompanyThemeReadDto>()
+                .ForMember(d => d.ColorPalette,        o => o.MapFrom(s => s.ColorPalette))
+                .ForMember(d => d.DarkModePalette,     o => o.MapFrom(s => s.DarkModePalette))
+                .ForMember(d => d.BackgroundSettings,  o => o.MapFrom(s => s.BackgroundSettings))
+                .ForMember(d => d.FrameSettings,       o => o.MapFrom(s => s.FrameSettings));
+
+            CreateMap<CompanyThemeUpdateDto, CompanyTheme>()
+                .ForMember(d => d.ColorPalette,        o => o.MapFrom(s => s.ColorPalette))
+                .ForMember(d => d.DarkModePalette,     o => o.MapFrom(s => s.DarkModePalette))
+                .ForMember(d => d.BackgroundSettings,  o => o.MapFrom(s => s.BackgroundSettings))
+                .ForMember(d => d.FrameSettings,       o => o.MapFrom(s => s.FrameSettings))
+                .ReverseMap();
 
             // CompanySeo
             CreateMap<CompanySeo, CompanySeoReadDto>();

@@ -130,6 +130,11 @@ namespace DigiMenuAPI.Application.Services
             if (!categoryBelongs)
                 return OperationResult<ProductReadDto>.NotFound("La categoría no se ha encontrado.", errorKey: ErrorKeys.CategoryNotFound);
 
+            // Procesar imagen FUERA de la transacción para no bloquear la conexión DB
+            string? imageUrl = null;
+            if (dto.Image is not null)
+                imageUrl = await _fileStorage.SaveFile(dto.Image, "products");
+
             Product product = null!;
 
             var strategy = _context.Database.CreateExecutionStrategy();
@@ -141,9 +146,7 @@ namespace DigiMenuAPI.Application.Services
                 product.CompanyId = companyId;
                 product.ImageObjectFit      = dto.ImageObjectFit      ?? "cover";
                 product.ImageObjectPosition = dto.ImageObjectPosition ?? "50% 50%";
-
-                if (dto.Image is not null)
-                    product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
+                product.MainImageUrl        = imageUrl;
 
                 if (dto.TagIds is { Count: > 0 })
                 {
@@ -154,7 +157,7 @@ namespace DigiMenuAPI.Application.Services
                 }
 
                 _context.Products.Add(product);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // Genera product.Id
 
                 foreach (var t in dto.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Name)))
                 {
@@ -196,6 +199,13 @@ namespace DigiMenuAPI.Application.Services
             if (!categoryBelongs)
                 return OperationResult<bool>.NotFound("La categoría no se ha encontrado a tu empresa.", errorKey: ErrorKeys.CategoryNotFound);
 
+            // Procesar imagen FUERA de la transacción para no bloquear la conexión DB
+            string? newImageUrl = null;
+            if (dto.Image is not null)
+            {
+                newImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
+            }
+
             var strategy = _context.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
             {
@@ -205,10 +215,10 @@ namespace DigiMenuAPI.Application.Services
                 if (dto.ImageObjectFit is not null)      product.ImageObjectFit      = dto.ImageObjectFit;
                 if (dto.ImageObjectPosition is not null)  product.ImageObjectPosition = dto.ImageObjectPosition;
 
-                if (dto.Image is not null)
+                if (newImageUrl is not null)
                 {
                     _fileStorage.DeleteFile(product.MainImageUrl ?? "", "products");
-                    product.MainImageUrl = await _fileStorage.SaveFile(dto.Image, "products");
+                    product.MainImageUrl = newImageUrl;
                 }
 
                 if (dto.TagIds is not null)

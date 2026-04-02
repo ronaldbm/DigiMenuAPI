@@ -63,6 +63,11 @@ namespace DigiMenuAPI.Application.Services
                     ErrorKeys.EmailAlreadyExists);
 
             // 1. Crear Company
+            var plan = await _context.Plans.FindAsync(dto.PlanId);
+            if (plan is null)
+                return OperationResult<LoginResponseDto>.NotFound(
+                    "El plan seleccionado no existe.", ErrorKeys.CompanyNotFound);
+
             var company = new Company
             {
                 Name = dto.Name.Trim(),
@@ -70,7 +75,10 @@ namespace DigiMenuAPI.Application.Services
                 Email = email,
                 Phone = dto.Phone?.Trim(),
                 CountryCode = dto.CountryCode?.ToUpper().Trim(),
-                IsActive = true
+                IsActive = true,
+                PlanId = plan.Id,
+                MaxBranches = dto.MaxBranches ?? plan.MaxBranches,
+                MaxUsers = dto.MaxUsers ?? plan.MaxUsers
             };
             _context.Companies.Add(company);
             await _context.SaveChangesAsync();
@@ -105,23 +113,34 @@ namespace DigiMenuAPI.Application.Services
             {
                 CompanyId = company.Id,
                 IsDarkMode = false,
-                PageBackgroundColor   = DefaultTheme.PageBackground,
-                HeaderBackgroundColor = DefaultTheme.HeaderBackground,
-                HeaderTextColor       = DefaultTheme.HeaderText,
-                TabBackgroundColor    = DefaultTheme.TabBackground,
-                TabTextColor          = DefaultTheme.TabText,
-                PrimaryColor          = DefaultTheme.Primary,
-                PrimaryTextColor      = DefaultTheme.PrimaryText,
-                SecondaryColor        = DefaultTheme.Secondary,
-                TitlesColor           = DefaultTheme.Titles,
-                TextColor             = DefaultTheme.Text,
-                BrowserThemeColor     = DefaultTheme.BrowserTheme,
-                HeaderStyle           = 1,
-                MenuLayout            = 1,
-                ProductDisplay        = 1,
-                ShowProductDetails    = true,
-                FilterMode           = 0,
-                ShowContactButton     = false
+                DarkModeAutoGenerate = true,
+                ColorPalette = new ColorPaletteData
+                {
+                    PageBackgroundColor   = DefaultTheme.PageBackground,
+                    HeaderBackgroundColor = DefaultTheme.HeaderBackground,
+                    HeaderTextColor       = DefaultTheme.HeaderText,
+                    TabBackgroundColor    = DefaultTheme.TabBackground,
+                    TabTextColor          = DefaultTheme.TabText,
+                    PrimaryColor          = DefaultTheme.Primary,
+                    PrimaryTextColor      = DefaultTheme.PrimaryText,
+                    SecondaryColor        = DefaultTheme.Secondary,
+                    TitlesColor           = DefaultTheme.Titles,
+                    TextColor             = DefaultTheme.Text,
+                    BrowserThemeColor     = DefaultTheme.BrowserTheme,
+                    CardBackgroundColor   = "#FFFFFF",
+                    CardBorderColor       = "#0F0F0F0F",
+                    FooterBackgroundColor = "#FFFFFF"
+                },
+                BackgroundSettings = new BackgroundSettingsData(),
+                FrameSettings      = new FrameSettingsData(),
+                HeaderStyle        = 1,
+                MenuLayout         = 1,
+                ProductDisplay     = 1,
+                CategoryHeaderStyle = 1,
+                ShowProductDetails  = true,
+                ShowCategoryImages  = true,
+                FilterMode          = 0,
+                ShowContactButton   = false
             });
 
             // 5. Crear CompanySeo — vacío, el admin lo completa después

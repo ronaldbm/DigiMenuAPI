@@ -4,10 +4,10 @@ namespace AppCore.Domain.Entities
 {
     /// <summary>
     /// Configuración visual y de layout del menú público de una Company.
-    /// Incluye paleta de colores, modo oscuro y estructura de presentación.
     ///
-    /// Se actualiza frecuentemente durante la personalización del menú.
-    /// Separada de CompanyInfo para no mezclar identidad con apariencia.
+    /// Colores almacenados como JSON (ColorPalette, DarkModePalette) para
+    /// evitar migraciones al agregar nuevos colores.
+    /// DarkModePalette = null → generar automáticamente desde ColorPalette.
     ///
     /// Relación 1:1 con Company.
     /// </summary>
@@ -17,45 +17,36 @@ namespace AppCore.Domain.Entities
         public int CompanyId { get; set; }
         public Company Company { get; set; } = null!;
 
-        // ── Modo ──────────────────────────────────────────────────────
+        // ── Paleta de colores (JSON) ───────────────────────────────────
+        /// <summary>Paleta de colores para modo claro.</summary>
+        public ColorPaletteData ColorPalette { get; set; } = new();
+
+        /// <summary>
+        /// Overrides de colores para modo oscuro.
+        /// Null = auto-generar paleta oscura desde ColorPalette.
+        /// Puede tener solo los campos que el usuario quiso personalizar.
+        /// </summary>
+        public ColorPaletteData? DarkModePalette { get; set; }
+
+        // ── Configuración de fondo (JSON) ─────────────────────────────
+        /// <summary>Controles de la imagen de fondo. Solo aplica si BackgroundImageUrl != null.</summary>
+        public BackgroundSettingsData BackgroundSettings { get; set; } = new();
+
+        // ── Marco decorativo (JSON) ────────────────────────────────────
+        /// <summary>Configuración del marco decorativo. FrameId=0 = sin marco.</summary>
+        public FrameSettingsData FrameSettings { get; set; } = new();
+
+        // ── Modo oscuro ───────────────────────────────────────────────
         public bool IsDarkMode { get; set; }
 
-        // ── Paleta de colores ─────────────────────────────────────────
-        [Required, MaxLength(7)]
-        public string PageBackgroundColor { get; set; } = "#FFFFFF";
-
-        [Required, MaxLength(7)]
-        public string HeaderBackgroundColor { get; set; } = "#FFFFFF";
-
-        [Required, MaxLength(7)]
-        public string HeaderTextColor { get; set; } = "#000000";
-
-        [Required, MaxLength(7)]
-        public string TabBackgroundColor { get; set; } = "#000000";
-
-        [Required, MaxLength(7)]
-        public string TabTextColor { get; set; } = "#FFFFFF";
-
-        [Required, MaxLength(7)]
-        public string PrimaryColor { get; set; } = "#E63946";
-
-        [Required, MaxLength(7)]
-        public string PrimaryTextColor { get; set; } = "#FFFFFF";
-
-        [Required, MaxLength(7)]
-        public string SecondaryColor { get; set; } = "#457B9D";
-
-        [Required, MaxLength(7)]
-        public string TitlesColor { get; set; } = "#000000";
-
-        [Required, MaxLength(7)]
-        public string TextColor { get; set; } = "#1D3557";
-
-        [Required, MaxLength(7)]
-        public string BrowserThemeColor { get; set; } = "#FFFFFF";
+        /// <summary>
+        /// Si true, la paleta oscura se auto-genera desde ColorPalette preservando identidad de marca.
+        /// Si false, se usa DarkModePalette directamente (o los colores claros como fallback).
+        /// </summary>
+        public bool DarkModeAutoGenerate { get; set; } = true;
 
         // ── Layout ────────────────────────────────────────────────────
-        /// <summary>Estilo del header. 1: Estilo A, 2: Estilo B, 3: Estilo C.</summary>
+        /// <summary>Estilo del header. 1: Logo+Nombre izq, 2: Centrado, 3: Solo nombre, 4: Solo logo.</summary>
         public byte HeaderStyle { get; set; } = 1;
 
         /// <summary>Distribución del menú. 1: Por categorías, 2: Lista plana.</summary>
@@ -64,8 +55,16 @@ namespace AppCore.Domain.Entities
         /// <summary>Visualización de productos. 1: Grid, 2: List, 3: Compact.</summary>
         public byte ProductDisplay { get; set; } = 1;
 
+        // ── Encabezados de categoría ──────────────────────────────────
+        /// <summary>Estilo global de encabezado. 1: AccentBar, 2: Underline, 3: Filled, 4: Minimal.</summary>
+        public byte CategoryHeaderStyle { get; set; } = 1;
+
+        /// <summary>Si false, no se entregan HeaderImageUrl de categorías al menú público.</summary>
+        public bool ShowCategoryImages { get; set; } = true;
+
         // ── Comportamiento ────────────────────────────────────────────
         public bool ShowProductDetails { get; set; } = true;
+
         /// <summary>Modo de filtro del menú. 0: Sin filtro, 1: Por etiquetas, 2: Por categorías.</summary>
         public byte FilterMode { get; set; } = 0;
         public bool ShowContactButton { get; set; }
