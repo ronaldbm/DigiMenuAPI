@@ -7,6 +7,10 @@ namespace DigiMenuAPI.Application.DTOs.Read
         string? Tagline,
         string? LogoUrl,
         string? FaviconUrl,
-        string? BackgroundImageUrl
+        string? BackgroundImageUrl,
+        bool TabsEnabled,
+        int DefaultMaxOpenTabs,
+        decimal DefaultMaxTabAmount,
+        bool TabRequiresManagerApproval
     );
 }
