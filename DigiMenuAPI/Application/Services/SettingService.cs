@@ -1,5 +1,6 @@
 using AutoMapper;
 using AppCore.Application.Common;
+using AppCore.Domain.Entities;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.DTOs.Update;
 using DigiMenuAPI.Application.Interfaces;
@@ -136,7 +137,71 @@ namespace DigiMenuAPI.Application.Services
             if (theme is null)
                 return OperationResult<CompanyThemeReadDto>.Fail("Tema no encontrado.");
 
-            _mapper.Map(dto, theme);
+            // Scalar properties
+            theme.IsDarkMode           = dto.IsDarkMode;
+            theme.DarkModeAutoGenerate = dto.DarkModeAutoGenerate;
+            theme.HeaderStyle          = dto.HeaderStyle;
+            theme.MenuLayout           = dto.MenuLayout;
+            theme.ProductDisplay       = dto.ProductDisplay;
+            theme.ShowProductDetails   = dto.ShowProductDetails;
+            theme.ShowCategoryImages   = dto.ShowCategoryImages;
+            theme.CategoryHeaderStyle  = dto.CategoryHeaderStyle;
+            theme.FilterMode           = dto.FilterMode;
+            theme.ShowContactButton    = dto.ShowContactButton;
+            theme.ShowMapInMenu        = dto.ShowMapInMenu;
+            theme.ShowModalProductInfo = dto.ShowModalProductInfo;
+
+            // JSON owned types: asignar instancias nuevas para que EF Core detecte el cambio
+            theme.ColorPalette = new ColorPaletteData
+            {
+                HeaderBackgroundColor = dto.ColorPalette.HeaderBackgroundColor,
+                HeaderTextColor       = dto.ColorPalette.HeaderTextColor,
+                PageBackgroundColor   = dto.ColorPalette.PageBackgroundColor,
+                TextColor             = dto.ColorPalette.TextColor,
+                TitlesColor           = dto.ColorPalette.TitlesColor,
+                CardBackgroundColor   = dto.ColorPalette.CardBackgroundColor,
+                CardBorderColor       = dto.ColorPalette.CardBorderColor,
+                TabBackgroundColor    = dto.ColorPalette.TabBackgroundColor,
+                TabTextColor          = dto.ColorPalette.TabTextColor,
+                PrimaryColor          = dto.ColorPalette.PrimaryColor,
+                PrimaryTextColor      = dto.ColorPalette.PrimaryTextColor,
+                SecondaryColor        = dto.ColorPalette.SecondaryColor,
+                FooterBackgroundColor = dto.ColorPalette.FooterBackgroundColor,
+                BrowserThemeColor     = dto.ColorPalette.BrowserThemeColor
+            };
+
+            theme.DarkModePalette = dto.DarkModePalette is null ? null : new ColorPaletteData
+            {
+                HeaderBackgroundColor = dto.DarkModePalette.HeaderBackgroundColor,
+                HeaderTextColor       = dto.DarkModePalette.HeaderTextColor,
+                PageBackgroundColor   = dto.DarkModePalette.PageBackgroundColor,
+                TextColor             = dto.DarkModePalette.TextColor,
+                TitlesColor           = dto.DarkModePalette.TitlesColor,
+                CardBackgroundColor   = dto.DarkModePalette.CardBackgroundColor,
+                CardBorderColor       = dto.DarkModePalette.CardBorderColor,
+                TabBackgroundColor    = dto.DarkModePalette.TabBackgroundColor,
+                TabTextColor          = dto.DarkModePalette.TabTextColor,
+                PrimaryColor          = dto.DarkModePalette.PrimaryColor,
+                PrimaryTextColor      = dto.DarkModePalette.PrimaryTextColor,
+                SecondaryColor        = dto.DarkModePalette.SecondaryColor,
+                FooterBackgroundColor = dto.DarkModePalette.FooterBackgroundColor,
+                BrowserThemeColor     = dto.DarkModePalette.BrowserThemeColor
+            };
+
+            theme.BackgroundSettings = new BackgroundSettingsData
+            {
+                Opacity  = dto.BackgroundSettings.Opacity,
+                Position = dto.BackgroundSettings.Position,
+                Size     = dto.BackgroundSettings.Size,
+                Repeat   = dto.BackgroundSettings.Repeat
+            };
+
+            theme.FrameSettings = new FrameSettingsData
+            {
+                FrameId        = dto.FrameSettings.FrameId,
+                CustomFrameUrl = dto.FrameSettings.CustomFrameUrl
+            };
+
             await _context.SaveChangesAsync();
             await _cache.EvictMenuByCompanyAsync(companyId);
 

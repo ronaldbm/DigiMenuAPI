@@ -1,5 +1,6 @@
 ﻿using AppCore.Application.Common;
 using AppCore.Application.Utils;
+using AppCore.Domain.Entities;
 using DigiMenuAPI.Application.DTOs.Read;
 using DigiMenuAPI.Application.Interfaces;
 using AppCore.Application.Interfaces;
@@ -267,21 +268,26 @@ namespace DigiMenuAPI.Application.Services
                 // 12. Construir MenuBranchDto manualmente desde las 4 entidades.
                 //    No se usa AutoMapper porque el origen es multi-entidad
                 //    y el destino es un DTO compuesto.
+                // Guardia contra JSON null en BD existente (columnas migradas desde esquema antiguo)
+                var palette    = theme.ColorPalette       ?? new ColorPaletteData();
+                var bgSettings = theme.BackgroundSettings ?? new BackgroundSettingsData();
+                var fmSettings = theme.FrameSettings      ?? new FrameSettingsData();
+
                 var colorPalette = new ColorPaletteDto(
-                    theme.ColorPalette.HeaderBackgroundColor,
-                    theme.ColorPalette.HeaderTextColor,
-                    theme.ColorPalette.PageBackgroundColor,
-                    theme.ColorPalette.TextColor,
-                    theme.ColorPalette.TitlesColor,
-                    theme.ColorPalette.CardBackgroundColor,
-                    theme.ColorPalette.CardBorderColor,
-                    theme.ColorPalette.TabBackgroundColor,
-                    theme.ColorPalette.TabTextColor,
-                    theme.ColorPalette.PrimaryColor,
-                    theme.ColorPalette.PrimaryTextColor,
-                    theme.ColorPalette.SecondaryColor,
-                    theme.ColorPalette.FooterBackgroundColor,
-                    theme.ColorPalette.BrowserThemeColor);
+                    palette.HeaderBackgroundColor,
+                    palette.HeaderTextColor,
+                    palette.PageBackgroundColor,
+                    palette.TextColor,
+                    palette.TitlesColor,
+                    palette.CardBackgroundColor,
+                    palette.CardBorderColor,
+                    palette.TabBackgroundColor,
+                    palette.TabTextColor,
+                    palette.PrimaryColor,
+                    palette.PrimaryTextColor,
+                    palette.SecondaryColor,
+                    palette.FooterBackgroundColor,
+                    palette.BrowserThemeColor);
 
                 ColorPaletteDto? darkPalette = theme.DarkModePalette is null ? null : new ColorPaletteDto(
                     theme.DarkModePalette.HeaderBackgroundColor,
@@ -302,16 +308,16 @@ namespace DigiMenuAPI.Application.Services
                 // BackgroundSettings: null si no hay imagen (optimización de payload)
                 BackgroundSettingsDto? backgroundSettings = info.BackgroundImageUrl is null ? null
                     : new BackgroundSettingsDto(
-                        theme.BackgroundSettings.Opacity,
-                        theme.BackgroundSettings.Position,
-                        theme.BackgroundSettings.Size,
-                        theme.BackgroundSettings.Repeat);
+                        bgSettings.Opacity,
+                        bgSettings.Position,
+                        bgSettings.Size,
+                        bgSettings.Repeat);
 
                 // FrameSettings: null si FrameId=0 (sin marco)
-                FrameSettingsDto? frameSettings = theme.FrameSettings.FrameId == 0 ? null
+                FrameSettingsDto? frameSettings = fmSettings.FrameId == 0 ? null
                     : new FrameSettingsDto(
-                        theme.FrameSettings.FrameId,
-                        theme.FrameSettings.CustomFrameUrl);
+                        fmSettings.FrameId,
+                        fmSettings.CustomFrameUrl);
 
                 var menuDto = new MenuBranchDto(
                     // Identidad — BranchInfo
