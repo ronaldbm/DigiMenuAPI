@@ -17,5 +17,10 @@ namespace AppCore.Application.Common
         public const string Titles             = "#1D3557";
         public const string Text               = "#1D3557";
         public const string BrowserTheme       = "#FFFFFF";
+
+        // ── Tarjetas y pie (sin equivalente en columnas legacy) ───────
+        public const string CardBackground     = "#FFFFFF";
+        public const string CardBorder         = "#0F0F0F0F";
+        public const string FooterBackground   = "#FFFFFF";
     }
 }

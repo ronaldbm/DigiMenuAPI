@@ -1340,8 +1340,8 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "CompanyThemes",
-                columns: new[] { "Id", "CategoryHeaderStyle", "CompanyId", "CreatedAt", "CreatedUserId", "DarkModeAutoGenerate", "HeaderStyle", "IsDarkMode", "MenuLayout", "ModifiedAt", "ModifiedUserId", "ProductDisplay", "ShowCategoryImages", "ShowContactButton", "ShowMapInMenu", "ShowModalProductInfo", "ShowProductDetails" },
-                values: new object[] { 1, (byte)1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, true, (byte)1, false, (byte)1, null, null, (byte)1, true, true, true, false, true });
+                columns: new[] { "Id", "BackgroundSettings", "CategoryHeaderStyle", "ColorPalette", "CompanyId", "CreatedAt", "CreatedUserId", "DarkModeAutoGenerate", "FrameSettings", "HeaderStyle", "IsDarkMode", "MenuLayout", "ModifiedAt", "ModifiedUserId", "ProductDisplay", "ShowCategoryImages", "ShowContactButton", "ShowMapInMenu", "ShowModalProductInfo", "ShowProductDetails" },
+                values: new object[] { 1, "{\"Opacity\":100,\"Position\":0,\"Size\":0,\"Repeat\":false}", (byte)1, "{\"HeaderBackgroundColor\":\"#FFFFFF\",\"HeaderTextColor\":\"#1D3557\",\"PageBackgroundColor\":\"#F1FAEE\",\"TextColor\":\"#1D3557\",\"TitlesColor\":\"#1D3557\",\"CardBackgroundColor\":\"#FFFFFF\",\"CardBorderColor\":\"#0F0F0F0F\",\"TabBackgroundColor\":\"#1D3557\",\"TabTextColor\":\"#FFFFFF\",\"PrimaryColor\":\"#E63946\",\"PrimaryTextColor\":\"#FFFFFF\",\"SecondaryColor\":\"#457B9D\",\"FooterBackgroundColor\":\"#FFFFFF\",\"BrowserThemeColor\":\"#FFFFFF\"}", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, true, "{\"FrameId\":0,\"CustomFrameUrl\":null}", (byte)1, false, (byte)1, null, null, (byte)1, true, true, true, false, true });
 
             migrationBuilder.InsertData(
                 table: "Tags",

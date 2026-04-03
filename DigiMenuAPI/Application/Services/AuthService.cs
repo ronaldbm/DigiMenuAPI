@@ -127,9 +127,9 @@ namespace DigiMenuAPI.Application.Services
                     TitlesColor           = DefaultTheme.Titles,
                     TextColor             = DefaultTheme.Text,
                     BrowserThemeColor     = DefaultTheme.BrowserTheme,
-                    CardBackgroundColor   = "#FFFFFF",
-                    CardBorderColor       = "#0F0F0F0F",
-                    FooterBackgroundColor = "#FFFFFF"
+                    CardBackgroundColor   = DefaultTheme.CardBackground,
+                    CardBorderColor       = DefaultTheme.CardBorder,
+                    FooterBackgroundColor = DefaultTheme.FooterBackground
                 },
                 BackgroundSettings = new BackgroundSettingsData(),
                 FrameSettings      = new FrameSettingsData(),

@@ -696,14 +696,16 @@ namespace AppCore.Infrastructure.SQL
                 CreatedAt = seed
             });
 
-            // NOTE: JSON-owned properties (ColorPalette, DarkModePalette, BackgroundSettings,
-            // FrameSettings) cannot be seeded via HasData — EF Core does not support HasData
-            // for JSON-mapped owned types. Those columns will be populated by the application
-            // layer (AuthService.RegisterAsync) using entity C# initializers / DefaultTheme values.
+            // JSON-owned properties (ColorPalette, BackgroundSettings, FrameSettings) se seedean
+            // pasando el JSON serializado como string en el tipo anónimo. EF Core lo almacena
+            // directamente en la columna JSON. Usar PascalCase — coincide con el serializer por defecto.
             b.Entity<CompanyTheme>().HasData(new
             {
                 Id = 1,
                 CompanyId = 1,
+                ColorPalette = """{"HeaderBackgroundColor":"#FFFFFF","HeaderTextColor":"#1D3557","PageBackgroundColor":"#F1FAEE","TextColor":"#1D3557","TitlesColor":"#1D3557","CardBackgroundColor":"#FFFFFF","CardBorderColor":"#0F0F0F0F","TabBackgroundColor":"#1D3557","TabTextColor":"#FFFFFF","PrimaryColor":"#E63946","PrimaryTextColor":"#FFFFFF","SecondaryColor":"#457B9D","FooterBackgroundColor":"#FFFFFF","BrowserThemeColor":"#FFFFFF"}""",
+                BackgroundSettings = """{"Opacity":100,"Position":0,"Size":0,"Repeat":false}""",
+                FrameSettings = """{"FrameId":0,"CustomFrameUrl":null}""",
                 IsDarkMode = false,
                 DarkModeAutoGenerate = true,
                 HeaderStyle = (byte)1,

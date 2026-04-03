@@ -932,11 +932,14 @@ namespace DigiMenuAPI.Migrations
                         new
                         {
                             Id = 1,
+                            BackgroundSettings = "{\"Opacity\":100,\"Position\":0,\"Size\":0,\"Repeat\":false}",
                             CategoryHeaderStyle = (byte)1,
+                            ColorPalette = "{\"HeaderBackgroundColor\":\"#FFFFFF\",\"HeaderTextColor\":\"#1D3557\",\"PageBackgroundColor\":\"#F1FAEE\",\"TextColor\":\"#1D3557\",\"TitlesColor\":\"#1D3557\",\"CardBackgroundColor\":\"#FFFFFF\",\"CardBorderColor\":\"#0F0F0F0F\",\"TabBackgroundColor\":\"#1D3557\",\"TabTextColor\":\"#FFFFFF\",\"PrimaryColor\":\"#E63946\",\"PrimaryTextColor\":\"#FFFFFF\",\"SecondaryColor\":\"#457B9D\",\"FooterBackgroundColor\":\"#FFFFFF\",\"BrowserThemeColor\":\"#FFFFFF\"}",
                             CompanyId = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DarkModeAutoGenerate = true,
                             FilterMode = (byte)0,
+                            FrameSettings = "{\"FrameId\":0,\"CustomFrameUrl\":null}",
                             HeaderStyle = (byte)1,
                             IsDarkMode = false,
                             MenuLayout = (byte)1,
