@@ -121,6 +121,17 @@ namespace AppCore.Application.Common
         public static OperationResult<T> ValidationError(string message, string errorKey) =>
             Fail(message, OperationResultError.Validation, errorKey);
 
+        /// <summary>Validación fallida con datos adjuntos (ej: lista de errores por fila). → 422</summary>
+        public static OperationResult<T> ValidationError(string message, string errorKey, T data) =>
+            new()
+            {
+                Success = false,
+                Message = message,
+                ErrorCode = OperationResultError.Validation,
+                ErrorKey = errorKey,
+                Data = data
+            };
+
         /// <summary>
         /// Módulo no activo en el plan del tenant. → 403
         /// El mensaje se genera automáticamente desde el código del módulo.

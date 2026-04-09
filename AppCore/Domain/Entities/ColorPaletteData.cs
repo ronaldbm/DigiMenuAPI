@@ -14,7 +14,6 @@ namespace AppCore.Domain.Entities
         // ── Cuerpo ────────────────────────────────────────────────────
         public string PageBackgroundColor { get; set; } = "#FFFFFF";
         public string TextColor { get; set; } = "#1D3557";
-        public string TitlesColor { get; set; } = "#000000";
 
         // ── Tarjetas de producto ──────────────────────────────────────
         public string CardBackgroundColor { get; set; } = "#FFFFFF";
@@ -31,6 +30,13 @@ namespace AppCore.Domain.Entities
 
         // ── Pie de página ─────────────────────────────────────────────
         public string FooterBackgroundColor { get; set; } = "#FFFFFF";
+        public string FooterTextColor { get; set; } = "#1D3557";
+
+        // ── Títulos y precios granulares ──────────────────────────────
+        public string CategoryTitleColor { get; set; } = "#000000";
+        public string CardTitleColor { get; set; } = "#000000";
+        public string PriceColor { get; set; } = "#000000";
+        public string PromotionColor { get; set; } = "#E63946";
 
         // ── Navegador (mobile address bar) ────────────────────────────
         public string BrowserThemeColor { get; set; } = "#FFFFFF";

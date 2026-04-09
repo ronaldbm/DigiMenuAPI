@@ -124,12 +124,16 @@ namespace DigiMenuAPI.Application.Services
                     PrimaryColor          = DefaultTheme.Primary,
                     PrimaryTextColor      = DefaultTheme.PrimaryText,
                     SecondaryColor        = DefaultTheme.Secondary,
-                    TitlesColor           = DefaultTheme.Titles,
                     TextColor             = DefaultTheme.Text,
                     BrowserThemeColor     = DefaultTheme.BrowserTheme,
                     CardBackgroundColor   = DefaultTheme.CardBackground,
                     CardBorderColor       = DefaultTheme.CardBorder,
-                    FooterBackgroundColor = DefaultTheme.FooterBackground
+                    FooterBackgroundColor = DefaultTheme.FooterBackground,
+                    FooterTextColor       = DefaultTheme.FooterText,
+                    CategoryTitleColor    = DefaultTheme.CategoryTitle,
+                    CardTitleColor        = DefaultTheme.CardTitle,
+                    PriceColor            = DefaultTheme.Price,
+                    PromotionColor        = DefaultTheme.Promotion
                 },
                 BackgroundSettings = new BackgroundSettingsData(),
                 FrameSettings      = new FrameSettingsData(),

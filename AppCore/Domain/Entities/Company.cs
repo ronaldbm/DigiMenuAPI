@@ -69,5 +69,11 @@ namespace AppCore.Domain.Entities
 
         /// <summary>Idiomas habilitados para el menú público de esta empresa.</summary>
         public ICollection<CompanyLanguage> Languages { get; set; } = new List<CompanyLanguage>();
+
+        /// <summary>
+        /// Suscripción activa. Null para la empresa maestra de la plataforma (Id=1).
+        /// El SuperAdmin la crea al dar de alta el tenant.
+        /// </summary>
+        public Subscription? Subscription { get; set; }
     }
 }

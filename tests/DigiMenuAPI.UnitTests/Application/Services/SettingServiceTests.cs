@@ -45,28 +45,31 @@ public sealed class SettingServiceTests : ServiceTestBase
     {
         Db.CompanyThemes.Add(new CompanyTheme
         {
-            Id                    = id,
-            CompanyId             = companyId,
-            PrimaryColor          = "#FF0000",
-            PrimaryTextColor      = "#FFFFFF",
-            SecondaryColor        = "#00FF00",
-            PageBackgroundColor   = "#FFFFFF",
-            HeaderBackgroundColor = "#000000",
-            HeaderTextColor       = "#FFFFFF",
-            TabBackgroundColor    = "#EEEEEE",
-            TabTextColor          = "#333333",
-            TitlesColor           = "#111111",
-            TextColor             = "#222222",
-            BrowserThemeColor     = "#FF0000",
-            IsDarkMode            = false,
-            HeaderStyle           = 1,
-            MenuLayout            = 1,
-            ProductDisplay        = 1,
-            ShowProductDetails    = true,
-            FilterMode            = 0,
-            ShowContactButton     = true,
-            ShowModalProductInfo  = false,
-            ShowMapInMenu         = true,
+            Id        = id,
+            CompanyId = companyId,
+            ColorPalette = new AppCore.Domain.Entities.ColorPaletteData
+            {
+                PrimaryColor          = "#FF0000",
+                PrimaryTextColor      = "#FFFFFF",
+                SecondaryColor        = "#00FF00",
+                PageBackgroundColor   = "#FFFFFF",
+                HeaderBackgroundColor = "#000000",
+                HeaderTextColor       = "#FFFFFF",
+                TabBackgroundColor    = "#EEEEEE",
+                TabTextColor          = "#333333",
+                TextColor             = "#222222",
+                BrowserThemeColor     = "#FF0000",
+            },
+            IsDarkMode         = false,
+            DarkModeAutoGenerate = true,
+            HeaderStyle        = 1,
+            MenuLayout         = 1,
+            ProductDisplay     = 1,
+            ShowProductDetails = true,
+            FilterMode         = 0,
+            ShowContactButton  = true,
+            ShowModalProductInfo = false,
+            ShowMapInMenu      = true,
         });
         await Db.SaveChangesAsync();
     }
@@ -199,29 +202,43 @@ public sealed class SettingServiceTests : ServiceTestBase
 
         SetTenant(companyId: 100);
         var result = await CreateService().UpdateCompanyTheme(new CompanyThemeUpdateDto(
-            IsDarkMode:            true,
-            PageBackgroundColor:   "#111111",
-            HeaderBackgroundColor: "#222222",
-            HeaderTextColor:       "#FFFFFF",
-            TabBackgroundColor:    "#333333",
-            TabTextColor:          "#EEEEEE",
-            PrimaryColor:          "#BLUE01",
-            PrimaryTextColor:      "#FFFFFF",
-            SecondaryColor:        "#GREEN1",
-            TitlesColor:           "#444444",
-            TextColor:             "#555555",
-            BrowserThemeColor:     "#BLUE01",
-            HeaderStyle:           2,
-            MenuLayout:            1,
-            ProductDisplay:        1,
-            ShowProductDetails:    true,
-            FilterMode:            0,
-            ShowContactButton:     false,
-            ShowModalProductInfo:  true,
-            ShowMapInMenu:         false));
+            ColorPalette: new ColorPaletteUpdateDto(
+                HeaderBackgroundColor: "#222222",
+                HeaderTextColor:       "#FFFFFF",
+                PageBackgroundColor:   "#111111",
+                TextColor:             "#555555",
+                CardBackgroundColor:   "#FAFAFA",
+                CardBorderColor:       "#DDDDDD",
+                TabBackgroundColor:    "#333333",
+                TabTextColor:          "#EEEEEE",
+                PrimaryColor:          "#BLUE01",
+                PrimaryTextColor:      "#FFFFFF",
+                SecondaryColor:        "#GREEN1",
+                FooterBackgroundColor: "#000000",
+                FooterTextColor:       "#CCCCCC",
+                CategoryTitleColor:    "#444444",
+                CardTitleColor:        "#444444",
+                PriceColor:            "#444444",
+                PromotionColor:        "#BLUE01",
+                BrowserThemeColor:     "#BLUE01"),
+            DarkModePalette:     null,
+            BackgroundSettings:  new BackgroundSettingsUpdateDto(100, 0, 0, false),
+            FrameSettings:       new FrameSettingsUpdateDto(0, null),
+            IsDarkMode:          true,
+            DarkModeAutoGenerate: false,
+            HeaderStyle:         2,
+            MenuLayout:          1,
+            ProductDisplay:      1,
+            ShowProductDetails:  true,
+            FilterMode:          0,
+            CategoryHeaderStyle: 1,
+            ShowCategoryImages:  true,
+            ShowContactButton:   false,
+            ShowModalProductInfo: true,
+            ShowMapInMenu:       false));
 
         result.Success.Should().BeTrue();
-        result.Data!.PrimaryColor.Should().Be("#BLUE01");
+        result.Data!.ColorPalette.PrimaryColor.Should().Be("#BLUE01");
 
         await CacheService.Received(1).EvictMenuByCompanyAsync(100, Arg.Any<CancellationToken>());
     }
@@ -231,8 +248,25 @@ public sealed class SettingServiceTests : ServiceTestBase
     {
         SetTenant(companyId: 100);
         var result = await CreateService().UpdateCompanyTheme(new CompanyThemeUpdateDto(
-            false, "#FFF", "#000", "#FFF", "#EEE", "#333", "#F00", "#FFF",
-            "#0F0", "#111", "#222", "#F00", 1, 1, 1, true, 0, true, false, true));
+            ColorPalette: new ColorPaletteUpdateDto(
+                "#000", "#FFF", "#FFF", "#111", "#222", "#FFF", "#EEE",
+                "#333", "#FFF", "#F00", "#FFF", "#0F0", "#FFF",
+                "#1D3557", "#000", "#000", "#000", "#E63946", "#F00"),
+            DarkModePalette:     null,
+            BackgroundSettings:  new BackgroundSettingsUpdateDto(100, 0, 0, false),
+            FrameSettings:       new FrameSettingsUpdateDto(0, null),
+            IsDarkMode:          false,
+            DarkModeAutoGenerate: true,
+            HeaderStyle:         1,
+            MenuLayout:          1,
+            ProductDisplay:      1,
+            ShowProductDetails:  true,
+            FilterMode:          0,
+            CategoryHeaderStyle: 1,
+            ShowCategoryImages:  true,
+            ShowContactButton:   true,
+            ShowModalProductInfo: false,
+            ShowMapInMenu:       true));
 
         result.Success.Should().BeFalse();
     }

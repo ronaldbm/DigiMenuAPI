@@ -158,7 +158,6 @@ namespace DigiMenuAPI.Application.Services
                 HeaderTextColor       = dto.ColorPalette.HeaderTextColor,
                 PageBackgroundColor   = dto.ColorPalette.PageBackgroundColor,
                 TextColor             = dto.ColorPalette.TextColor,
-                TitlesColor           = dto.ColorPalette.TitlesColor,
                 CardBackgroundColor   = dto.ColorPalette.CardBackgroundColor,
                 CardBorderColor       = dto.ColorPalette.CardBorderColor,
                 TabBackgroundColor    = dto.ColorPalette.TabBackgroundColor,
@@ -167,6 +166,11 @@ namespace DigiMenuAPI.Application.Services
                 PrimaryTextColor      = dto.ColorPalette.PrimaryTextColor,
                 SecondaryColor        = dto.ColorPalette.SecondaryColor,
                 FooterBackgroundColor = dto.ColorPalette.FooterBackgroundColor,
+                FooterTextColor       = dto.ColorPalette.FooterTextColor,
+                CategoryTitleColor    = dto.ColorPalette.CategoryTitleColor,
+                CardTitleColor        = dto.ColorPalette.CardTitleColor,
+                PriceColor            = dto.ColorPalette.PriceColor,
+                PromotionColor        = dto.ColorPalette.PromotionColor,
                 BrowserThemeColor     = dto.ColorPalette.BrowserThemeColor
             };
 
@@ -176,7 +180,6 @@ namespace DigiMenuAPI.Application.Services
                 HeaderTextColor       = dto.DarkModePalette.HeaderTextColor,
                 PageBackgroundColor   = dto.DarkModePalette.PageBackgroundColor,
                 TextColor             = dto.DarkModePalette.TextColor,
-                TitlesColor           = dto.DarkModePalette.TitlesColor,
                 CardBackgroundColor   = dto.DarkModePalette.CardBackgroundColor,
                 CardBorderColor       = dto.DarkModePalette.CardBorderColor,
                 TabBackgroundColor    = dto.DarkModePalette.TabBackgroundColor,
@@ -185,6 +188,11 @@ namespace DigiMenuAPI.Application.Services
                 PrimaryTextColor      = dto.DarkModePalette.PrimaryTextColor,
                 SecondaryColor        = dto.DarkModePalette.SecondaryColor,
                 FooterBackgroundColor = dto.DarkModePalette.FooterBackgroundColor,
+                FooterTextColor       = dto.DarkModePalette.FooterTextColor,
+                CategoryTitleColor    = dto.DarkModePalette.CategoryTitleColor,
+                CardTitleColor        = dto.DarkModePalette.CardTitleColor,
+                PriceColor            = dto.DarkModePalette.PriceColor,
+                PromotionColor        = dto.DarkModePalette.PromotionColor,
                 BrowserThemeColor     = dto.DarkModePalette.BrowserThemeColor
             };
 

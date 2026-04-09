@@ -5,7 +5,6 @@ namespace DigiMenuAPI.Application.DTOs.Read
         string HeaderTextColor,
         string PageBackgroundColor,
         string TextColor,
-        string TitlesColor,
         string CardBackgroundColor,
         string CardBorderColor,
         string TabBackgroundColor,
@@ -14,6 +13,11 @@ namespace DigiMenuAPI.Application.DTOs.Read
         string PrimaryTextColor,
         string SecondaryColor,
         string FooterBackgroundColor,
+        string FooterTextColor,
+        string CategoryTitleColor,
+        string CardTitleColor,
+        string PriceColor,
+        string PromotionColor,
         string BrowserThemeColor
     );
 

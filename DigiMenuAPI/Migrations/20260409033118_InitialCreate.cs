@@ -406,6 +406,44 @@ namespace DigiMenuAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Subscriptions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CompanyId = table.Column<int>(type: "int", nullable: false),
+                    PlanId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    NextBillingDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TrialEndsAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SuspendedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SuspendedReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedUserId = table.Column<int>(type: "int", nullable: true),
+                    ModifiedUserId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Subscriptions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Subscriptions_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Subscriptions_Plans_PlanId",
+                        column: x => x.PlanId,
+                        principalTable: "Plans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tags",
                 columns: table => new
                 {
@@ -900,6 +938,44 @@ namespace DigiMenuAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ImpersonationSessions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SuperAdminUserId = table.Column<int>(type: "int", nullable: false),
+                    TargetCompanyId = table.Column<int>(type: "int", nullable: false),
+                    TargetUserId = table.Column<int>(type: "int", nullable: false),
+                    TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    IssuedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ImpersonationSessions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ImpersonationSessions_Companies_TargetCompanyId",
+                        column: x => x.TargetCompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ImpersonationSessions_Users_SuperAdminUserId",
+                        column: x => x.SuperAdminUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ImpersonationSessions_Users_TargetUserId",
+                        column: x => x.TargetUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PasswordResetRequests",
                 columns: table => new
                 {
@@ -929,6 +1005,49 @@ namespace DigiMenuAPI.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentRecords",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CompanyId = table.Column<int>(type: "int", nullable: false),
+                    SubscriptionId = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Method = table.Column<byte>(type: "tinyint", nullable: false),
+                    Reference = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
+                    RecordedByUserId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedUserId = table.Column<int>(type: "int", nullable: true),
+                    ModifiedUserId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentRecords", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentRecords_Companies_CompanyId",
+                        column: x => x.CompanyId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PaymentRecords_Subscriptions_SubscriptionId",
+                        column: x => x.SubscriptionId,
+                        principalTable: "Subscriptions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PaymentRecords_Users_RecordedByUserId",
+                        column: x => x.RecordedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -1339,11 +1458,6 @@ namespace DigiMenuAPI.Migrations
                 values: new object[] { 1, 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "El mejor menú digital para tu restaurante", "DigiMenu Demo", null, null });
 
             migrationBuilder.InsertData(
-                table: "CompanyThemes",
-                columns: new[] { "Id", "BackgroundSettings", "CategoryHeaderStyle", "ColorPalette", "CompanyId", "CreatedAt", "CreatedUserId", "DarkModeAutoGenerate", "FrameSettings", "HeaderStyle", "IsDarkMode", "MenuLayout", "ModifiedAt", "ModifiedUserId", "ProductDisplay", "ShowCategoryImages", "ShowContactButton", "ShowMapInMenu", "ShowModalProductInfo", "ShowProductDetails" },
-                values: new object[] { 1, "{\"Opacity\":100,\"Position\":0,\"Size\":0,\"Repeat\":false}", (byte)1, "{\"HeaderBackgroundColor\":\"#FFFFFF\",\"HeaderTextColor\":\"#1D3557\",\"PageBackgroundColor\":\"#F1FAEE\",\"TextColor\":\"#1D3557\",\"TitlesColor\":\"#1D3557\",\"CardBackgroundColor\":\"#FFFFFF\",\"CardBorderColor\":\"#0F0F0F0F\",\"TabBackgroundColor\":\"#1D3557\",\"TabTextColor\":\"#FFFFFF\",\"PrimaryColor\":\"#E63946\",\"PrimaryTextColor\":\"#FFFFFF\",\"SecondaryColor\":\"#457B9D\",\"FooterBackgroundColor\":\"#FFFFFF\",\"BrowserThemeColor\":\"#FFFFFF\"}", 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, true, "{\"FrameId\":0,\"CustomFrameUrl\":null}", (byte)1, false, (byte)1, null, null, (byte)1, true, true, true, false, true });
-
-            migrationBuilder.InsertData(
                 table: "Tags",
                 columns: new[] { "Id", "Color", "CompanyId", "CreatedAt", "CreatedUserId", "IsDeleted", "ModifiedAt", "ModifiedUserId" },
                 values: new object[,]
@@ -1702,6 +1816,27 @@ namespace DigiMenuAPI.Migrations
                 column: "StandardIconId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ImpersonationSessions_SuperAdminUserId_IssuedAt",
+                table: "ImpersonationSessions",
+                columns: new[] { "SuperAdminUserId", "IssuedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ImpersonationSessions_TargetCompanyId",
+                table: "ImpersonationSessions",
+                column: "TargetCompanyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ImpersonationSessions_TargetUserId",
+                table: "ImpersonationSessions",
+                column: "TargetUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ImpersonationSessions_TokenHash",
+                table: "ImpersonationSessions",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Notifications_CompanyId_IsRead",
                 table: "Notifications",
                 columns: new[] { "CompanyId", "IsRead" });
@@ -1744,6 +1879,26 @@ namespace DigiMenuAPI.Migrations
                 columns: new[] { "UserId", "IsUsed", "ExpiresAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_PaymentRecords_CompanyId_PaidAt",
+                table: "PaymentRecords",
+                columns: new[] { "CompanyId", "PaidAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentRecords_CompanyId_Status",
+                table: "PaymentRecords",
+                columns: new[] { "CompanyId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentRecords_RecordedByUserId",
+                table: "PaymentRecords",
+                column: "RecordedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentRecords_SubscriptionId",
+                table: "PaymentRecords",
+                column: "SubscriptionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Plans_Code",
                 table: "Plans",
                 column: "Code",
@@ -1780,6 +1935,27 @@ namespace DigiMenuAPI.Migrations
                 name: "IX_Reservations_BranchId_IsDeleted_ReservationDate",
                 table: "Reservations",
                 columns: new[] { "BranchId", "IsDeleted", "ReservationDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Subscriptions_CompanyId",
+                table: "Subscriptions",
+                column: "CompanyId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Subscriptions_PlanId",
+                table: "Subscriptions",
+                column: "PlanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Subscriptions_Status",
+                table: "Subscriptions",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Subscriptions_Status_EndDate",
+                table: "Subscriptions",
+                columns: new[] { "Status", "EndDate" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tags_CompanyId_IsDeleted",
@@ -1864,6 +2040,9 @@ namespace DigiMenuAPI.Migrations
                 name: "FooterLinks");
 
             migrationBuilder.DropTable(
+                name: "ImpersonationSessions");
+
+            migrationBuilder.DropTable(
                 name: "Notifications");
 
             migrationBuilder.DropTable(
@@ -1871,6 +2050,9 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.DropTable(
                 name: "PasswordResetRequests");
+
+            migrationBuilder.DropTable(
+                name: "PaymentRecords");
 
             migrationBuilder.DropTable(
                 name: "ProductTags");
@@ -1904,6 +2086,9 @@ namespace DigiMenuAPI.Migrations
 
             migrationBuilder.DropTable(
                 name: "OutboxEmails");
+
+            migrationBuilder.DropTable(
+                name: "Subscriptions");
 
             migrationBuilder.DropTable(
                 name: "Tags");

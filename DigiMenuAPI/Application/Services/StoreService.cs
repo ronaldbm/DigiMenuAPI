@@ -278,7 +278,6 @@ namespace DigiMenuAPI.Application.Services
                     palette.HeaderTextColor,
                     palette.PageBackgroundColor,
                     palette.TextColor,
-                    palette.TitlesColor,
                     palette.CardBackgroundColor,
                     palette.CardBorderColor,
                     palette.TabBackgroundColor,
@@ -287,23 +286,33 @@ namespace DigiMenuAPI.Application.Services
                     palette.PrimaryTextColor,
                     palette.SecondaryColor,
                     palette.FooterBackgroundColor,
+                    palette.FooterTextColor,
+                    palette.CategoryTitleColor,
+                    palette.CardTitleColor,
+                    palette.PriceColor,
+                    palette.PromotionColor,
                     palette.BrowserThemeColor);
 
-                ColorPaletteDto? darkPalette = theme.DarkModePalette is null ? null : new ColorPaletteDto(
-                    theme.DarkModePalette.HeaderBackgroundColor,
-                    theme.DarkModePalette.HeaderTextColor,
-                    theme.DarkModePalette.PageBackgroundColor,
-                    theme.DarkModePalette.TextColor,
-                    theme.DarkModePalette.TitlesColor,
-                    theme.DarkModePalette.CardBackgroundColor,
-                    theme.DarkModePalette.CardBorderColor,
-                    theme.DarkModePalette.TabBackgroundColor,
-                    theme.DarkModePalette.TabTextColor,
-                    theme.DarkModePalette.PrimaryColor,
-                    theme.DarkModePalette.PrimaryTextColor,
-                    theme.DarkModePalette.SecondaryColor,
-                    theme.DarkModePalette.FooterBackgroundColor,
-                    theme.DarkModePalette.BrowserThemeColor);
+                var darkData = theme.DarkModePalette;
+                ColorPaletteDto? darkPalette = darkData is null ? null : new ColorPaletteDto(
+                    darkData.HeaderBackgroundColor,
+                    darkData.HeaderTextColor,
+                    darkData.PageBackgroundColor,
+                    darkData.TextColor,
+                    darkData.CardBackgroundColor,
+                    darkData.CardBorderColor,
+                    darkData.TabBackgroundColor,
+                    darkData.TabTextColor,
+                    darkData.PrimaryColor,
+                    darkData.PrimaryTextColor,
+                    darkData.SecondaryColor,
+                    darkData.FooterBackgroundColor,
+                    darkData.FooterTextColor,
+                    darkData.CategoryTitleColor,
+                    darkData.CardTitleColor,
+                    darkData.PriceColor,
+                    darkData.PromotionColor,
+                    darkData.BrowserThemeColor);
 
                 // BackgroundSettings: null si no hay imagen (optimización de payload)
                 BackgroundSettingsDto? backgroundSettings = info.BackgroundImageUrl is null ? null

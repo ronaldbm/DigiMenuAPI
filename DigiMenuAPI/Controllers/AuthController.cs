@@ -16,6 +16,7 @@ namespace DigiMenuAPI.Controllers
     ///   POST /api/auth/forgot-password
     ///   GET  /api/auth/validate-reset-token/{token}
     ///   POST /api/auth/reset-password
+    ///   POST /api/auth/impersonate/exchange  (token de un solo uso emitido por SuperAdmin)
     ///
     /// Autenticados (requieren JWT):
     ///   POST /api/auth/change-password
@@ -26,10 +27,14 @@ namespace DigiMenuAPI.Controllers
     public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
+        private readonly ISuperAdminImpersonationService _impersonationService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(
+            IAuthService authService,
+            ISuperAdminImpersonationService impersonationService)
         {
             _authService = authService;
+            _impersonationService = impersonationService;
         }
 
         /// <summary>
@@ -82,5 +87,24 @@ namespace DigiMenuAPI.Controllers
         [EnableRateLimiting("auth")]
         public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
             => HandleResult(await _authService.ResetPassword(dto));
+
+        /// <summary>
+        /// Intercambia un token de impersonación (emitido por el SuperAdmin) por un JWT
+        /// del CompanyAdmin del tenant. El token es de un solo uso y válido 30 minutos.
+        ///
+        /// Este endpoint es público porque DigiMenuWeb no tiene JWT de SuperAdmin.
+        /// La seguridad está garantizada por:
+        ///   - Token de 32 bytes aleatorios (criptográficamente seguro)
+        ///   - SHA-256 almacenado en BD (nunca en claro)
+        ///   - One-time use: marcado atómicamente en primera validación
+        ///   - TTL de 30 minutos
+        ///   - Rate limiting estricto: 5 intentos por minuto por IP
+        /// </summary>
+        [HttpPost("impersonate/exchange")]
+        [AllowAnonymous]
+        [EnableRateLimiting("impersonate")]
+        public async Task<ActionResult> ExchangeImpersonationToken(
+            [FromBody] ImpersonationExchangeDto dto)
+            => HandleResult(await _impersonationService.ExchangeToken(dto.Token));
     }
 }

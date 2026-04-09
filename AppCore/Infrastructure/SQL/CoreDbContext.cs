@@ -52,6 +52,11 @@ namespace AppCore.Infrastructure.SQL
         public DbSet<OutboxEmail> OutboxEmails { get; set; }
         public DbSet<OutboxEmailBody> OutboxEmailBodies { get; set; }
 
+        // SuperAdmin — suscripciones, pagos y auditoría de impersonación
+        public DbSet<Subscription> Subscriptions { get; set; }
+        public DbSet<PaymentRecord> PaymentRecords { get; set; }
+        public DbSet<ImpersonationSession> ImpersonationSessions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -74,6 +79,9 @@ namespace AppCore.Infrastructure.SQL
             ConfigureBranchEvent(modelBuilder);
             ConfigureSupportedLanguage(modelBuilder);
             ConfigureCompanyLanguage(modelBuilder);
+            ConfigureSubscription(modelBuilder);
+            ConfigurePaymentRecord(modelBuilder);
+            ConfigureImpersonationSession(modelBuilder);
 
             SeedCoreData(modelBuilder);
         }
@@ -494,6 +502,108 @@ namespace AppCore.Infrastructure.SQL
             });
         }
 
+        private static void ConfigureSubscription(ModelBuilder b)
+        {
+            b.Entity<Subscription>(e =>
+            {
+                e.HasKey(s => s.Id);
+
+                // Status como tinyint — mínimo espacio, máximo rendimiento en filtros
+                e.Property(s => s.Status).HasConversion<byte>().HasColumnType("tinyint");
+                e.Property(s => s.Notes).HasMaxLength(1000);
+                e.Property(s => s.SuspendedReason).HasMaxLength(500);
+
+                // Índices para el dashboard: filtrar por estado y por fecha de vencimiento
+                e.HasIndex(s => s.Status);
+                e.HasIndex(s => new { s.Status, s.EndDate });
+                e.HasIndex(s => s.CompanyId).IsUnique(); // 1:1 Company→Subscription
+
+                // 1:1 Company ↔ Subscription
+                e.HasOne(s => s.Company)
+                 .WithOne(c => c.Subscription)
+                 .HasForeignKey<Subscription>(s => s.CompanyId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // N:1 Subscription → Plan
+                e.HasOne(s => s.Plan)
+                 .WithMany()
+                 .HasForeignKey(s => s.PlanId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigurePaymentRecord(ModelBuilder b)
+        {
+            b.Entity<PaymentRecord>(e =>
+            {
+                e.HasKey(p => p.Id);
+
+                e.Property(p => p.Amount).HasPrecision(18, 2);
+                e.Property(p => p.Currency).IsRequired().HasMaxLength(5);
+                e.Property(p => p.Reference).HasMaxLength(100);
+                e.Property(p => p.Notes).HasMaxLength(500);
+
+                // Enums como tinyint
+                e.Property(p => p.Method).HasConversion<byte>().HasColumnType("tinyint");
+                e.Property(p => p.Status).HasConversion<byte>().HasColumnType("tinyint");
+
+                // Índice principal: pagos por empresa, ordenados por fecha
+                e.HasIndex(p => new { p.CompanyId, p.PaidAt });
+                // Índice para filtrar por estado (pagos pendientes, fallidos)
+                e.HasIndex(p => new { p.CompanyId, p.Status });
+
+                e.HasOne(p => p.Company)
+                 .WithMany()
+                 .HasForeignKey(p => p.CompanyId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(p => p.Subscription)
+                 .WithMany(s => s.Payments)
+                 .HasForeignKey(p => p.SubscriptionId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // Sin cascade: si el SuperAdmin que lo registró es eliminado, el registro se conserva
+                e.HasOne(p => p.RecordedBy)
+                 .WithMany()
+                 .HasForeignKey(p => p.RecordedByUserId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+        }
+
+        private static void ConfigureImpersonationSession(ModelBuilder b)
+        {
+            b.Entity<ImpersonationSession>(e =>
+            {
+                e.HasKey(i => i.Id);
+
+                e.Property(i => i.TokenHash).IsRequired().HasMaxLength(64);
+                e.Property(i => i.IpAddress).IsRequired().HasMaxLength(45); // IPv6 max 45 chars
+
+                // Búsqueda por hash en el exchange — debe ser muy rápida
+                e.HasIndex(i => i.TokenHash).IsUnique();
+
+                // Índice para auditoría: sesiones activas por SuperAdmin
+                e.HasIndex(i => new { i.SuperAdminUserId, i.IssuedAt });
+
+                // Sin QueryFilter (sin soft delete): el audit log es inmutable
+                e.HasOne(i => i.SuperAdmin)
+                 .WithMany()
+                 .HasForeignKey(i => i.SuperAdminUserId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(i => i.TargetCompany)
+                 .WithMany()
+                 .HasForeignKey(i => i.TargetCompanyId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // NoAction para evitar múltiples cascade paths en SQL Server
+                e.HasOne(i => i.TargetUser)
+                 .WithMany()
+                 .HasForeignKey(i => i.TargetUserId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+        }
+
         // ── Data Seeding ─────────────────────────────────────────────
 
         private static void SeedCoreData(ModelBuilder b)
@@ -696,30 +806,8 @@ namespace AppCore.Infrastructure.SQL
                 CreatedAt = seed
             });
 
-            // JSON-owned properties (ColorPalette, BackgroundSettings, FrameSettings) se seedean
-            // pasando el JSON serializado como string en el tipo anónimo. EF Core lo almacena
-            // directamente en la columna JSON. Usar PascalCase — coincide con el serializer por defecto.
-            b.Entity<CompanyTheme>().HasData(new
-            {
-                Id = 1,
-                CompanyId = 1,
-                ColorPalette = """{"HeaderBackgroundColor":"#FFFFFF","HeaderTextColor":"#1D3557","PageBackgroundColor":"#F1FAEE","TextColor":"#1D3557","TitlesColor":"#1D3557","CardBackgroundColor":"#FFFFFF","CardBorderColor":"#0F0F0F0F","TabBackgroundColor":"#1D3557","TabTextColor":"#FFFFFF","PrimaryColor":"#E63946","PrimaryTextColor":"#FFFFFF","SecondaryColor":"#457B9D","FooterBackgroundColor":"#FFFFFF","BrowserThemeColor":"#FFFFFF"}""",
-                BackgroundSettings = """{"Opacity":100,"Position":0,"Size":0,"Repeat":false}""",
-                FrameSettings = """{"FrameId":0,"CustomFrameUrl":null}""",
-                IsDarkMode = false,
-                DarkModeAutoGenerate = true,
-                HeaderStyle = (byte)1,
-                MenuLayout = (byte)1,
-                ProductDisplay = (byte)1,
-                CategoryHeaderStyle = (byte)1,
-                ShowProductDetails = true,
-                ShowCategoryImages = true,
-                FilterMode = (byte)0,
-                ShowContactButton = true,
-                ShowModalProductInfo = false,
-                ShowMapInMenu = true,
-                CreatedAt = seed
-            });
+            // CompanyTheme no se puede seedear con HasData porque tiene owned types ToJson()
+            // (limitación de EF Core 10). El seed del tenant demo se maneja en DbSeeder.
 
             b.Entity<BranchLocale>().HasData(new BranchLocale
             {

@@ -1,3 +1,4 @@
+using AppCore.Application.Common;
 using AppCore.Application.Interfaces;
 using AppCore.Application.Services;
 using DigiMenuAPI.Infrastructure.HealthChecks;
@@ -21,7 +22,7 @@ using System.Text;
 
 public partial class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -73,6 +74,9 @@ public partial class Program
         })
         .AddJwtBearer(options =>
         {
+            // Preserva los nombres de claim tal como vienen en el token (no los mapea a URIs largos).
+            // Sin esto, "role" se convierte en ClaimTypes.Role y RequireClaim("role", ...) falla.
+            options.MapInboundClaims = false;
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
@@ -86,7 +90,13 @@ public partial class Program
             };
         });
 
-        builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization(options =>
+        {
+            // Solo el SuperAdmin (role=255) puede acceder a endpoints de gestión de plataforma.
+            // Usar [Authorize(Policy = "SuperAdminOnly")] en todos los controllers /api/superadmin/*.
+            options.AddPolicy("SuperAdminOnly", policy =>
+                policy.RequireClaim("role", UserRoles.SuperAdmin.ToString()));
+        });
 
         builder.Services.AddProblemDetails();
 
@@ -99,6 +109,14 @@ public partial class Program
             options.AddFixedWindowLimiter("auth", opt =>
             {
                 opt.PermitLimit = 10;
+                opt.Window = TimeSpan.FromMinutes(1);
+                opt.QueueLimit = 0;
+            });
+
+            // Exchange de token de impersonación: estricto (5/min) — previene brute force del token
+            options.AddFixedWindowLimiter("impersonate", opt =>
+            {
+                opt.PermitLimit = 5;
                 opt.Window = TimeSpan.FromMinutes(1);
                 opt.QueueLimit = 0;
             });
@@ -144,6 +162,17 @@ public partial class Program
         builder.Services.AddScoped<IReportService, ReportService>();
         builder.Services.AddScoped<ICompanyLanguageService, CompanyLanguageService>();
         builder.Services.AddScoped(typeof(LogMessageDispatcher<>));
+
+        // ── BULK IMPORT ───────────────────────────────────────────────────────
+        builder.Services.AddSingleton<ImportLockService>(); // Singleton: one semaphore per tenant across all requests
+        builder.Services.AddScoped<IBulkImportService, BulkImportService>();
+
+        // ── SUPERADMIN SERVICES ───────────────────────────────────────────────
+        builder.Services.AddScoped<ISuperAdminCompanyService, SuperAdminCompanyService>();
+        builder.Services.AddScoped<ISuperAdminSubscriptionService, SuperAdminSubscriptionService>();
+        builder.Services.AddScoped<ISuperAdminPlanService, SuperAdminPlanService>();
+        builder.Services.AddScoped<ISuperAdminDashboardService, SuperAdminDashboardService>();
+        builder.Services.AddScoped<ISuperAdminImpersonationService, SuperAdminImpersonationService>();
 
         // ── AUTOMAPPER + OUTPUTCACHE + CONTROLLERS ────────────────────────────
         builder.Services.AddAutoMapper(cfg =>
@@ -259,6 +288,13 @@ public partial class Program
 
         // GET /health — sin autenticación, sin logging de Serilog (filtrado por path)
         app.MapHealthChecks("/health").AllowAnonymous();
+
+        // Seeds que no pueden hacerse via HasData (owned types ToJson)
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+            await AppCore.Infrastructure.SQL.DbSeeder.SeedAsync(db);
+        }
 
         app.Run();
     }

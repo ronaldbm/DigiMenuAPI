@@ -145,6 +145,17 @@ namespace AppCore.Application.Common
         public const string CompanyTabLimitReached      = "COMPANY_TAB_LIMIT_REACHED";
         public const string CompanyMaxTabAmountReached  = "COMPANY_MAX_TAB_AMOUNT_REACHED";
 
+        // ── SuperAdmin ────────────────────────────────────────────────────────────
+        public const string PlanNotFound              = "PLAN_NOT_FOUND";
+        public const string PlanCodeAlreadyExists     = "PLAN_CODE_ALREADY_EXISTS";
+        public const string SubscriptionNotFound      = "SUBSCRIPTION_NOT_FOUND";
+        public const string SubscriptionAlreadyExists = "SUBSCRIPTION_ALREADY_EXISTS";
+        public const string PaymentNotFound           = "PAYMENT_NOT_FOUND";
+        public const string ImpersonationFailed       = "IMPERSONATION_FAILED";
+        public const string ImpersonationTokenInvalid = "IMPERSONATION_TOKEN_INVALID";
+        public const string NoCompanyAdminAvailable   = "NO_COMPANY_ADMIN_AVAILABLE";
+        public const string CannotImpersonateSelf     = "CANNOT_IMPERSONATE_SELF";
+
         // ── Account Management ────────────────────────────────────────────────────
         public const string AccountNotFound                = "ACCOUNT_NOT_FOUND";
         public const string AccountNotOwned               = "ACCOUNT_NOT_OWNED";
@@ -166,5 +177,22 @@ namespace AppCore.Application.Common
         public const string DiscountRequiresApproval      = "DISCOUNT_REQUIRES_APPROVAL";
         public const string DiscountApprovalUnauthorized  = "DISCOUNT_APPROVAL_UNAUTHORIZED";
         public const string BranchProductNotVisibleForAccount = "BRANCH_PRODUCT_NOT_VISIBLE_FOR_ACCOUNT";
+
+        // ── Bulk Import ───────────────────────────────────────────────────────────
+        public const string BulkImportValidationFailed    = "BULK_IMPORT_VALIDATION_FAILED";
+        public const string BulkImportCategoryNotFound    = "BULK_IMPORT_CATEGORY_NOT_FOUND";
+        public const string BulkImportProductNotFound     = "BULK_IMPORT_PRODUCT_NOT_FOUND";
+        public const string BulkImportBranchNotFound      = "BULK_IMPORT_BRANCH_NOT_FOUND";
+        public const string BulkImportDuplicateRow        = "BULK_IMPORT_DUPLICATE_ROW";
+        public const string BulkImportDuplicateInDb       = "BULK_IMPORT_DUPLICATE_IN_DB";
+        public const string BulkImportImageNotFound       = "BULK_IMPORT_IMAGE_NOT_FOUND";
+        public const string BulkImportDefaultLangRequired = "BULK_IMPORT_DEFAULT_LANG_REQUIRED";
+        public const string BulkImportBranchProductExists = "BULK_IMPORT_BRANCH_PRODUCT_EXISTS";
+        public const string BulkImportInvalidPrice        = "BULK_IMPORT_INVALID_PRICE";
+        public const string BulkImportZipTooLarge         = "BULK_IMPORT_ZIP_TOO_LARGE";
+        public const string BulkImportZipInvalid          = "BULK_IMPORT_ZIP_INVALID";
+        public const string BulkImportZipInvalidFile      = "BULK_IMPORT_ZIP_INVALID_FILE";
+        public const string BulkImportNoLanguages         = "BULK_IMPORT_NO_LANGUAGES";
+        public const string BulkImportAlreadyInProgress   = "BULK_IMPORT_ALREADY_IN_PROGRESS";
     }
 }

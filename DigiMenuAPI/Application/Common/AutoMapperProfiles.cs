@@ -246,10 +246,10 @@ namespace DigiMenuAPI.Application.Common
             CreateMap<FrameSettingsUpdateDto, FrameSettingsData>().ReverseMap();
 
             CreateMap<CompanyTheme, CompanyThemeReadDto>()
-                .ForMember(d => d.ColorPalette,        o => o.MapFrom(s => s.ColorPalette))
-                .ForMember(d => d.DarkModePalette,     o => o.MapFrom(s => s.DarkModePalette))
-                .ForMember(d => d.BackgroundSettings,  o => o.MapFrom(s => s.BackgroundSettings))
-                .ForMember(d => d.FrameSettings,       o => o.MapFrom(s => s.FrameSettings));
+                .ForMember(d => d.ColorPalette,       o => o.MapFrom(s => s.ColorPalette       ?? new ColorPaletteData()))
+                .ForMember(d => d.DarkModePalette,    o => o.MapFrom(s => s.DarkModePalette))
+                .ForMember(d => d.BackgroundSettings, o => o.MapFrom(s => s.BackgroundSettings ?? new BackgroundSettingsData()))
+                .ForMember(d => d.FrameSettings,      o => o.MapFrom(s => s.FrameSettings      ?? new FrameSettingsData()));
 
             CreateMap<CompanyThemeUpdateDto, CompanyTheme>()
                 .ForMember(d => d.ColorPalette,        o => o.MapFrom(s => s.ColorPalette))
